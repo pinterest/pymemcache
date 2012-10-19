@@ -70,7 +70,7 @@ __author__ = "Charles Gordon"
 import socket
 
 
-RECV_SIZE = 1024
+RECV_SIZE = 4096
 VALID_STORE_RESULTS = {
     'set':     ('STORED',),
     'add':     ('STORED', 'NOT_STORED'),
