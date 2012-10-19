@@ -7,7 +7,7 @@ Basic Usage:
  from pymemcache.client import Client
 
  client = Client(('localhost', 11211))
- client.set('some_key', 'some_value', noreply=True)
+ client.set('some_key', 'some_value')
  result = client.get('some_key')
 
 
@@ -31,7 +31,7 @@ Serialization:
 
  client = Client(('localhost', 11211), serializer=json_serializer,
                  deserializer=json_deserializer)
- client.set('key', {'a':'b', 'c':'d'}, noreply=True)
+ client.set('key', {'a':'b', 'c':'d'})
  result = client.get('key')
 
 
@@ -42,7 +42,8 @@ Best Practices:
    avoid blocking your process when memcached is slow. Consider setting them
    to small values like 0.05 (50ms) or less.
  - Use the "noreply" flag whenever possible for a significant performance
-   boost.
+   boost. The flag is on by default, so you are using it unless you specify
+   otherwise.
  - Use get_many and gets_many whenever possible, as they result in less
    round trip times for fetching multiple keys.
  - Use the "ignore_exc" flag to treat memcache/network errors as cache misses
@@ -242,7 +243,7 @@ class Client(object):
         self.sock = None
         self.buf = ''
 
-    def set(self, key, value, expire=0, noreply=False):
+    def set(self, key, value, expire=0, noreply=True):
         """
         The memcached "set" command.
 
@@ -259,7 +260,7 @@ class Client(object):
         """
         return self._store_cmd('set', key, expire, noreply, value)
 
-    def add(self, key, value, expire=0, noreply=False):
+    def add(self, key, value, expire=0, noreply=True):
         """
         The memcached "add" command.
 
@@ -276,7 +277,7 @@ class Client(object):
         """
         return self._store_cmd('add', key, expire, noreply, value)
 
-    def replace(self, key, value, expire=0, noreply=False):
+    def replace(self, key, value, expire=0, noreply=True):
         """
         The memcached "replace" command.
 
@@ -293,7 +294,7 @@ class Client(object):
         """
         return self._store_cmd('replace', key, expire, noreply, value)
 
-    def append(self, key, value, expire=0, noreply=False):
+    def append(self, key, value, expire=0, noreply=True):
         """
         The memcached "append" command.
 
@@ -310,7 +311,7 @@ class Client(object):
         """
         return self._store_cmd('append', key, expire, noreply, value)
 
-    def prepend(self, key, value, expire=0, noreply=False):
+    def prepend(self, key, value, expire=0, noreply=True):
         """
         The memcached "prepend" command.
 
@@ -327,7 +328,7 @@ class Client(object):
         """
         return self._store_cmd('prepend', key, expire, noreply, value)
 
-    def cas(self, key, value, cas, expire=0, noreply=False):
+    def cas(self, key, value, cas, expire=0, noreply=True):
         """
         The memcached "cas" command.
 
@@ -402,7 +403,7 @@ class Client(object):
         """
         return self._fetch_cmd('gets', keys, True)
 
-    def delete(self, key, noreply=False):
+    def delete(self, key, noreply=True):
         """
         The memcached "delete" command.
 
@@ -417,7 +418,7 @@ class Client(object):
         cmd = 'delete {}{}\r\n'.format(key, ' noreply' if noreply else '')
         return self._misc_cmd(cmd, 'delete', noreply)
 
-    def incr(self, key, value, noreply=False):
+    def incr(self, key, value, noreply=True):
         """
         The memcached "incr" command.
 
@@ -442,7 +443,7 @@ class Client(object):
             return result
         return int(result)
 
-    def decr(self, key, value, noreply=False):
+    def decr(self, key, value, noreply=True):
         """
         The memcached "decr" command.
 
@@ -467,7 +468,7 @@ class Client(object):
             return result
         return int(result)
 
-    def touch(self, key, expire=0, noreply=False):
+    def touch(self, key, expire=0, noreply=True):
         """
         The memcached "touch" command.
 
@@ -491,7 +492,7 @@ class Client(object):
         # TODO(charles)
         pass
 
-    def flush_all(self, delay=0, noreply=False):
+    def flush_all(self, delay=0, noreply=True):
         """
         The memcached "flush_all" command.
 
