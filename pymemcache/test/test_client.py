@@ -1,0 +1,369 @@
+import collections
+import json
+
+from nose import tools
+from pymemcache.client import Client, MemcacheUnknownCommandError
+from pymemcache.client import MemcacheClientError, MemcacheServerError
+from pymemcache.client import MemcacheUnknownError
+
+
+class MockSocket(object):
+    def __init__(self, recv_bufs):
+        self.recv_bufs = collections.deque(recv_bufs)
+        self.send_bufs = []
+        self.closed = False
+
+    def sendall(self, value):
+        self.send_bufs.append(value)
+
+    def close(self):
+        self.closed = True
+
+    def recv(self, size):
+        value = self.recv_bufs.popleft()
+        if isinstance(value, Exception):
+            raise value
+        return value
+
+
+def test_set_success():
+    client = Client(None)
+    client.sock = MockSocket(['STORED\r\n'])
+    result = client.set('key', 'value')
+    tools.assert_equal(result, 'STORED')
+    tools.assert_equal(client.sock.closed, False)
+    tools.assert_equal(len(client.sock.send_bufs), 1)
+
+
+def test_set_error():
+    client = Client(None)
+    client.sock = MockSocket(['ERROR\r\n'])
+
+    def _set():
+        client.set('key', 'value')
+
+    tools.assert_raises(MemcacheUnknownCommandError, _set)
+
+
+def test_set_client_error():
+    client = Client(None)
+    client.sock = MockSocket(['CLIENT_ERROR some message\r\n'])
+
+    def _set():
+        client.set('key', 'value')
+
+    tools.assert_raises(MemcacheClientError, _set)
+
+
+def test_set_server_error():
+    client = Client(None)
+    client.sock = MockSocket(['SERVER_ERROR some message\r\n'])
+
+    def _set():
+        client.set('key', 'value')
+
+    tools.assert_raises(MemcacheServerError, _set)
+
+
+def test_set_unknown_error():
+    client = Client(None)
+    client.sock = MockSocket(['foobarbaz\r\n'])
+
+    def _set():
+        client.set('key', 'value')
+
+    tools.assert_raises(MemcacheUnknownError, _set)
+
+
+def test_set_noreply():
+    client = Client(None)
+    client.sock = MockSocket([])
+    result = client.set('key', 'value', noreply=True)
+    tools.assert_equal(result, None)
+
+
+def test_set_exception():
+    client = Client(None)
+    client.sock = MockSocket([Exception('fail')])
+
+    def _set():
+        client.set('key', 'value')
+
+    tools.assert_raises(Exception, _set)
+    tools.assert_equal(client.sock, None)
+    tools.assert_equal(client.buf, '')
+
+
+def test_add_stored():
+    client = Client(None)
+    client.sock = MockSocket(['STORED\r', '\n'])
+    result = client.add('key', 'value')
+    tools.assert_equal(result, 'STORED')
+
+
+def test_add_not_stored():
+    client = Client(None)
+    client.sock = MockSocket(['NOT_', 'STOR', 'ED', '\r\n'])
+    result = client.add('key', 'value')
+    tools.assert_equal(result, 'NOT_STORED')
+
+
+def test_replace_stored():
+    client = Client(None)
+    client.sock = MockSocket(['STORED\r\n'])
+    result = client.replace('key', 'value')
+    tools.assert_equal(result, 'STORED')
+
+
+def test_replace_not_stored():
+    client = Client(None)
+    client.sock = MockSocket(['NOT_STORED\r\n'])
+    result = client.replace('key', 'value')
+    tools.assert_equal(result, 'NOT_STORED')
+
+
+def test_append_stored():
+    client = Client(None)
+    client.sock = MockSocket(['STORED\r\n'])
+    result = client.append('key', 'value')
+    tools.assert_equal(result, 'STORED')
+
+
+def test_prepend_stored():
+    client = Client(None)
+    client.sock = MockSocket(['STORED\r\n'])
+    result = client.prepend('key', 'value')
+    tools.assert_equal(result, 'STORED')
+
+
+def test_cas_stored():
+    client = Client(None)
+    client.sock = MockSocket(['STORED\r\n'])
+    result = client.cas('key', 'value', 'cas')
+    tools.assert_equal(result, 'STORED')
+
+
+def test_cas_exists():
+    client = Client(None)
+    client.sock = MockSocket(['EXISTS\r\n'])
+    result = client.cas('key', 'value', 'cas')
+    tools.assert_equal(result, 'EXISTS')
+
+
+def test_cas_not_found():
+    client = Client(None)
+    client.sock = MockSocket(['NOT_FOUND\r\n'])
+    result = client.cas('key', 'value', 'cas')
+    tools.assert_equal(result, 'NOT_FOUND')
+
+
+def test_get_not_found():
+    client = Client(None)
+    client.sock = MockSocket(['END\r\n'])
+    result = client.get('key')
+    tools.assert_equal(result, None)
+
+
+def test_get_found():
+    client = Client(None)
+    client.sock = MockSocket(['VALUE key 0 5\r\nvalue\r\nEND\r\n'])
+    result = client.get('key')
+    tools.assert_equal(result, 'value')
+
+
+def test_get_error():
+    client = Client(None)
+    client.sock = MockSocket(['ERROR\r\n'])
+
+    def _get():
+        client.get('key')
+
+    tools.assert_raises(MemcacheUnknownCommandError, _get)
+
+
+def test_get_many_none_found():
+    client = Client(None)
+    client.sock = MockSocket(['END\r\n'])
+    result = client.get_many(['key1', 'key2'])
+    tools.assert_equal(result, {})
+
+
+def test_get_many_some_found():
+    client = Client(None)
+    client.sock = MockSocket(['VALUE key1 0 6\r\nvalue1\r\nEND\r\n'])
+    result = client.get_many(['key1', 'key2'])
+    tools.assert_equal(result, {'key1': 'value1'})
+
+
+def test_get_many_all_found():
+    client = Client(None)
+    client.sock = MockSocket(['VALUE key1 0 6\r\nvalue1\r\n'
+                              'VALUE key2 0 6\r\nvalue2\r\nEND\r\n'])
+    result = client.get_many(['key1', 'key2'])
+    tools.assert_equal(result, {'key1': 'value1', 'key2': 'value2'})
+
+
+def test_get_unknown_error():
+    client = Client(None)
+    client.sock = MockSocket(['foobarbaz\r\n'])
+
+    def _get():
+        client.get('key')
+
+    tools.assert_raises(MemcacheUnknownError, _get)
+
+
+def test_gets_not_found():
+    client = Client(None)
+    client.sock = MockSocket(['END\r\n'])
+    result = client.gets('key')
+    tools.assert_equal(result, (None, None))
+
+
+def test_gets_found():
+    client = Client(None)
+    client.sock = MockSocket(['VALUE key 0 5 10\r\nvalue\r\nEND\r\n'])
+    result = client.gets('key')
+    tools.assert_equal(result, ('value', '10'))
+
+
+def test_gets_many_none_found():
+    client = Client(None)
+    client.sock = MockSocket(['END\r\n'])
+    result = client.gets_many(['key1', 'key2'])
+    tools.assert_equal(result, {})
+
+
+def test_gets_many_some_found():
+    client = Client(None)
+    client.sock = MockSocket(['VALUE key1 0 6 11\r\nvalue1\r\nEND\r\n'])
+    result = client.gets_many(['key1', 'key2'])
+    tools.assert_equal(result, {'key1': ('value1', '11')})
+
+
+def test_get_recv_chunks():
+    client = Client(None)
+    client.sock = MockSocket(['VALUE key', ' 0 5\r', '\nvalue', '\r\n',
+                              'END', '\r', '\n'])
+    result = client.get('key')
+    tools.assert_equal(result, 'value')
+
+
+def test_delete_not_found():
+    client = Client(None)
+    client.sock = MockSocket(['NOT_FOUND\r\n'])
+    result = client.delete('key')
+    tools.assert_equal(result, 'NOT_FOUND')
+
+
+def test_delete_found():
+    client = Client(None)
+    client.sock = MockSocket(['DELETED\r\n'])
+    result = client.delete('key')
+    tools.assert_equal(result, 'DELETED')
+
+
+def test_delete_noreply():
+    client = Client(None)
+    client.sock = MockSocket([])
+    result = client.delete('key', noreply=True)
+    tools.assert_equal(result, None)
+
+
+def test_delete_exception():
+    client = Client(None)
+    client.sock = MockSocket([Exception('fail')])
+
+    def _delete():
+        client.delete('key')
+
+    tools.assert_raises(Exception, _delete)
+    tools.assert_equal(client.sock, None)
+    tools.assert_equal(client.buf, '')
+
+
+def test_incr_not_found():
+    client = Client(None)
+    client.sock = MockSocket(['NOT_FOUND\r\n'])
+    result = client.incr('key', 1)
+    tools.assert_equal(result, 'NOT_FOUND')
+
+
+def test_incr_found():
+    client = Client(None)
+    client.sock = MockSocket(['1\r\n'])
+    result = client.incr('key', 1)
+    tools.assert_equal(result, 1)
+
+
+def test_incr_noreply():
+    client = Client(None)
+    client.sock = MockSocket([])
+    result = client.incr('key', 1, noreply=True)
+    tools.assert_equal(result, None)
+
+
+def test_incr_exception():
+    client = Client(None)
+    client.sock = MockSocket([Exception('fail')])
+
+    def _incr():
+        client.incr('key', 1)
+
+    tools.assert_raises(Exception, _incr)
+    tools.assert_equal(client.sock, None)
+    tools.assert_equal(client.buf, '')
+
+
+def test_decr_not_found():
+    client = Client(None)
+    client.sock = MockSocket(['NOT_FOUND\r\n'])
+    result = client.decr('key', 1)
+    tools.assert_equal(result, 'NOT_FOUND')
+
+
+def test_decr_found():
+    client = Client(None)
+    client.sock = MockSocket(['1\r\n'])
+    result = client.decr('key', 1)
+    tools.assert_equal(result, 1)
+
+
+def test_flush_all():
+    client = Client(None)
+    client.sock = MockSocket(['OK\r\n'])
+    result = client.flush_all()
+    tools.assert_equal(result, 'OK')
+
+
+def test_touch_not_found():
+    client = Client(None)
+    client.sock = MockSocket(['NOT_FOUND\r\n'])
+    result = client.touch('key')
+    tools.assert_equal(result, 'NOT_FOUND')
+
+
+def test_touch_found():
+    client = Client(None)
+    client.sock = MockSocket(['TOUCHED\r\n'])
+    result = client.touch('key')
+    tools.assert_equal(result, 'TOUCHED')
+
+
+def test_quit():
+    client = Client(None)
+    client.sock = MockSocket([])
+    result = client.quit()
+    tools.assert_equal(result, None)
+    tools.assert_equal(client.sock, None)
+    tools.assert_equal(client.buf, '')
+
+
+def test_serialization():
+    def _ser(value):
+        return json.dumps(value), 0
+
+    client = Client(None, serializer=_ser)
+    client.sock = MockSocket(['STORED\r\n'])
+    client.set('key', {'a': 'b', 'c': 'd'})
+    print client.sock.send_bufs
