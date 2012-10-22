@@ -41,13 +41,16 @@ Best Practices:
  - Always set the connect_timeout and timeout arguments in the constructor to
    avoid blocking your process when memcached is slow. Consider setting them
    to small values like 0.05 (50ms) or less.
- - Use the "noreply" flag whenever possible for a significant performance
-   boost. The flag is on by default, so you are using it unless you specify
-   otherwise.
+ - Use the "noreply" flag for a significant performance boot. The "noreply"
+   flag is enabled by default for "set", "add", "replace", "append", "prepend",
+   and "delete". It is disabled by default for "cas", "incr" and "decr".
  - Use get_many and gets_many whenever possible, as they result in less
    round trip times for fetching multiple keys.
  - Use the "ignore_exc" flag to treat memcache/network errors as cache misses
-   on calls to the get* methods.
+   on calls to the get* methods. This prevents failures in memcache, or network
+   errors, from killing your web requests. Do not use this flag if you need to
+   know about errors from memcache, and make sure you have some other way to
+   detect memcache failures.
 
 
 Not Implemented:
@@ -252,11 +255,10 @@ class Client(object):
           value: str, see class docs for details.
           expire: optional int, number of seconds until the item is expired
                   from the cache, or zero for no expiry (the default).
-          noreply: optional bool, False to wait for the reply (the default).
+          noreply: optional bool, True to not wait for the reply (the default).
 
         Returns:
-          The string 'STORED' on success, or raises an Exception on error (see
-          class documentation).
+          If noreply is True, always returns None, otherwise returns 'STORED'.
         """
         return self._store_cmd('set', key, expire, noreply, value)
 
@@ -269,11 +271,11 @@ class Client(object):
           value: str, see class docs for details.
           expire: optional int, number of seconds until the item is expired
                   from the cache, or zero for no expiry (the default).
-          noreply: optional bool, False to wait for the reply (the default).
+          noreply: optional bool, True to not wait for the reply (the default).
 
         Returns:
-          The string 'STORED' if the value was stored, 'NOT_STORED' if the key
-          already existed, or an Exception on error (see class docs).
+          If noreply is True, always returns None, otherwise returns 'STORED'
+          if the key didn't exist already, and 'NOT_STORED' otherwise.
         """
         return self._store_cmd('add', key, expire, noreply, value)
 
@@ -286,11 +288,12 @@ class Client(object):
           value: str, see class docs for details.
           expire: optional int, number of seconds until the item is expired
                   from the cache, or zero for no expiry (the default).
-          noreply: optional bool, False to wait for the reply (the default).
+          noreply: optional bool, True to not wait for the reply (the default).
 
         Returns:
-          The string 'STORED' if the value was stored, 'NOT_STORED' if the key
-          didn't already exist or an Exception on error (see class docs).
+          If noreply is True, always returns None, otherwise returns 'STORED'
+          if the value was stored, and 'NOT_STORED' if the key did not already
+          exist.
         """
         return self._store_cmd('replace', key, expire, noreply, value)
 
@@ -303,11 +306,10 @@ class Client(object):
           value: str, see class docs for details.
           expire: optional int, number of seconds until the item is expired
                   from the cache, or zero for no expiry (the default).
-          noreply: optional bool, False to wait for the reply (the default).
+          noreply: optional bool, True to not wait for the reply (the default).
 
         Returns:
-          The string 'STORED' on success, or raises an Exception on error (see
-          the class docs).
+          If noreply is True, always returns None, otherwise returns 'STORED'.
         """
         return self._store_cmd('append', key, expire, noreply, value)
 
@@ -323,12 +325,11 @@ class Client(object):
           noreply: optional bool, False to wait for the reply (the default).
 
         Returns:
-          The string 'STORED' on success, or raises an Exception on error (see
-          the class docs).
+          If noreply is True, always returns None, otherwise returns 'STORED'.
         """
         return self._store_cmd('prepend', key, expire, noreply, value)
 
-    def cas(self, key, value, cas, expire=0, noreply=True):
+    def cas(self, key, value, cas, expire=0, noreply=False):
         """
         The memcached "cas" command.
 
@@ -341,9 +342,9 @@ class Client(object):
           noreply: optional bool, False to wait for the reply (the default).
 
         Returns:
-          The string 'STORED' if the value was stored, 'EXISTS' if the key
-          already existed with a different cas, 'NOT_FOUND' if the key didn't
-          exist or raises an Exception on error (see the class docs).
+          If noreply is True, always returns None, otherwise returns 'STORED'
+          if the value was stored, 'EXISTS' if the key already existed with a
+          different cas value or 'NOT_FOUND' if the key didn't exist.
         """
         return self._store_cmd('cas', key, expire, noreply, value, cas)
 
@@ -355,8 +356,7 @@ class Client(object):
           key: str, see class docs for details.
 
         Returns:
-          The value for the key, or None if the key wasn't found, or raises
-          an Exception on error (see class docs).
+          The value for the key, or None if the key wasn't found.
         """
         return self._fetch_cmd('get', [key], False).get(key, None)
 
@@ -370,8 +370,7 @@ class Client(object):
         Returns:
           A dict in which the keys are elements of the "keys" argument list
           and the values are values from the cache. The dict may contain all,
-          some or none of the given keys. An exception is raised on errors (see
-          the class docs for details).
+          some or none of the given keys.
         """
         return self._fetch_cmd('get', keys, False)
 
@@ -384,7 +383,6 @@ class Client(object):
 
         Returns:
           A tuple of (key, cas), or (None, None) if the key was not found.
-          Raises an Exception on errors (see class docs for details).
         """
         return self._fetch_cmd('gets', [key], True).get(key, (None, None))
 
@@ -398,8 +396,7 @@ class Client(object):
         Returns:
           A dict in which the keys are elements of the "keys" argument list and
           the values are tuples of (value, cas) from the cache. The dict may
-          contain all, some or none of the given keys. An exception is raised
-          on errors (see the class docs for details).
+          contain all, some or none of the given keys.
         """
         return self._fetch_cmd('gets', keys, True)
 
@@ -411,14 +408,13 @@ class Client(object):
           key: str, see class docs for details.
 
         Returns:
-          The string 'DELTED' if the key existed, and was deleted, 'NOT_FOUND'
-          if the string did not exist, or raises an Exception on error (see the
-          class docs for details).
+          If noreply is True, always returns None, otherwise returns 'DELETED'
+          if the key existed, or 'NOT_FOUND' if it did not.
         """
         cmd = 'delete {}{}\r\n'.format(key, ' noreply' if noreply else '')
         return self._misc_cmd(cmd, 'delete', noreply)
 
-    def incr(self, key, value, noreply=True):
+    def incr(self, key, value, noreply=False):
         """
         The memcached "incr" command.
 
@@ -428,9 +424,9 @@ class Client(object):
           noreply: optional bool, False to wait for the reply (the default).
 
         Returns:
-          The string 'NOT_FOUND', or an integer which is the value of the key
-          after incrementing. Raises an Exception on errors (see the class docs
-          for details).
+          If noreply is True, always returns None, otherwise returns 'NOT_FOUND'
+          if the key wasn't found, or an integer which is the value of the key
+          after incrementing by value.
         """
         cmd = "incr {} {}{}\r\n".format(
             key,
@@ -443,7 +439,7 @@ class Client(object):
             return result
         return int(result)
 
-    def decr(self, key, value, noreply=True):
+    def decr(self, key, value, noreply=False):
         """
         The memcached "decr" command.
 
@@ -453,9 +449,9 @@ class Client(object):
           noreply: optional bool, False to wait for the reply (the default).
 
         Returns:
-          The string 'NOT_FOUND', or an integer which is the value of the key
-          after decrementing. Raises an Exception on errors (see the class
-          docs for details).
+          If noreply is True, always returns None, otherwise returns 'NOT_FOUND'
+          if the key wasn't found, or an integer which is the value of the key
+          after decrementing by value.
         """
         cmd = "decr {} {}{}\r\n".format(
             key,
@@ -479,8 +475,7 @@ class Client(object):
           noreply: optional bool, False to wait for the reply (the default).
 
         Returns:
-          The string 'OK' if the value was stored or raises an Exception on
-          error (see the class docs).
+          If noreply is True, always returns None, otherwise returns 'OK'.
         """
         cmd = "touch {} {}{}\r\n".format(
             key,
@@ -502,8 +497,7 @@ class Client(object):
           noreply: optional bool, False to wait for the response (the default).
 
         Returns:
-          The string 'OK' on success, or raises an Exception on error (see the
-          class docs).
+          If noreply is True, always returns None, otherwise returns 'OK'.
         """
         cmd = "flush_all {}{}\r\n".format(delay, ' noreply' if noreply else '')
         return self._misc_cmd(cmd, 'flush_all', noreply)
