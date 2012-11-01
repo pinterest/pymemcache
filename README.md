@@ -61,3 +61,15 @@ deserialization support and can't treat errors as cache misses.
 
 External Links
 ==============
+
+The memcached text protocol reference page:
+  https://github.com/memcached/memcached/blob/master/doc/protocol.txt
+
+The python-memcached library (another pure-Python library):
+  http://www.tummy.com/Community/software/python-memcached/
+
+Mixpanel's Blog post about their memcached client for Python:
+  http://code.mixpanel.com/2012/07/16/we-went-down-so-we-wrote-a-better-pure-python-memcache-client/
+
+Mixpanel's pure Python memcached client:
+  https://github.com/mixpanel/memcache_client
