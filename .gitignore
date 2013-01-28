@@ -13,6 +13,8 @@ eggs
 # sdist
 develop-eggs
 .installed.cfg
+build
+dist
 
 # Installer logs
 pip-log.txt
