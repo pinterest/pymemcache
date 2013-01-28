@@ -275,7 +275,9 @@ class Client(object):
           noreply: optional bool, True to not wait for the reply (the default).
 
         Returns:
-          If noreply is True, always returns None, otherwise returns 'STORED'.
+          If no exception is raised, always returns True. If an exception is
+          raised, the set may or may not have occurred. If noreply is True,
+          then a successful return does not guarantee a successful set.
         """
         return self._store_cmd('set', key, expire, noreply, value)
 
@@ -291,13 +293,13 @@ class Client(object):
           noreply: optional bool, True to not wait for the reply (the default).
 
         Returns:
-          None. If an exception is raised then all, some or none of the keys
-          may have been sent to memcached. If no exceptions are raised, then
-          all the values have been sent to memcached and, if noreply is False,
-          it has accepted all of them.
+          If no exception is raised, always returns True. Otherwise all, some
+          or none of the keys have been successfully set. If noreply is True
+          then a successful return does not guarantee that any keys were
+          successfully set (just that the keys were successfully sent).
         """
         if not values:
-            return
+            return True
 
         # TODO: make this more performant by sending all the values first, then
         # waiting for all the responses.
@@ -316,8 +318,9 @@ class Client(object):
           noreply: optional bool, True to not wait for the reply (the default).
 
         Returns:
-          If noreply is True, always returns None, otherwise returns 'STORED'
-          if the key didn't exist already, and 'NOT_STORED' otherwise.
+          If noreply is True, the return value is always True. Otherwise the
+          return value is True if the value was stgored, and False if it was
+          not (because the key already existed).
         """
         return self._store_cmd('add', key, expire, noreply, value)
 
@@ -333,9 +336,9 @@ class Client(object):
           noreply: optional bool, True to not wait for the reply (the default).
 
         Returns:
-          If noreply is True, always returns None, otherwise returns 'STORED'
-          if the value was stored, and 'NOT_STORED' if the key did not already
-          exist.
+          If noreply is True, always returns True. Otherwise returns True if
+          the value was stored and False if it wasn't (because the key didn't
+          already exist).
         """
         return self._store_cmd('replace', key, expire, noreply, value)
 
@@ -351,7 +354,7 @@ class Client(object):
           noreply: optional bool, True to not wait for the reply (the default).
 
         Returns:
-          If noreply is True, always returns None, otherwise returns 'STORED'.
+          True.
         """
         return self._store_cmd('append', key, expire, noreply, value)
 
@@ -367,7 +370,7 @@ class Client(object):
           noreply: optional bool, False to wait for the reply (the default).
 
         Returns:
-          If noreply is True, always returns None, otherwise returns 'STORED'.
+          True.
         """
         return self._store_cmd('prepend', key, expire, noreply, value)
 
@@ -384,9 +387,9 @@ class Client(object):
           noreply: optional bool, False to wait for the reply (the default).
 
         Returns:
-          If noreply is True, always returns None, otherwise returns 'STORED'
-          if the value was stored, 'EXISTS' if the key already existed with a
-          different cas value or 'NOT_FOUND' if the key didn't exist.
+          If noreply is True, always returns True. Otherwise returns None if
+          the key didn't exist, False if it existed but had a different cas
+          value and True if it existed and was changed.
         """
         return self._store_cmd('cas', key, expire, noreply, value, cas)
 
@@ -456,11 +459,14 @@ class Client(object):
           key: str, see class docs for details.
 
         Returns:
-          If noreply is True, always returns None, otherwise returns 'DELETED'
-          if the key existed, or 'NOT_FOUND' if it did not.
+          If noreply is True, always returns True. Otherwise returns True if
+          the key was deleted, and False if it wasn't found.
         """
         cmd = 'delete {}{}\r\n'.format(key, ' noreply' if noreply else '')
-        return self._misc_cmd(cmd, 'delete', noreply)
+        result = self._misc_cmd(cmd, 'delete', noreply)
+        if noreply:
+            return True
+        return result == 'DELETED'
 
     def delete_many(self, keys, noreply=True):
         """
@@ -470,18 +476,20 @@ class Client(object):
           keys: list(str), the list of keys to delete.
 
         Returns:
-          None. If an exception is raised then all, some or none of the keys
+          True. If an exception is raised then all, some or none of the keys
           may have been deleted. Otherwise all the keys have been sent to
           memcache for deletion and if noreply is False, they have been
           acknowledged by memcache.
         """
         if not keys:
-            return
+            return True
 
         # TODO: make this more performant by sending all keys first, then
         # waiting for all values.
         for key in keys:
             self.delete(key, noreply)
+
+        return True
 
     def incr(self, key, value, noreply=False):
         """
@@ -493,9 +501,8 @@ class Client(object):
           noreply: optional bool, False to wait for the reply (the default).
 
         Returns:
-          If noreply is True, always returns None, otherwise returns 'NOT_FOUND'
-          if the key wasn't found, or an integer which is the value of the key
-          after incrementing by value.
+          If noreply is True, always returns None. Otherwise returns the new
+          value of the key, or None if the key wasn't found.
         """
         cmd = "incr {} {}{}\r\n".format(
             key,
@@ -505,7 +512,7 @@ class Client(object):
         if noreply:
             return None
         if result == 'NOT_FOUND':
-            return result
+            return None
         return int(result)
 
     def decr(self, key, value, noreply=False):
@@ -518,9 +525,8 @@ class Client(object):
           noreply: optional bool, False to wait for the reply (the default).
 
         Returns:
-          If noreply is True, always returns None, otherwise returns 'NOT_FOUND'
-          if the key wasn't found, or an integer which is the value of the key
-          after decrementing by value.
+          If noreply is True, always returns None. Otherwise returns the new
+          value of the key, or None if the key wasn't found.
         """
         cmd = "decr {} {}{}\r\n".format(
             key,
@@ -530,7 +536,7 @@ class Client(object):
         if noreply:
             return None
         if result == 'NOT_FOUND':
-            return result
+            return None
         return int(result)
 
     def touch(self, key, expire=0, noreply=True):
@@ -544,13 +550,17 @@ class Client(object):
           noreply: optional bool, False to wait for the reply (the default).
 
         Returns:
-          If noreply is True, always returns None, otherwise returns 'OK'.
+          True if the expiration time was updated, False if the key wasn't
+          found.
         """
         cmd = "touch {} {}{}\r\n".format(
             key,
             expire,
             ' noreply' if noreply else '')
-        return self._misc_cmd(cmd, 'touch', noreply)
+        result = self._misc_cmd(cmd, 'touch', noreply)
+        if noreply:
+            return True
+        return result == 'TOUCHED'
 
     def stats(self):
         # TODO(charles)
@@ -566,10 +576,13 @@ class Client(object):
           noreply: optional bool, False to wait for the response (the default).
 
         Returns:
-          If noreply is True, always returns None, otherwise returns 'OK'.
+          True.
         """
         cmd = "flush_all {}{}\r\n".format(delay, ' noreply' if noreply else '')
-        return self._misc_cmd(cmd, 'flush_all', noreply)
+        result = self._misc_cmd(cmd, 'flush_all', noreply)
+        if noreply:
+            return True
+        return result == 'OK'
 
     def quit(self):
         """
@@ -667,13 +680,20 @@ class Client(object):
             self.sock.sendall(cmd)
 
             if noreply:
-                return
+                return True
 
             self.buf, line = _readline(self.sock, self.buf)
             self._raise_errors(line, name)
 
             if line in VALID_STORE_RESULTS[name]:
-                return line
+                if line == 'STORED':
+                    return True
+                if line == 'NOT_STORED':
+                    return False
+                if line == 'NOT_FOUND':
+                    return None
+                if line == 'EXISTS':
+                    return False
             else:
                 raise MemcacheUnknownError(line[:32])
         except Exception:

@@ -44,7 +44,7 @@ def test_set_success():
     client = Client(None)
     client.sock = MockSocket(['STORED\r\n'])
     result = client.set('key', 'value', noreply=False)
-    tools.assert_equal(result, 'STORED')
+    tools.assert_equal(result, True)
     tools.assert_equal(client.sock.closed, False)
     tools.assert_equal(len(client.sock.send_bufs), 1)
 
@@ -113,7 +113,7 @@ def test_set_noreply():
     client = Client(None)
     client.sock = MockSocket([])
     result = client.set('key', 'value', noreply=True)
-    tools.assert_equal(result, None)
+    tools.assert_equal(result, True)
 
 
 def test_set_exception():
@@ -132,63 +132,63 @@ def test_add_stored():
     client = Client(None)
     client.sock = MockSocket(['STORED\r', '\n'])
     result = client.add('key', 'value', noreply=False)
-    tools.assert_equal(result, 'STORED')
+    tools.assert_equal(result, True)
 
 
 def test_add_not_stored():
     client = Client(None)
     client.sock = MockSocket(['NOT_', 'STOR', 'ED', '\r\n'])
     result = client.add('key', 'value', noreply=False)
-    tools.assert_equal(result, 'NOT_STORED')
+    tools.assert_equal(result, False)
 
 
 def test_replace_stored():
     client = Client(None)
     client.sock = MockSocket(['STORED\r\n'])
     result = client.replace('key', 'value', noreply=False)
-    tools.assert_equal(result, 'STORED')
+    tools.assert_equal(result, True)
 
 
 def test_replace_not_stored():
     client = Client(None)
     client.sock = MockSocket(['NOT_STORED\r\n'])
     result = client.replace('key', 'value', noreply=False)
-    tools.assert_equal(result, 'NOT_STORED')
+    tools.assert_equal(result, False)
 
 
 def test_append_stored():
     client = Client(None)
     client.sock = MockSocket(['STORED\r\n'])
     result = client.append('key', 'value', noreply=False)
-    tools.assert_equal(result, 'STORED')
+    tools.assert_equal(result, True)
 
 
 def test_prepend_stored():
     client = Client(None)
     client.sock = MockSocket(['STORED\r\n'])
     result = client.prepend('key', 'value', noreply=False)
-    tools.assert_equal(result, 'STORED')
+    tools.assert_equal(result, True)
 
 
 def test_cas_stored():
     client = Client(None)
     client.sock = MockSocket(['STORED\r\n'])
     result = client.cas('key', 'value', 'cas', noreply=False)
-    tools.assert_equal(result, 'STORED')
+    tools.assert_equal(result, True)
 
 
 def test_cas_exists():
     client = Client(None)
     client.sock = MockSocket(['EXISTS\r\n'])
     result = client.cas('key', 'value', 'cas', noreply=False)
-    tools.assert_equal(result, 'EXISTS')
+    tools.assert_equal(result, False)
 
 
 def test_cas_not_found():
     client = Client(None)
     client.sock = MockSocket(['NOT_FOUND\r\n'])
     result = client.cas('key', 'value', 'cas', noreply=False)
-    tools.assert_equal(result, 'NOT_FOUND')
+    tools.assert_equal(result, None)
 
 
 def test_get_not_found():
@@ -297,21 +297,21 @@ def test_delete_not_found():
     client = Client(None)
     client.sock = MockSocket(['NOT_FOUND\r\n'])
     result = client.delete('key', noreply=False)
-    tools.assert_equal(result, 'NOT_FOUND')
+    tools.assert_equal(result, False)
 
 
 def test_delete_found():
     client = Client(None)
     client.sock = MockSocket(['DELETED\r\n'])
     result = client.delete('key', noreply=False)
-    tools.assert_equal(result, 'DELETED')
+    tools.assert_equal(result, True)
 
 
 def test_delete_noreply():
     client = Client(None)
     client.sock = MockSocket([])
     result = client.delete('key', noreply=True)
-    tools.assert_equal(result, None)
+    tools.assert_equal(result, True)
 
 
 def test_delete_exception():
@@ -330,7 +330,7 @@ def test_incr_not_found():
     client = Client(None)
     client.sock = MockSocket(['NOT_FOUND\r\n'])
     result = client.incr('key', 1, noreply=False)
-    tools.assert_equal(result, 'NOT_FOUND')
+    tools.assert_equal(result, None)
 
 
 def test_incr_found():
@@ -363,7 +363,7 @@ def test_decr_not_found():
     client = Client(None)
     client.sock = MockSocket(['NOT_FOUND\r\n'])
     result = client.decr('key', 1, noreply=False)
-    tools.assert_equal(result, 'NOT_FOUND')
+    tools.assert_equal(result, None)
 
 
 def test_decr_found():
@@ -377,21 +377,21 @@ def test_flush_all():
     client = Client(None)
     client.sock = MockSocket(['OK\r\n'])
     result = client.flush_all(noreply=False)
-    tools.assert_equal(result, 'OK')
+    tools.assert_equal(result, True)
 
 
 def test_touch_not_found():
     client = Client(None)
     client.sock = MockSocket(['NOT_FOUND\r\n'])
     result = client.touch('key', noreply=False)
-    tools.assert_equal(result, 'NOT_FOUND')
+    tools.assert_equal(result, False)
 
 
 def test_touch_found():
     client = Client(None)
     client.sock = MockSocket(['TOUCHED\r\n'])
     result = client.touch('key', noreply=False)
-    tools.assert_equal(result, 'TOUCHED')
+    tools.assert_equal(result, True)
 
 
 def test_quit():
