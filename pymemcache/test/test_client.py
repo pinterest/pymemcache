@@ -59,6 +59,26 @@ def test_set_error():
     tools.assert_raises(MemcacheUnknownCommandError, _set)
 
 
+def test_set_unicode_key():
+    client = Client(None)
+    client.sock = MockSocket([''])
+
+    def _set():
+        client.set(u'\u0FFF', 'value', noreply=False)
+
+    tools.assert_raises(MemcacheClientError, _set)
+
+
+def test_set_unicode_value():
+    client = Client(None)
+    client.sock = MockSocket([''])
+
+    def _set():
+        client.set(u'\u0FFF', 'value', noreply=False)
+
+    tools.assert_raises(MemcacheClientError, _set)
+
+
 def test_set_client_error():
     client = Client(None)
     client.sock = MockSocket(['CLIENT_ERROR some message\r\n'])
@@ -227,6 +247,16 @@ def test_get_unknown_error():
     tools.assert_raises(MemcacheUnknownError, _get)
 
 
+def test_get_unicode_key():
+    client = Client(None)
+    client.sock = MockSocket([''])
+
+    def _get():
+        client.get(u'\u0FFF')
+
+    tools.assert_raises(MemcacheClientError, _get)
+
+
 def test_gets_not_found():
     client = Client(None)
     client.sock = MockSocket(['END\r\n'])
@@ -374,7 +404,7 @@ def test_quit():
 
 
 def test_serialization():
-    def _ser(value):
+    def _ser(key, value):
         return json.dumps(value), 0
 
     client = Client(None, serializer=_ser)

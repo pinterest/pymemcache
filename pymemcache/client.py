@@ -53,18 +53,18 @@ Best Practices:
 ---------------
 
  - Always set the connect_timeout and timeout arguments in the constructor to
-   avoid blocking your process when memcached is slow. Consider setting them
-   to small values like 0.05 (50ms) or less.
- - Use the "noreply" flag for a significant performance boot. The "noreply"
+   avoid blocking your process when memcached is slow.
+ - Use the "noreply" flag for a significant performance boost. The "noreply"
    flag is enabled by default for "set", "add", "replace", "append", "prepend",
-   and "delete". It is disabled by default for "cas", "incr" and "decr".
+   and "delete". It is disabled by default for "cas", "incr" and "decr". It
+   obviously doesn't apply to any get calls.
  - Use get_many and gets_many whenever possible, as they result in less
    round trip times for fetching multiple keys.
  - Use the "ignore_exc" flag to treat memcache/network errors as cache misses
    on calls to the get* methods. This prevents failures in memcache, or network
    errors, from killing your web requests. Do not use this flag if you need to
    know about errors from memcache, and make sure you have some other way to
-   detect memcache failures.
+   detect memcache server failures.
 
 
 Not Implemented:
@@ -76,8 +76,6 @@ The following features are not implemented by this library:
        ignore_exc flag to treat failures as cache misses.
  - Pooling: coming soon?
  - Clustering: coming soon?
- - Key/value validation: it's relatively expensive to validate keys and values
-       on the client side, and memcached already does so on the server side.
  - Unix sockets: coming soon?
  - Binary protocol: coming soon?
 """
@@ -154,6 +152,11 @@ class Client(object):
      returned by list.__str__() is not the same length as the value returned
      by list.__len__(). As with keys, unicode values must be encoded if they
      contain characters not in the ASCII subset.
+
+     If you intend to use anything but str as a value, it is a good idea to use
+     a serializer and deserializer. The pymemcache.serde library has some
+     already implemented serializers, including one that is compatible with
+     the python-memcache library.
 
     Serialization and Deserialization:
     ----------------------------------
@@ -276,6 +279,31 @@ class Client(object):
         """
         return self._store_cmd('set', key, expire, noreply, value)
 
+    def set_many(self, values, expire=0, noreply=True):
+        """
+        A convenience function for setting multiple values.
+
+        Args:
+          values: dict(str, str), a dict of keys and values, see class docs
+                  for details.
+          expire: optional int, number of seconds until the item is expired
+                  from the cache, or zero for no expiry (the default).
+          noreply: optional bool, True to not wait for the reply (the default).
+
+        Returns:
+          None. If an exception is raised then all, some or none of the keys
+          may have been sent to memcached. If no exceptions are raised, then
+          all the values have been sent to memcached and, if noreply is False,
+          it has accepted all of them.
+        """
+        if not values:
+            return
+
+        # TODO: make this more performant by sending all the values first, then
+        # waiting for all the responses.
+        for key, value in values.items():
+            self.set(key, value, expire, noreply)
+
     def add(self, key, value, expire=0, noreply=True):
         """
         The memcached "add" command.
@@ -386,6 +414,9 @@ class Client(object):
           and the values are values from the cache. The dict may contain all,
           some or none of the given keys.
         """
+        if not keys:
+            return {}
+
         return self._fetch_cmd('get', keys, False)
 
     def gets(self, key):
@@ -412,6 +443,9 @@ class Client(object):
           the values are tuples of (value, cas) from the cache. The dict may
           contain all, some or none of the given keys.
         """
+        if not keys:
+            return {}
+
         return self._fetch_cmd('gets', keys, True)
 
     def delete(self, key, noreply=True):
@@ -427,6 +461,27 @@ class Client(object):
         """
         cmd = 'delete {}{}\r\n'.format(key, ' noreply' if noreply else '')
         return self._misc_cmd(cmd, 'delete', noreply)
+
+    def delete_many(self, keys, noreply=True):
+        """
+        A convenience function to delete multiple keys.
+
+        Args:
+          keys: list(str), the list of keys to delete.
+
+        Returns:
+          None. If an exception is raised then all, some or none of the keys
+          may have been deleted. Otherwise all the keys have been sent to
+          memcache for deletion and if noreply is False, they have been
+          acknowledged by memcache.
+        """
+        if not keys:
+            return
+
+        # TODO: make this more performant by sending all keys first, then
+        # waiting for all values.
+        for key in keys:
+            self.delete(key, noreply)
 
     def incr(self, key, value, noreply=False):
         """
@@ -544,7 +599,11 @@ class Client(object):
         if not self.sock:
             self._connect()
 
-        cmd = '{} {}\r\n'.format(name, ' '.join(keys))
+        try:
+            cmd = '{} {}\r\n'.format(name, ' '.join(keys))
+        except UnicodeEncodeError as e:
+            raise MemcacheClientError(str(e))
+
         try:
             self.sock.sendall(cmd)
 
@@ -566,7 +625,7 @@ class Client(object):
                                                  int(size))
 
                     if self.deserializer:
-                        value = self.deserializer(value, int(flags))
+                        value = self.deserializer(key, value, int(flags))
 
                     if expect_cas:
                         result[key] = (value, cas)
@@ -585,7 +644,7 @@ class Client(object):
             self._connect()
 
         if self.serializer:
-            data, flags = self.serializer(data)
+            data, flags = self.serializer(key, data)
         else:
             flags = 0
 
@@ -598,14 +657,11 @@ class Client(object):
         else:
             extra = ''
 
-        cmd = '{} {} {} {} {}{}\r\n{}\r\n'.format(
-            name,
-            key,
-            flags,
-            expire,
-            len(data),
-            extra,
-            data)
+        try:
+            cmd = '{} {} {} {} {}{}\r\n{}\r\n'.format(
+                name, key, flags, expire, len(data), extra, data)
+        except UnicodeEncodeError as e:
+            raise MemcacheClientError(str(e))
 
         try:
             self.sock.sendall(cmd)

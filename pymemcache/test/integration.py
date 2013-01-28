@@ -15,7 +15,7 @@
 import argparse
 import json
 
-from pymemcache.client import Client, MemcacheClientError
+from pymemcache.client import Client, MemcacheClientError, MemcacheUnknownCommandError
 from nose import tools
 
 
@@ -36,6 +36,9 @@ def get_set_test(host, port):
 
     result = client.get_many(['key', 'key2'])
     tools.assert_equal(result, {'key': 'value', 'key2': 'value2'})
+
+    result = client.get_many([])
+    tools.assert_equal(result, {})
 
 
 def add_replace_test(host, port):
@@ -175,10 +178,10 @@ def misc_test(host, port):
 
 
 def test_serialization_deserialization(host, port):
-    def _ser(value):
+    def _ser(key, value):
         return json.dumps(value), 1
 
-    def _des(value, flags):
+    def _des(key, value, flags):
         if flags == 1:
             return json.loads(value)
         return value
@@ -190,6 +193,41 @@ def test_serialization_deserialization(host, port):
     client.set('key', value)
     result = client.get('key')
     tools.assert_equal(result, value)
+
+
+def test_errors(host, port):
+    client = Client((host, port))
+    client.flush_all()
+
+    def _key_with_ws():
+        client.set('key with spaces', 'value', noreply=False)
+
+    tools.assert_raises(MemcacheUnknownCommandError, _key_with_ws)
+
+    def _key_too_long():
+        client.set('x' * 1024, 'value', noreply=False)
+
+    tools.assert_raises(MemcacheClientError, _key_too_long)
+
+    def _non_str_value():
+        client.set('key', [1, 2, 3], noreply=False)
+
+    tools.assert_raises(MemcacheClientError, _non_str_value)
+
+    def _unicode_key_in_set():
+        client.set(u'\u0FFF', 'value', noreply=False)
+
+    tools.assert_raises(MemcacheClientError, _unicode_key_in_set)
+
+    def _unicode_key_in_get():
+        client.get(u'\u0FFF')
+
+    tools.assert_raises(MemcacheClientError, _unicode_key_in_get)
+
+    def _unicode_value_in_set():
+        client.set('key', u'\u0FFF', noreply=False)
+
+    tools.assert_raises(MemcacheClientError, _unicode_value_in_set)
 
 
 def main():
@@ -204,15 +242,27 @@ def main():
 
     args = parser.parse_args()
 
+    print "Testing get and set..."
     get_set_test(args.server, args.port)
+    print "Testing add and replace..."
     add_replace_test(args.server, args.port)
+    print "Testing append and prepend..."
     append_prepend_test(args.server, args.port)
+    print "Testing cas..."
     cas_test(args.server, args.port)
+    print "Testing gets..."
     gets_test(args.server, args.port)
+    print "Testing delete..."
     delete_test(args.server, args.port)
+    print "Testing incr and decr..."
     incr_decr_test(args.server, args.port)
+    print "Testing flush_all..."
     misc_test(args.server, args.port)
+    print "Testing serialization and deserialization..."
     test_serialization_deserialization(args.server, args.port)
+    print "Testing error cases..."
+    test_errors(args.server, args.port)
+
 
 if __name__ == '__main__':
     main()
