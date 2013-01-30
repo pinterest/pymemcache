@@ -65,19 +65,6 @@ Best Practices:
    errors, from killing your web requests. Do not use this flag if you need to
    know about errors from memcache, and make sure you have some other way to
    detect memcache server failures.
-
-
-Not Implemented:
-----------------
-
-The following features are not implemented by this library:
-
- - Retries: It generally isn't worth retrying failed memcached calls. Use the
-       ignore_exc flag to treat failures as cache misses.
- - Pooling: coming soon?
- - Clustering: coming soon?
- - Unix sockets: coming soon?
- - Binary protocol: coming soon?
 """
 
 __author__ = "Charles Gordon"
@@ -102,16 +89,22 @@ class MemcacheError(Exception):
     pass
 
 
-class MemcacheUnknownCommandError(MemcacheError):
+class MemcacheClientError(MemcacheError):
+    """Raised when memcached fails to parse the arguments to a request, likely
+    due to a malformed key and/or value, a bug in this library, or a version
+    mismatch with memcached."""
+    pass
+
+
+class MemcacheUnknownCommandError(MemcacheClientError):
     """Raised when memcached fails to parse a request, likely due to a bug in
     this library or a version mismatch with memcached."""
     pass
 
 
-class MemcacheClientError(MemcacheError):
-    """Raised when memcached fails to parse the arguments to a request, likely
-    due to a malformed key and/or value, a bug in this library, or a version
-    mismatch with memcached."""
+class MemcacheIllegalInputError(MemcacheClientError):
+    """Raised when a key or value is not legal for Memcache (see the class docs
+    for Client for more details)."""
     pass
 
 
@@ -128,7 +121,7 @@ class MemcacheUnknownError(MemcacheError):
     pass
 
 
-class MemcacheUnexpectedCloseError(MemcacheError):
+class MemcacheUnexpectedCloseError(MemcacheServerError):
     "Raised when the connection with memcached closes unexpectedly."
     pass
 
@@ -145,13 +138,11 @@ class Client(object):
      strings must be encoded (as UTF-8, for example) unless they consist only
      of ASCII characters that are neither whitespace nor control characters.
 
-     Values must have a __str__() method and a __len__() method (unless
-     serialization is being used, see below). The __str__() method can return
-     any str object, and the __len__() method must return the length of the
-     str returned. For instance, passing a list won't work, because the str
-     returned by list.__str__() is not the same length as the value returned
-     by list.__len__(). As with keys, unicode values must be encoded if they
-     contain characters not in the ASCII subset.
+     Values must have a __str__() method to convert themselves to a byte string.
+     Unicode objects can be a problem since str() on a Unicode object will
+     attempt to encode it as ASCII (which will fail if the value contains
+     code points larger than U+127). You can fix this will a serializer or by
+     just calling encode on the string (using UTF-8, for instance).
 
      If you intend to use anything but str as a value, it is a good idea to use
      a serializer and deserializer. The pymemcache.serde library has some
@@ -193,6 +184,7 @@ class Client(object):
       * MemcacheServerError
       * MemcacheUnknownError
       * MemcacheUnexpectedCloseError
+      * MemcacheIllegalInputError
       * socket.timeout
       * socket.error
 
@@ -613,9 +605,16 @@ class Client(object):
             self._connect()
 
         try:
-            cmd = '{} {}\r\n'.format(name, ' '.join(keys))
+            key_strs = []
+            for key in keys:
+                key = str(key)
+                if ' ' in key:
+                    raise MemcacheIllegalInputError("Key contains spaces: %s", key)
+                key_strs.append(key)
         except UnicodeEncodeError as e:
-            raise MemcacheClientError(str(e))
+            raise MemcacheIllegalInputError(str(e))
+
+        cmd = '{} {}\r\n'.format(name, ' '.join(key_strs))
 
         try:
             self.sock.sendall(cmd)
@@ -653,6 +652,13 @@ class Client(object):
             raise
 
     def _store_cmd(self, name, key, expire, noreply, data, cas=None):
+        try:
+            key = str(key)
+            if ' ' in key:
+                raise MemcacheIllegalInputError("Key contains spaces: %s", key)
+        except UnicodeEncodeError as e:
+            raise MemcacheIllegalInputError(str(e))
+
         if not self.sock:
             self._connect()
 
@@ -660,6 +666,11 @@ class Client(object):
             data, flags = self.serializer(key, data)
         else:
             flags = 0
+
+        try:
+            data = str(data)
+        except UnicodeEncodeError as e:
+            raise MemcacheIllegalInputError(str(e))
 
         if cas is not None and noreply:
             extra = ' {} noreply'.format(cas)
@@ -670,11 +681,8 @@ class Client(object):
         else:
             extra = ''
 
-        try:
-            cmd = '{} {} {} {} {}{}\r\n{}\r\n'.format(
-                name, key, flags, expire, len(data), extra, data)
-        except UnicodeEncodeError as e:
-            raise MemcacheClientError(str(e))
+        cmd = '{} {} {} {} {}{}\r\n{}\r\n'.format(
+            name, key, flags, expire, len(data), extra, data)
 
         try:
             self.sock.sendall(cmd)

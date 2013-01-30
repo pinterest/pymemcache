@@ -18,7 +18,7 @@ import json
 from nose import tools
 from pymemcache.client import Client, MemcacheUnknownCommandError
 from pymemcache.client import MemcacheClientError, MemcacheServerError
-from pymemcache.client import MemcacheUnknownError
+from pymemcache.client import MemcacheUnknownError, MemcacheIllegalInputError
 
 
 class MockSocket(object):
@@ -66,7 +66,7 @@ def test_set_unicode_key():
     def _set():
         client.set(u'\u0FFF', 'value', noreply=False)
 
-    tools.assert_raises(MemcacheClientError, _set)
+    tools.assert_raises(MemcacheIllegalInputError, _set)
 
 
 def test_set_unicode_value():
@@ -74,9 +74,9 @@ def test_set_unicode_value():
     client.sock = MockSocket([''])
 
     def _set():
-        client.set(u'\u0FFF', 'value', noreply=False)
+        client.set('key', u'\u0FFF', noreply=False)
 
-    tools.assert_raises(MemcacheClientError, _set)
+    tools.assert_raises(MemcacheIllegalInputError, _set)
 
 
 def test_set_client_error():
@@ -254,7 +254,7 @@ def test_get_unicode_key():
     def _get():
         client.get(u'\u0FFF')
 
-    tools.assert_raises(MemcacheClientError, _get)
+    tools.assert_raises(MemcacheIllegalInputError, _get)
 
 
 def test_gets_not_found():
