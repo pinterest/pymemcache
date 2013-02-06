@@ -16,6 +16,7 @@ import argparse
 import json
 
 from pymemcache.client import Client, MemcacheClientError, MemcacheUnknownCommandError
+from pymemcache.client import MemcacheIllegalInputError
 from nose import tools
 
 
@@ -46,22 +47,22 @@ def add_replace_test(host, port):
     client.flush_all()
 
     result = client.add('key', 'value', noreply=False)
-    tools.assert_equal(result, 'STORED')
+    tools.assert_equal(result, True)
     result = client.get('key')
     tools.assert_equal(result, 'value')
 
     result = client.add('key', 'value2', noreply=False)
-    tools.assert_equal(result, 'NOT_STORED')
+    tools.assert_equal(result, False)
     result = client.get('key')
     tools.assert_equal(result, 'value')
 
     result = client.replace('key1', 'value1', noreply=False)
-    tools.assert_equal(result, 'NOT_STORED')
+    tools.assert_equal(result, False)
     result = client.get('key1')
     tools.assert_equal(result, None)
 
     result = client.replace('key', 'value2', noreply=False)
-    tools.assert_equal(result, 'STORED')
+    tools.assert_equal(result, True)
     result = client.get('key')
     tools.assert_equal(result, 'value2')
 
@@ -71,24 +72,24 @@ def append_prepend_test(host, port):
     client.flush_all()
 
     result = client.append('key', 'value', noreply=False)
-    tools.assert_equal(result, 'NOT_STORED')
+    tools.assert_equal(result, False)
     result = client.get('key')
     tools.assert_equal(result, None)
 
     result = client.set('key', 'value', noreply=False)
-    tools.assert_equal(result, 'STORED')
+    tools.assert_equal(result, True)
     result = client.append('key', 'after', noreply=False)
-    tools.assert_equal(result, 'STORED')
+    tools.assert_equal(result, True)
     result = client.get('key')
     tools.assert_equal(result, 'valueafter')
 
     result = client.prepend('key1', 'value', noreply=False)
-    tools.assert_equal(result, 'NOT_STORED')
+    tools.assert_equal(result, False)
     result = client.get('key1')
     tools.assert_equal(result, None)
 
     result = client.prepend('key', 'before', noreply=False)
-    tools.assert_equal(result, 'STORED')
+    tools.assert_equal(result, True)
     result = client.get('key')
     tools.assert_equal(result, 'beforevalueafter')
 
@@ -98,22 +99,22 @@ def cas_test(host, port):
     client.flush_all()
 
     result = client.cas('key', 'value', '1', noreply=False)
-    tools.assert_equal(result, 'NOT_FOUND')
+    tools.assert_equal(result, None)
 
     result = client.set('key', 'value', noreply=False)
-    tools.assert_equal(result, 'STORED')
+    tools.assert_equal(result, True)
 
     result = client.cas('key', 'value', '1', noreply=False)
-    tools.assert_equal(result, 'EXISTS')
+    tools.assert_equal(result, False)
 
     result, cas = client.gets('key')
     tools.assert_equal(result, 'value')
 
     result = client.cas('key', 'value1', cas, noreply=False)
-    tools.assert_equal(result, 'STORED')
+    tools.assert_equal(result, True)
 
     result = client.cas('key', 'value2', cas, noreply=False)
-    tools.assert_equal(result, 'EXISTS')
+    tools.assert_equal(result, False)
 
 
 def gets_test(host, port):
@@ -124,7 +125,7 @@ def gets_test(host, port):
     tools.assert_equal(result, (None, None))
 
     result = client.set('key', 'value', noreply=False)
-    tools.assert_equal(result, 'STORED')
+    tools.assert_equal(result, True)
     result = client.gets('key')
     tools.assert_equal(result[0], 'value')
 
@@ -134,14 +135,14 @@ def delete_test(host, port):
     client.flush_all()
 
     result = client.delete('key', noreply=False)
-    tools.assert_equal(result, 'NOT_FOUND')
+    tools.assert_equal(result, False)
 
     result = client.get('key')
     tools.assert_equal(result, None)
     result = client.set('key', 'value', noreply=False)
-    tools.assert_equal(result, 'STORED')
+    tools.assert_equal(result, True)
     result = client.delete('key', noreply=False)
-    tools.assert_equal(result, 'DELETED')
+    tools.assert_equal(result, True)
     result = client.get('key')
     tools.assert_equal(result, None)
 
@@ -151,10 +152,10 @@ def incr_decr_test(host, port):
     client.flush_all()
 
     result = client.incr('key', 1, noreply=False)
-    tools.assert_equal(result, 'NOT_FOUND')
+    tools.assert_equal(result, None)
 
     result = client.set('key', '0', noreply=False)
-    tools.assert_equal(result, 'STORED')
+    tools.assert_equal(result, True)
     result = client.incr('key', 1, noreply=False)
     tools.assert_equal(result, 1)
 
@@ -164,7 +165,7 @@ def incr_decr_test(host, port):
     tools.assert_raises(MemcacheClientError, _bad_int)
 
     result = client.decr('key1', 1, noreply=False)
-    tools.assert_equal(result, 'NOT_FOUND')
+    tools.assert_equal(result, None)
 
     result = client.decr('key', 1, noreply=False)
     tools.assert_equal(result, 0)
@@ -202,17 +203,12 @@ def test_errors(host, port):
     def _key_with_ws():
         client.set('key with spaces', 'value', noreply=False)
 
-    tools.assert_raises(MemcacheUnknownCommandError, _key_with_ws)
+    tools.assert_raises(MemcacheIllegalInputError, _key_with_ws)
 
     def _key_too_long():
         client.set('x' * 1024, 'value', noreply=False)
 
     tools.assert_raises(MemcacheClientError, _key_too_long)
-
-    def _non_str_value():
-        client.set('key', [1, 2, 3], noreply=False)
-
-    tools.assert_raises(MemcacheClientError, _non_str_value)
 
     def _unicode_key_in_set():
         client.set(u'\u0FFF', 'value', noreply=False)
