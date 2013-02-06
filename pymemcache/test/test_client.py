@@ -237,6 +237,14 @@ def test_get_many_all_found():
     tools.assert_equal(result, {'key1': 'value1', 'key2': 'value2'})
 
 
+def test_get_many_cr_nl_boundary_issue():
+    client = Client(None)
+    client.sock = MockSocket(['VALUE key1 0 6\r', '\nvalue1\r', '\n',
+                              'VALUE key2 0 6\r', '\nvalue2', '\r\nEND\r\n'])
+    result = client.get_many(['key1', 'key2'])
+    tools.assert_equal(result, {'key1': 'value1', 'key2': 'value2'})
+
+
 def test_get_unknown_error():
     client = Client(None)
     client.sock = MockSocket(['foobarbaz\r\n'])

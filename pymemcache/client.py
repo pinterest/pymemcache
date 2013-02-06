@@ -803,5 +803,16 @@ def _readvalue(sock, buf, size):
         if not buf:
             raise MemcacheUnexpectedCloseError()
 
-    chunks.append(buf[:rlen - 2])
+    # Now we need to remove the \r\n from the end. There are two cases we care
+    # about: the \r\n is all in the last buffer, or only the \n is in the last
+    # buffer, and we need to remove the \r from the penultimate buffer.
+
+    if len(buf) == 1:
+        # replace the last chunk with the same string minus the last character,
+        # which is always '\r' in this case.
+        chunks[-1] = chunks[-1][:-1]
+    else:
+        # Just remove the "\r\n" from the latest chunk
+        chunks.append(buf[:rlen - 2])
+
     return buf[rlen:], ''.join(chunks)
