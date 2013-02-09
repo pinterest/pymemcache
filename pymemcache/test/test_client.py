@@ -237,12 +237,58 @@ def test_get_many_all_found():
     tools.assert_equal(result, {'key1': 'value1', 'key2': 'value2'})
 
 
-def test_get_many_cr_nl_boundary_issue():
+def test_cr_nl_boundaries():
     client = Client(None)
-    client.sock = MockSocket(['VALUE key1 0 6\r', '\nvalue1\r', '\n',
-                              'VALUE key2 0 6\r', '\nvalue2', '\r\nEND\r\n'])
+    client.sock = MockSocket(['VALUE key1 0 6\r',
+                              '\nvalue1\r\n'
+                              'VALUE key2 0 6\r\n',
+                              'value2\r\n'
+                              'END\r\n'])
     result = client.get_many(['key1', 'key2'])
-    tools.assert_equal(result, {'key1': 'value1', 'key2': 'value2'})
+    tools.assert_equals(result, {'key1': 'value1', 'key2': 'value2'})
+
+    client.sock = MockSocket(['VALUE key1 0 6\r\n',
+                              'value1\r',
+                              '\nVALUE key2 0 6\r\n',
+                              'value2\r\n',
+                              'END\r\n'])
+    result = client.get_many(['key1', 'key2'])
+    tools.assert_equals(result, {'key1': 'value1', 'key2': 'value2'})
+
+    client.sock = MockSocket(['VALUE key1 0 6\r\n',
+                              'value1\r\n',
+                              'VALUE key2 0 6\r',
+                              '\nvalue2\r\n',
+                              'END\r\n'])
+    result = client.get_many(['key1', 'key2'])
+    tools.assert_equals(result, {'key1': 'value1', 'key2': 'value2'})
+
+
+    client.sock = MockSocket(['VALUE key1 0 6\r\n',
+                              'value1\r\n',
+                              'VALUE key2 0 6\r\n',
+                              'value2\r',
+                              '\nEND\r\n'])
+    result = client.get_many(['key1', 'key2'])
+    tools.assert_equals(result, {'key1': 'value1', 'key2': 'value2'})
+
+    client.sock = MockSocket(['VALUE key1 0 6\r\n',
+                              'value1\r\n',
+                              'VALUE key2 0 6\r\n',
+                              'value2\r\n',
+                              'END\r',
+                              '\n'])
+    result = client.get_many(['key1', 'key2'])
+    tools.assert_equals(result, {'key1': 'value1', 'key2': 'value2'})
+
+    client.sock = MockSocket(['VALUE key1 0 6\r',
+                              '\nvalue1\r',
+                              '\nVALUE key2 0 6\r',
+                              '\nvalue2\r',
+                              '\nEND\r',
+                              '\n'])
+    result = client.get_many(['key1', 'key2'])
+    tools.assert_equals(result, {'key1': 'value1', 'key2': 'value2'})
 
 
 def test_get_unknown_error():

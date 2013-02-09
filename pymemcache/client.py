@@ -751,18 +751,20 @@ def _readline(sock, buf):
     last_char = ''
 
     while True:
-        idx = buf.find('\r\n')
         # We're reading in chunks, so "\r\n" could appear in one chunk,
         # or across the boundary of two chunks, so we check for both
         # cases.
-        if idx != -1:
-            before, sep, after = buf.partition("\r\n")
-            chunks.append(before)
-            return after, ''.join(chunks)
-        elif last_char == '\r' and buf[0] == '\n':
+
+        # This case must appear first, since the buffer could have
+        # later \r\n characters in it and we want to get the first \r\n.
+        if last_char == '\r' and buf[0] == '\n':
             # Strip the last character from the last chunk.
             chunks[-1] = chunks[-1][:-1]
             return buf[1:], ''.join(chunks)
+        elif buf.find('\r\n') != -1:
+            before, sep, after = buf.partition("\r\n")
+            chunks.append(before)
+            return after, ''.join(chunks)
 
         if buf:
             chunks.append(buf)
