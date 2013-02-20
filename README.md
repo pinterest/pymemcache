@@ -1,15 +1,13 @@
 pymemcache
 ==========
 
-NOTE: this is still BETA, use with caution!
-
 A comprehensive, fast, pure-Python memcached client.
 
 pymemcache supports the following features:
 
 * Complete implementation of the memcached text protocol.
 * Configurable timeouts for socket connect and send/recv calls.
-* Access to the "noreply" flag, which can significantly increase speed.
+* Access to the "noreply" flag, which can significantly increase the speed of writes.
 * Flexible, simple approach to serialization and deserialization.
 * The (optional) ability to treat network and memcached errors as cache misses.
 
@@ -26,6 +24,11 @@ You can install pymemcache manually, with Nose tests, by doing the following:
 You can also use pip:
 
     sudo pip install https://github.com/pinterest/pymemcache.git
+
+Usage
+=====
+
+See the module documentation in pymemcache.client for details.
 
 Comparison with Other Libraries
 ===============================
