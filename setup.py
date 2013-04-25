@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'pymemcache',
-    version = '1.0',
+    version = '1.0.1',
     author = 'Charles Gordon',
     author_email = 'charles@pinterest.com',
     packages = find_packages(),
