@@ -30,7 +30,7 @@ def test_client(name, client, size, count):
         client.get(str(i))
 
     duration = time.time() - start
-    print "{}: {}".format(name, duration)
+    print "{0}: {1}".format(name, duration)
 
 
 def test_pylibmc(host, port, size, count):
@@ -40,7 +40,7 @@ def test_pylibmc(host, port, size, count):
         print "Could not import pylibmc, skipping test..."
         return
 
-    client = pylibmc.Client(['{}:{}'.format(host, port)])
+    client = pylibmc.Client(['{0}:{1}'.format(host, port)])
     client.behaviors = {"tcp_nodelay": True}
     test_client('pylibmc', client, size, count)
 
@@ -52,7 +52,7 @@ def test_memcache(host, port, size, count):
         print "Could not import pymemcache.client, skipping test..."
         return
 
-    client = memcache.Client(['{}:{}'.format(host, port)])
+    client = memcache.Client(['{0}:{1}'.format(host, port)])
     test_client('memcache', client, size, count)
 
 
