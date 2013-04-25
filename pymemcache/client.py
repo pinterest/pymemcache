@@ -171,7 +171,7 @@ class Client(object):
               return value
           if flags == 2:
               return json.loads(value)
-          raise Exception("Unknown flags for value: {}".format(flags))
+          raise Exception("Unknown flags for value: {1}".format(flags))
 
     Error Handling:
     ---------------
@@ -454,7 +454,7 @@ class Client(object):
           If noreply is True, always returns True. Otherwise returns True if
           the key was deleted, and False if it wasn't found.
         """
-        cmd = 'delete {}{}\r\n'.format(key, ' noreply' if noreply else '')
+        cmd = 'delete {0}{1}\r\n'.format(key, ' noreply' if noreply else '')
         result = self._misc_cmd(cmd, 'delete', noreply)
         if noreply:
             return True
@@ -496,7 +496,7 @@ class Client(object):
           If noreply is True, always returns None. Otherwise returns the new
           value of the key, or None if the key wasn't found.
         """
-        cmd = "incr {} {}{}\r\n".format(
+        cmd = "incr {0} {1}{2}\r\n".format(
             key,
             str(value),
             ' noreply' if noreply else '')
@@ -520,7 +520,7 @@ class Client(object):
           If noreply is True, always returns None. Otherwise returns the new
           value of the key, or None if the key wasn't found.
         """
-        cmd = "decr {} {}{}\r\n".format(
+        cmd = "decr {0} {1}{2}\r\n".format(
             key,
             str(value),
             ' noreply' if noreply else '')
@@ -545,7 +545,7 @@ class Client(object):
           True if the expiration time was updated, False if the key wasn't
           found.
         """
-        cmd = "touch {} {}{}\r\n".format(
+        cmd = "touch {0} {1}{2}\r\n".format(
             key,
             expire,
             ' noreply' if noreply else '')
@@ -570,7 +570,7 @@ class Client(object):
         Returns:
           True.
         """
-        cmd = "flush_all {}{}\r\n".format(delay, ' noreply' if noreply else '')
+        cmd = "flush_all {0}{1}\r\n".format(delay, ' noreply' if noreply else '')
         result = self._misc_cmd(cmd, 'flush_all', noreply)
         if noreply:
             return True
@@ -614,7 +614,7 @@ class Client(object):
         except UnicodeEncodeError as e:
             raise MemcacheIllegalInputError(str(e))
 
-        cmd = '{} {}\r\n'.format(name, ' '.join(key_strs))
+        cmd = '{0} {1}\r\n'.format(name, ' '.join(key_strs))
 
         try:
             self.sock.sendall(cmd)
@@ -673,15 +673,15 @@ class Client(object):
             raise MemcacheIllegalInputError(str(e))
 
         if cas is not None and noreply:
-            extra = ' {} noreply'.format(cas)
+            extra = ' {0} noreply'.format(cas)
         elif cas is not None and not noreply:
-            extra = ' {}'.format(cas)
+            extra = ' {0}'.format(cas)
         elif cas is None and noreply:
             extra = ' noreply'
         else:
             extra = ''
 
-        cmd = '{} {} {} {} {}{}\r\n{}\r\n'.format(
+        cmd = '{0} {1} {2} {3} {4}{5}\r\n{6}\r\n'.format(
             name, key, flags, expire, len(data), extra, data)
 
         try:
