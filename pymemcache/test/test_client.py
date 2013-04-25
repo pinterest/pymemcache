@@ -467,3 +467,55 @@ def test_serialization():
     tools.assert_equal(client.sock.send_bufs, [
         'set key 0 0 20 noreply\r\n{"a": "b", "c": "d"}\r\n'
     ])
+
+def test_stats():
+    client = Client(None)
+    client.sock = MockSocket(['STAT fake_stats 1\r\n', 'END\r\n'])
+    result = client.stats()
+    tools.assert_equal(client.sock.send_bufs, [
+        'stats \r\n'
+    ])
+    tools.assert_equal(result, {'fake_stats': 1})
+
+def test_stats_with_args():
+    client = Client(None)
+    client.sock = MockSocket(['STAT fake_stats 1\r\n', 'END\r\n'])
+    result = client.stats('some_arg')
+    tools.assert_equal(client.sock.send_bufs, [
+        'stats some_arg\r\n'
+    ])
+    tools.assert_equal(result, {'fake_stats': 1})
+
+def test_stats_conversions():
+    client = Client(None)
+    client.sock = MockSocket([
+        # Most stats are converted to int
+        'STAT cmd_get 2519\r\n',
+        'STAT cmd_set 3099\r\n',
+
+        # Unless they can't be, they remain str
+        'STAT libevent 2.0.19-stable\r\n',
+
+        # Some named stats are explicitly converted
+        'STAT hash_is_expanding 0\r\n',
+        'STAT rusage_user 0.609165\r\n',
+        'STAT rusage_system 0.852791\r\n',
+        'STAT slab_reassign_running 1\r\n',
+        'STAT version 1.4.14\r\n',
+        'END\r\n',
+    ])
+    result = client.stats()
+    tools.assert_equal(client.sock.send_bufs, [
+        'stats \r\n'
+    ])
+    expected = {
+        'cmd_get': 2519,
+        'cmd_set': 3099,
+        'libevent': '2.0.19-stable',
+        'hash_is_expanding': False,
+        'rusage_user': 0.609165,
+        'rusage_system': 0.852791,
+        'slab_reassign_running': True,
+        'version': '1.4.14',
+    }
+    tools.assert_equal(result, expected)

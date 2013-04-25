@@ -84,6 +84,30 @@ VALID_STORE_RESULTS = {
 }
 
 
+# Some of the values returned by the "stats" command
+# need mapping into native Python types
+STAT_TYPES = {
+    # General stats
+    'version': str,
+    'rusage_user': lambda value: float(value.replace(':', '.')),
+    'rusage_system': lambda value: float(value.replace(':', '.')),
+    'hash_is_expanding': lambda value: int(value) != 0,
+    'slab_reassign_running': lambda value: int(value) != 0,
+
+    # Settings stats
+    'inter': str,
+    'evictions': lambda value: value == 'on',
+    'growth_factor': float,
+    'stat_key_prefix': str,
+    'umask': lambda value: int(value, 8),
+    'detail_enabled': lambda value: int(value) != 0,
+    'cas_enabled': lambda value: int(value) != 0,
+    'auth_enabled_sasl': lambda value: value == 'yes',
+    'maxconns_fast': lambda value: int(value) != 0,
+    'slab_reassign': lambda value: int(value) != 0,
+    'slab_automove': lambda value: int(value) != 0,
+}
+
 class MemcacheError(Exception):
     "Base exception class"
     pass
@@ -554,9 +578,31 @@ class Client(object):
             return True
         return result == 'TOUCHED'
 
-    def stats(self):
-        # TODO(charles)
-        pass
+    def stats(self, *args):
+        """
+        The memcached "stats" command.
+
+        The returned keys depend on what the "stats" command returns.
+        A best effort is made to convert values to appropriate Python
+        types, defaulting to strings when a conversion cannot be made.
+
+        Args:
+          *arg: extra string arguments to the "stats" command. See the
+                memcached protocol documentation for more information.
+
+        Returns:
+          A dict of the returned stats.
+        """
+        result = self._fetch_cmd('stats', args, False)
+
+        for key, value in result.iteritems():
+            converter = STAT_TYPES.get(key, int)
+            try:
+                result[key] = converter(value)
+            except Exception:
+                pass
+
+        return result
 
     def flush_all(self, delay=0, noreply=True):
         """
@@ -643,6 +689,9 @@ class Client(object):
                         result[key] = (value, cas)
                     else:
                         result[key] = value
+                elif name == 'stats' and line.startswith('STAT'):
+                    _, key, value = line.split()
+                    result[key] = value
                 else:
                     raise MemcacheUnknownError(line[:32])
         except Exception:
