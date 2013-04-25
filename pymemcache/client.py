@@ -108,6 +108,7 @@ STAT_TYPES = {
     'slab_automove': lambda value: int(value) != 0,
 }
 
+
 class MemcacheError(Exception):
     "Base exception class"
     pass
