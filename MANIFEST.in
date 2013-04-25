@@ -1,0 +1,5 @@
+include README.* setup.py setup.cfg
+recursive-include pymemcache *.py
+global-exclude *.pyc
+global-exclude *.pyo
+
