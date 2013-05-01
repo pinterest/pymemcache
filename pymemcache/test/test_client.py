@@ -128,6 +128,27 @@ def test_set_exception():
     tools.assert_equal(client.buf, '')
 
 
+def test_set_many_success():
+    client = Client(None)
+    client.sock = MockSocket(['STORED\r\n'])
+    result = client.set_many({'key' : 'value'}, noreply=False)
+    tools.assert_equal(result, True)
+    tools.assert_equal(client.sock.closed, False)
+    tools.assert_equal(len(client.sock.send_bufs), 1)
+
+
+def test_set_many_exception():
+    client = Client(None)
+    client.sock = MockSocket(['STORED\r\n', Exception('fail')])
+
+    def _set():
+        client.set_many({'key' : 'value', 'other' : 'value'}, noreply=False)
+
+    tools.assert_raises(Exception, _set)
+    tools.assert_equal(client.sock, None)
+    tools.assert_equal(client.buf, '')
+
+
 def test_add_stored():
     client = Client(None)
     client.sock = MockSocket(['STORED\r', '\n'])
