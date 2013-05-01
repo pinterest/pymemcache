@@ -315,13 +315,12 @@ class Client(object):
           then a successful return does not guarantee that any keys were
           successfully set (just that the keys were successfully sent).
         """
-        if not values:
-            return True
 
         # TODO: make this more performant by sending all the values first, then
         # waiting for all the responses.
-        for key, value in values.items():
+        for key, value in values.iteritems():
             self.set(key, value, expire, noreply)
+        return True
 
     def add(self, key, value, expire=0, noreply=True):
         """
