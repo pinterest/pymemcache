@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import pickle
 
 try:
@@ -61,7 +62,7 @@ def python_memcache_deserializer(key, value, flags):
             unpickler = pickle.Unpickler(buf)
             return unpickler.load()
         except Exception as e:
-            log.info('Pickle error', exc_info=True)
+            logging.info('Pickle error', exc_info=True)
             return None
 
     return value
