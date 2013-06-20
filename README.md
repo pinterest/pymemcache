@@ -83,3 +83,4 @@ Credits
 1. [Dave Dash](http://github.com/davedash)
 2. [Dan Crosta](http://github.com/dcrosta)
 3. [Julian Berman](http://github.com/Julian)
+4. [Mark Shirley](http://github.com/maspwr)
