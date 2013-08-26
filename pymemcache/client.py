@@ -383,7 +383,7 @@ class Client(object):
           value: str, see class docs for details.
           expire: optional int, number of seconds until the item is expired
                   from the cache, or zero for no expiry (the default).
-          noreply: optional bool, False to wait for the reply (the default).
+          noreply: optional bool, True to not wait for the reply (the default).
 
         Returns:
           True.
@@ -563,7 +563,7 @@ class Client(object):
           key: str, see class docs for details.
           expire: optional int, number of seconds until the item is expired
                   from the cache, or zero for no expiry (the default).
-          noreply: optional bool, False to wait for the reply (the default).
+          noreply: optional bool, True to not wait for the reply (the default).
 
         Returns:
           True if the expiration time was updated, False if the key wasn't
@@ -611,7 +611,7 @@ class Client(object):
         Args:
           delay: optional int, the number of seconds to wait before flushing,
                  or zero to flush immediately (the default).
-          noreply: optional bool, False to wait for the response (the default).
+          noreply: optional bool, True to not wait for the response (the default).
 
         Returns:
           True.
