@@ -14,14 +14,15 @@
 
 import argparse
 import json
+import socket
 
 from pymemcache.client import Client, MemcacheClientError, MemcacheUnknownCommandError
 from pymemcache.client import MemcacheIllegalInputError
 from nose import tools
 
 
-def get_set_test(host, port):
-    client = Client((host, port))
+def get_set_test(host, port, socket_module):
+    client = Client((host, port), socket_module=socket_module)
     client.flush_all()
 
     result = client.get('key')
@@ -42,8 +43,8 @@ def get_set_test(host, port):
     tools.assert_equal(result, {})
 
 
-def add_replace_test(host, port):
-    client = Client((host, port))
+def add_replace_test(host, port, socket_module):
+    client = Client((host, port), socket_module=socket_module)
     client.flush_all()
 
     result = client.add('key', 'value', noreply=False)
@@ -67,8 +68,8 @@ def add_replace_test(host, port):
     tools.assert_equal(result, 'value2')
 
 
-def append_prepend_test(host, port):
-    client = Client((host, port))
+def append_prepend_test(host, port, socket_module):
+    client = Client((host, port), socket_module=socket_module)
     client.flush_all()
 
     result = client.append('key', 'value', noreply=False)
@@ -94,8 +95,8 @@ def append_prepend_test(host, port):
     tools.assert_equal(result, 'beforevalueafter')
 
 
-def cas_test(host, port):
-    client = Client((host, port))
+def cas_test(host, port, socket_module):
+    client = Client((host, port), socket_module=socket_module)
     client.flush_all()
 
     result = client.cas('key', 'value', '1', noreply=False)
@@ -117,8 +118,8 @@ def cas_test(host, port):
     tools.assert_equal(result, False)
 
 
-def gets_test(host, port):
-    client = Client((host, port))
+def gets_test(host, port, socket_module):
+    client = Client((host, port), socket_module=socket_module)
     client.flush_all()
 
     result = client.gets('key')
@@ -130,8 +131,8 @@ def gets_test(host, port):
     tools.assert_equal(result[0], 'value')
 
 
-def delete_test(host, port):
-    client = Client((host, port))
+def delete_test(host, port, socket_module):
+    client = Client((host, port), socket_module=socket_module)
     client.flush_all()
 
     result = client.delete('key', noreply=False)
@@ -147,8 +148,8 @@ def delete_test(host, port):
     tools.assert_equal(result, None)
 
 
-def incr_decr_test(host, port):
-    client = Client((host, port))
+def incr_decr_test(host, port, socket_module):
+    client = Client((host, port), socket_module=socket_module)
     client.flush_all()
 
     result = client.incr('key', 1, noreply=False)
@@ -173,12 +174,12 @@ def incr_decr_test(host, port):
     tools.assert_equal(result, '0')
 
 
-def misc_test(host, port):
-    client = Client((host, port))
+def misc_test(host, port, socket_module):
+    client = Client((host, port), socket_module=socket_module)
     client.flush_all()
 
 
-def test_serialization_deserialization(host, port):
+def test_serialization_deserialization(host, port, socket_module):
     def _ser(key, value):
         return json.dumps(value), 1
 
@@ -187,7 +188,8 @@ def test_serialization_deserialization(host, port):
             return json.loads(value)
         return value
 
-    client = Client((host, port), serializer=_ser, deserializer=_des)
+    client = Client((host, port), serializer=_ser, deserializer=_des,
+                    socket_module=socket_module)
     client.flush_all()
 
     value = {'a': 'b', 'c': ['d']}
@@ -196,8 +198,8 @@ def test_serialization_deserialization(host, port):
     tools.assert_equal(result, value)
 
 
-def test_errors(host, port):
-    client = Client((host, port))
+def test_errors(host, port, socket_module):
+    client = Client((host, port), socket_module=socket_module)
     client.flush_all()
 
     def _key_with_ws():
@@ -238,26 +240,38 @@ def main():
 
     args = parser.parse_args()
 
-    print "Testing get and set..."
-    get_set_test(args.server, args.port)
-    print "Testing add and replace..."
-    add_replace_test(args.server, args.port)
-    print "Testing append and prepend..."
-    append_prepend_test(args.server, args.port)
-    print "Testing cas..."
-    cas_test(args.server, args.port)
-    print "Testing gets..."
-    gets_test(args.server, args.port)
-    print "Testing delete..."
-    delete_test(args.server, args.port)
-    print "Testing incr and decr..."
-    incr_decr_test(args.server, args.port)
-    print "Testing flush_all..."
-    misc_test(args.server, args.port)
-    print "Testing serialization and deserialization..."
-    test_serialization_deserialization(args.server, args.port)
-    print "Testing error cases..."
-    test_errors(args.server, args.port)
+    socket_modules = [socket]
+    try:
+        from gevent import socket as gevent_socket
+    except ImportError:
+        print "Skipping gevent (not installed)"
+    else:
+        socket_modules.append(gevent_socket)
+
+    for socket_module in socket_modules:
+        print "Testing with socket module:", socket_module.__name__
+
+        print "Testing get and set..."
+        get_set_test(args.server, args.port, socket_module)
+        print "Testing add and replace..."
+        add_replace_test(args.server, args.port, socket_module)
+        print "Testing append and prepend..."
+        append_prepend_test(args.server, args.port, socket_module)
+        print "Testing cas..."
+        cas_test(args.server, args.port, socket_module)
+        print "Testing gets..."
+        gets_test(args.server, args.port, socket_module)
+        print "Testing delete..."
+        delete_test(args.server, args.port, socket_module)
+        print "Testing incr and decr..."
+        incr_decr_test(args.server, args.port, socket_module)
+        print "Testing flush_all..."
+        misc_test(args.server, args.port, socket_module)
+        print "Testing serialization and deserialization..."
+        test_serialization_deserialization(args.server, args.port,
+                                           socket_module)
+        print "Testing error cases..."
+        test_errors(args.server, args.port, socket_module)
 
 
 if __name__ == '__main__':
