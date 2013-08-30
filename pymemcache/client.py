@@ -265,12 +265,14 @@ class Client(object):
         self.buf = ''
 
     def _connect(self):
-        sock = self.socket_module.socket(self.socket_module.AF_INET, self.socket_module.SOCK_STREAM)
+        sock = self.socket_module.socket(self.socket_module.AF_INET,
+                                         self.socket_module.SOCK_STREAM)
         sock.settimeout(self.connect_timeout)
         sock.connect(self.server)
         sock.settimeout(self.timeout)
         if self.no_delay:
-            sock.setsockopt(self.socket_module.IPPROTO_TCP, self.socket_module.TCP_NODELAY, 1)
+            sock.setsockopt(self.socket_module.IPPROTO_TCP,
+                            self.socket_module.TCP_NODELAY, 1)
         self.sock = sock
 
     def close(self):

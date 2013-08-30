@@ -42,7 +42,7 @@ class MockSocket(object):
         if isinstance(value, Exception):
             raise value
         return value
-    
+
     def settimeout(self, timeout):
         self.timeouts.append(timeout)
 
@@ -59,7 +59,6 @@ class MockSocketModule(object):
 
     def __getattr__(self, name):
         return getattr(socket, name)
-
 
 
 def test_set_success():
@@ -153,7 +152,7 @@ def test_set_exception():
 def test_set_many_success():
     client = Client(None)
     client.sock = MockSocket(['STORED\r\n'])
-    result = client.set_many({'key' : 'value'}, noreply=False)
+    result = client.set_many({'key': 'value'}, noreply=False)
     tools.assert_equal(result, True)
     tools.assert_equal(client.sock.closed, False)
     tools.assert_equal(len(client.sock.send_bufs), 1)
@@ -164,7 +163,7 @@ def test_set_many_exception():
     client.sock = MockSocket(['STORED\r\n', Exception('fail')])
 
     def _set():
-        client.set_many({'key' : 'value', 'other' : 'value'}, noreply=False)
+        client.set_many({'key': 'value', 'other': 'value'}, noreply=False)
 
     tools.assert_raises(Exception, _set)
     tools.assert_equal(client.sock, None)
@@ -305,7 +304,6 @@ def test_cr_nl_boundaries():
                               'END\r\n'])
     result = client.get_many(['key1', 'key2'])
     tools.assert_equals(result, {'key1': 'value1', 'key2': 'value2'})
-
 
     client.sock = MockSocket(['VALUE key1 0 6\r\n',
                               'value1\r\n',
@@ -511,6 +509,7 @@ def test_serialization():
         'set key 0 0 20 noreply\r\n{"a": "b", "c": "d"}\r\n'
     ])
 
+
 def test_stats():
     client = Client(None)
     client.sock = MockSocket(['STAT fake_stats 1\r\n', 'END\r\n'])
@@ -520,6 +519,7 @@ def test_stats():
     ])
     tools.assert_equal(result, {'fake_stats': 1})
 
+
 def test_stats_with_args():
     client = Client(None)
     client.sock = MockSocket(['STAT fake_stats 1\r\n', 'END\r\n'])
@@ -528,6 +528,7 @@ def test_stats_with_args():
         'stats some_arg\r\n'
     ])
     tools.assert_equal(result, {'fake_stats': 1})
+
 
 def test_stats_conversions():
     client = Client(None)
@@ -562,6 +563,7 @@ def test_stats_conversions():
         'version': '1.4.14',
     }
     tools.assert_equal(result, expected)
+
 
 def test_socket_connect():
     server = ("example.com", 11211)
