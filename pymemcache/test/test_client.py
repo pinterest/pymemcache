@@ -14,6 +14,7 @@
 
 import collections
 import json
+import socket
 
 from nose import tools
 from pymemcache.client import Client, MemcacheUnknownCommandError
@@ -26,6 +27,9 @@ class MockSocket(object):
         self.recv_bufs = collections.deque(recv_bufs)
         self.send_bufs = []
         self.closed = False
+        self.timeouts = []
+        self.connections = []
+        self.socket_options = []
 
     def sendall(self, value):
         self.send_bufs.append(value)
@@ -38,6 +42,24 @@ class MockSocket(object):
         if isinstance(value, Exception):
             raise value
         return value
+    
+    def settimeout(self, timeout):
+        self.timeouts.append(timeout)
+
+    def connect(self, server):
+        self.connections.append(server)
+
+    def setsockopt(self, level, option, value):
+        self.socket_options.append((level, option, value))
+
+
+class MockSocketModule(object):
+    def socket(self, family, type):
+        return MockSocket([])
+
+    def __getattr__(self, name):
+        return getattr(socket, name)
+
 
 
 def test_set_success():
@@ -540,3 +562,26 @@ def test_stats_conversions():
         'version': '1.4.14',
     }
     tools.assert_equal(result, expected)
+
+def test_socket_connect():
+    server = ("example.com", 11211)
+
+    client = Client(server, socket_module=MockSocketModule())
+    client._connect()
+    tools.assert_equal(client.sock.connections, [server])
+
+    timeout = 2
+    connect_timeout = 3
+    client = Client(server, connect_timeout=connect_timeout, timeout=timeout,
+                    socket_module=MockSocketModule())
+    client._connect()
+    tools.assert_equal(client.sock.timeouts, [connect_timeout, timeout])
+
+    client = Client(server, socket_module=MockSocketModule())
+    client._connect()
+    tools.assert_equal(client.sock.socket_options, [])
+
+    client = Client(server, socket_module=MockSocketModule(), no_delay=True)
+    client._connect()
+    tools.assert_equal(client.sock.socket_options, [(socket.IPPROTO_TCP,
+                                                     socket.TCP_NODELAY, 1)])
