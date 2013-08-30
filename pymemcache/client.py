@@ -226,7 +226,8 @@ class Client(object):
                  connect_timeout=None,
                  timeout=None,
                  no_delay=False,
-                 ignore_exc=False):
+                 ignore_exc=False,
+                 socket_module=socket):
         """
         Constructor.
 
@@ -245,6 +246,8 @@ class Client(object):
           ignore_exc: optional bool, True to cause the "get", "gets",
             "get_many" and "gets_many" calls to treat any errors as cache
             misses. Defaults to False.
+          socket_module: socket module to use, e.g. gevent.socket. Defaults to
+            the standard library's socket module.
 
         Notes:
           The constructor does not make a connection to memcached. The first
@@ -257,20 +260,21 @@ class Client(object):
         self.timeout = timeout
         self.no_delay = no_delay
         self.ignore_exc = ignore_exc
+        self.socket_module = socket_module
         self.sock = None
         self.buf = ''
 
     def _connect(self):
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock = self.socket_module.socket(self.socket_module.AF_INET, self.socket_module.SOCK_STREAM)
         sock.settimeout(self.connect_timeout)
         sock.connect(self.server)
         sock.settimeout(self.timeout)
         if self.no_delay:
-            sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            sock.setsockopt(self.socket_module.IPPROTO_TCP, self.socket_module.TCP_NODELAY, 1)
         self.sock = sock
 
     def close(self):
-        """Close the connetion to memcached, if it is open. The next call to a
+        """Close the connection to memcached, if it is open. The next call to a
         method that requires a connection will re-open it."""
         if self.sock is not None:
             try:
