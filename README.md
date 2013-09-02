@@ -85,3 +85,4 @@ Credits
 3. [Julian Berman](http://github.com/Julian)
 4. [Mark Shirley](http://github.com/maspwr)
 5. [Tim Bart](http://github.com/pims)
+6. [Thomas Orozco](http://github.com/krallin)
