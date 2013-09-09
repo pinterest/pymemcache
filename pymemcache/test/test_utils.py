@@ -31,6 +31,16 @@ def test_add():
     tools.assert_equal(client.get("k"), 2)
 
 
+def test_delete():
+    client = MockMemcacheClient()
+
+    client.add("k", 2)
+    tools.assert_equal(client.get("k"), 2)
+
+    client.delete("k")
+    tools.assert_equal(client.get("k"), None)
+
+
 def test_incr_decr():
     client = MockMemcacheClient()
 

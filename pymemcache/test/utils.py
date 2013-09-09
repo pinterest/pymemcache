@@ -7,6 +7,8 @@ This module is considered public API.
 
 import time
 
+from pymemcache.client import MemcacheIllegalInputError
+
 
 class MockMemcacheClient(object):
     """
@@ -36,6 +38,9 @@ class MockMemcacheClient(object):
         self.ignore_exc = ignore_exc
 
     def get(self, key):
+        if isinstance(key, unicode):
+            raise MemcacheIllegalInputError(key)
+
         if key not in self._contents:
             return None
 
@@ -57,6 +62,11 @@ class MockMemcacheClient(object):
         return out
 
     def set(self, key, value, expire=0, noreply=True):
+        if isinstance(key, unicode):
+            raise MemcacheIllegalInputError(key)
+        if isinstance(value, unicode):
+            raise MemcacheIllegalInputError(value)
+
         was_serialized = False
         if self.serializer:
             value = self.serializer(key, value)
@@ -65,22 +75,36 @@ class MockMemcacheClient(object):
             expire += time.time()
 
         self._contents[key] = expire, value, was_serialized
+        return True
 
     def set_many(self, values, expire=None, noreply=True):
         for key, value in values.iteritems():
             self.set(key, value, expire, noreply)
+        return True
 
     def incr(self, key, value, noreply=False):
         current = self.get(key)
-        self.set(key, current + value, noreply=noreply)
-        return current + value
+        present = current is not None
+        if present:
+            self.set(key, current + value, noreply=noreply)
+        return None if noreply or not present else current + value
 
     def decr(self, key, value, noreply=False):
         current = self.get(key)
+        if current is None:
+            return
+
         self.set(key, current - value, noreply=noreply)
         return current - value
 
     def add(self, key, value, expire=None, noreply=True):
         current = self.get(key)
-        if current is None:
+        present = current is not None
+        if not present:
             self.set(key, value, expire, noreply)
+        return not present
+
+    def delete(self, key, noreply=True):
+        current = self._contents.pop(key, None)
+        present = current is not None
+        return noreply or present
