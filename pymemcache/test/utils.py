@@ -45,7 +45,7 @@ class MockMemcacheClient(object):
             return None
 
         expire, value, was_serialized = self._contents[key]
-        if expire and expire < _time.time():
+        if expire and expire < time.time():
             del self._contents[key]
             return None
 
