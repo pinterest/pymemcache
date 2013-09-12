@@ -1,6 +1,9 @@
 pymemcache
 ==========
 
+[![Build
+Status](https://travis-ci.org/pinterest/pymemcache.png)](https://travis-ci.org/pinterest/pymemcache)
+
 A comprehensive, fast, pure-Python memcached client.
 
 pymemcache supports the following features:
