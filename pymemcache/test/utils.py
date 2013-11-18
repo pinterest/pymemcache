@@ -108,3 +108,25 @@ class MockMemcacheClient(object):
         current = self._contents.pop(key, None)
         present = current is not None
         return noreply or present
+
+    def stats(self):
+        # I make no claim that these values make any sense, but the format
+        # of the output is the same as for pymemcache.client.Client.stats()
+        return {
+            "version": "MockMemcacheClient",
+            "rusage_user": 1.0,
+            "rusage_system": 1.0,
+            "hash_is_expanding": False,
+            "slab_reassign_running": False,
+            "inter": "in-memory",
+            "evictions": False,
+            "growth_factor": 1.0,
+            "stat_key_prefix": "",
+            "umask": 0644,
+            "detail_enabled": False,
+            "cas_enabled": False,
+            "auth_enabled_sasl": False,
+            "maxconns_fast": False,
+            "slab_reassign": False,
+            "slab_automove": False,
+        }
