@@ -781,6 +781,18 @@ class Client(object):
             self.close()
             raise
 
+    def __setitem__(self, key, value):
+        self.set(key, value, noreply=True)
+
+    def __getitem__(self, key):
+        value = self.get(key)
+        if value is None:
+            raise KeyError
+        return value
+
+    def __delitem__(self, key):
+        self.delete(key, noreply=True)
+
 
 def _readline(sock, buf):
     """Read line of text from the socket.
