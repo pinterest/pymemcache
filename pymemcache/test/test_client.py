@@ -589,6 +589,29 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         tools.assert_equal(client.sock.socket_options, [(socket.IPPROTO_TCP,
                                                         socket.TCP_NODELAY, 1)])
 
+    def test_python_dict_set_is_supported(self):
+        client = self.Client(None)
+        client.sock = MockSocket(['STORED\r\n'])
+        client['key'] = 'value'
+
+    def test_python_dict_get_is_supported(self):
+        client = self.Client(None)
+        client.sock = MockSocket(['VALUE key 0 5\r\nvalue\r\nEND\r\n'])
+        tools.assert_equal(client['key'], 'value')
+
+    def test_python_dict_get_not_found_is_supported(self):
+        client = self.Client(None)
+        client.sock = MockSocket(['END\r\n'])
+
+        def _get():
+            _ = client['key']
+
+        tools.assert_raises(KeyError, _get)
+
+    def test_python_dict_del_is_supported(self):
+        client = self.Client(None)
+        client.sock = MockSocket(['DELETED\r\n'])
+        del client['key']
 
 class TestMockClient(ClientTestMixin, unittest.TestCase):
     Client = MockMemcacheClient
