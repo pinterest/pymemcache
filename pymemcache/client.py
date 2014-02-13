@@ -71,7 +71,7 @@ __author__ = "Charles Gordon"
 
 
 import socket
-
+import six
 
 RECV_SIZE = 4096
 VALID_STORE_RESULTS = {
@@ -669,7 +669,7 @@ class Client(object):
         cmd = '{0} {1}\r\n'.format(name, ' '.join(key_strs))
 
         try:
-            self.sock.sendall(cmd)
+            self.sock.sendall(six.b(cmd))
 
             result = {}
             while True:
@@ -740,7 +740,7 @@ class Client(object):
             name, key, flags, expire, len(data), extra, data)
 
         try:
-            self.sock.sendall(cmd)
+            self.sock.sendall(six.b(cmd))
 
             if noreply:
                 return True
@@ -768,12 +768,12 @@ class Client(object):
             self._connect()
 
         try:
-            self.sock.sendall(cmd)
+            self.sock.sendall(six.b(cmd))
 
             if noreply:
                 return
 
-            _, line = _readline(self.sock, '')
+            _, line = _readline(self.sock, b'')
             self._raise_errors(line, cmd_name)
 
             return line
@@ -816,7 +816,8 @@ def _readline(sock, buf):
     """
     chunks = []
     last_char = ''
-
+    if isinstance(buf, str):
+        buf = six.b(buf)
     while True:
         # We're reading in chunks, so "\r\n" could appear in one chunk,
         # or across the boundary of two chunks, so we check for both
@@ -824,14 +825,15 @@ def _readline(sock, buf):
 
         # This case must appear first, since the buffer could have
         # later \r\n characters in it and we want to get the first \r\n.
-        if last_char == '\r' and buf[0] == '\n':
+
+        if last_char == b'\r' and buf[0] == b'\n':
             # Strip the last character from the last chunk.
             chunks[-1] = chunks[-1][:-1]
-            return buf[1:], ''.join(chunks)
-        elif buf.find('\r\n') != -1:
-            before, sep, after = buf.partition("\r\n")
+            return buf[1:].decode(), ''.join([c.decode() for c in chunks])
+        elif buf.find(b'\r\n') != -1:
+            before, sep, after = buf.partition(b"\r\n")
             chunks.append(before)
-            return after, ''.join(chunks)
+            return after.decode(), ''.join([c.decode() for c in chunks])
 
         if buf:
             chunks.append(buf)

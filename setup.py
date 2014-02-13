@@ -10,7 +10,7 @@ setup(
     author = 'Charles Gordon',
     author_email = 'charles@pinterest.com',
     packages = find_packages(),
-    setup_requires = ['nose>=1.0'],
+    setup_requires = ['nose>=1.0', 'six'],
     description = 'A comprehensive, fast, pure Python memcached client',
     long_description = open('README.md').read(),
     license = 'Apache License 2.0',
