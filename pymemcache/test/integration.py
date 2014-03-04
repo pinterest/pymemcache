@@ -16,6 +16,8 @@ import argparse
 import json
 import socket
 
+import six
+
 from pymemcache.client import (Client, MemcacheClientError,
                                MemcacheUnknownCommandError)
 from pymemcache.client import MemcacheIllegalInputError
@@ -29,16 +31,16 @@ def get_set_test(host, port, socket_module):
     result = client.get('key')
     tools.assert_equal(result, None)
 
-    client.set('key', 'value', noreply=False)
-    result = client.get('key')
-    tools.assert_equal(result, 'value')
+    client.set(b'key', b'value', noreply=False)
+    result = client.get(b'key')
+    tools.assert_equal(result, b'value')
 
-    client.set('key2', 'value2', noreply=True)
-    result = client.get('key2')
-    tools.assert_equal(result, 'value2')
+    client.set(b'key2', b'value2', noreply=True)
+    result = client.get(b'key2')
+    tools.assert_equal(result, b'value2')
 
-    result = client.get_many(['key', 'key2'])
-    tools.assert_equal(result, {'key': 'value', 'key2': 'value2'})
+    result = client.get_many([b'key', b'key2'])
+    tools.assert_equal(result, {b'key': b'value', b'key2': b'value2'})
 
     result = client.get_many([])
     tools.assert_equal(result, {})
@@ -48,74 +50,74 @@ def add_replace_test(host, port, socket_module):
     client = Client((host, port), socket_module=socket_module)
     client.flush_all()
 
-    result = client.add('key', 'value', noreply=False)
+    result = client.add(b'key', b'value', noreply=False)
     tools.assert_equal(result, True)
-    result = client.get('key')
-    tools.assert_equal(result, 'value')
+    result = client.get(b'key')
+    tools.assert_equal(result, b'value')
 
-    result = client.add('key', 'value2', noreply=False)
+    result = client.add(b'key', b'value2', noreply=False)
     tools.assert_equal(result, False)
-    result = client.get('key')
-    tools.assert_equal(result, 'value')
+    result = client.get(b'key')
+    tools.assert_equal(result, b'value')
 
-    result = client.replace('key1', 'value1', noreply=False)
+    result = client.replace(b'key1', b'value1', noreply=False)
     tools.assert_equal(result, False)
-    result = client.get('key1')
+    result = client.get(b'key1')
     tools.assert_equal(result, None)
 
-    result = client.replace('key', 'value2', noreply=False)
+    result = client.replace(b'key', b'value2', noreply=False)
     tools.assert_equal(result, True)
-    result = client.get('key')
-    tools.assert_equal(result, 'value2')
+    result = client.get(b'key')
+    tools.assert_equal(result, b'value2')
 
 
 def append_prepend_test(host, port, socket_module):
     client = Client((host, port), socket_module=socket_module)
     client.flush_all()
 
-    result = client.append('key', 'value', noreply=False)
+    result = client.append(b'key', b'value', noreply=False)
     tools.assert_equal(result, False)
-    result = client.get('key')
+    result = client.get(b'key')
     tools.assert_equal(result, None)
 
-    result = client.set('key', 'value', noreply=False)
+    result = client.set(b'key', b'value', noreply=False)
     tools.assert_equal(result, True)
-    result = client.append('key', 'after', noreply=False)
+    result = client.append(b'key', b'after', noreply=False)
     tools.assert_equal(result, True)
-    result = client.get('key')
-    tools.assert_equal(result, 'valueafter')
+    result = client.get(b'key')
+    tools.assert_equal(result, b'valueafter')
 
-    result = client.prepend('key1', 'value', noreply=False)
+    result = client.prepend(b'key1', b'value', noreply=False)
     tools.assert_equal(result, False)
-    result = client.get('key1')
+    result = client.get(b'key1')
     tools.assert_equal(result, None)
 
-    result = client.prepend('key', 'before', noreply=False)
+    result = client.prepend(b'key', b'before', noreply=False)
     tools.assert_equal(result, True)
-    result = client.get('key')
-    tools.assert_equal(result, 'beforevalueafter')
+    result = client.get(b'key')
+    tools.assert_equal(result, b'beforevalueafter')
 
 
 def cas_test(host, port, socket_module):
     client = Client((host, port), socket_module=socket_module)
     client.flush_all()
 
-    result = client.cas('key', 'value', '1', noreply=False)
+    result = client.cas(b'key', b'value', b'1', noreply=False)
     tools.assert_equal(result, None)
 
-    result = client.set('key', 'value', noreply=False)
+    result = client.set(b'key', b'value', noreply=False)
     tools.assert_equal(result, True)
 
-    result = client.cas('key', 'value', '1', noreply=False)
+    result = client.cas(b'key', b'value', b'1', noreply=False)
     tools.assert_equal(result, False)
 
-    result, cas = client.gets('key')
-    tools.assert_equal(result, 'value')
+    result, cas = client.gets(b'key')
+    tools.assert_equal(result, b'value')
 
-    result = client.cas('key', 'value1', cas, noreply=False)
+    result = client.cas(b'key', b'value1', cas, noreply=False)
     tools.assert_equal(result, True)
 
-    result = client.cas('key', 'value2', cas, noreply=False)
+    result = client.cas(b'key', b'value2', cas, noreply=False)
     tools.assert_equal(result, False)
 
 
@@ -123,29 +125,29 @@ def gets_test(host, port, socket_module):
     client = Client((host, port), socket_module=socket_module)
     client.flush_all()
 
-    result = client.gets('key')
+    result = client.gets(b'key')
     tools.assert_equal(result, (None, None))
 
-    result = client.set('key', 'value', noreply=False)
+    result = client.set(b'key', b'value', noreply=False)
     tools.assert_equal(result, True)
-    result = client.gets('key')
-    tools.assert_equal(result[0], 'value')
+    result = client.gets(b'key')
+    tools.assert_equal(result[0], b'value')
 
 
 def delete_test(host, port, socket_module):
     client = Client((host, port), socket_module=socket_module)
     client.flush_all()
 
-    result = client.delete('key', noreply=False)
+    result = client.delete(b'key', noreply=False)
     tools.assert_equal(result, False)
 
-    result = client.get('key')
+    result = client.get(b'key')
     tools.assert_equal(result, None)
-    result = client.set('key', 'value', noreply=False)
+    result = client.set(b'key', b'value', noreply=False)
     tools.assert_equal(result, True)
-    result = client.delete('key', noreply=False)
+    result = client.delete(b'key', noreply=False)
     tools.assert_equal(result, True)
-    result = client.get('key')
+    result = client.get(b'key')
     tools.assert_equal(result, None)
 
 
@@ -153,26 +155,26 @@ def incr_decr_test(host, port, socket_module):
     client = Client((host, port), socket_module=socket_module)
     client.flush_all()
 
-    result = client.incr('key', 1, noreply=False)
+    result = client.incr(b'key', 1, noreply=False)
     tools.assert_equal(result, None)
 
-    result = client.set('key', '0', noreply=False)
+    result = client.set(b'key', b'0', noreply=False)
     tools.assert_equal(result, True)
-    result = client.incr('key', 1, noreply=False)
+    result = client.incr(b'key', 1, noreply=False)
     tools.assert_equal(result, 1)
 
     def _bad_int():
-        client.incr('key', 'foobar')
+        client.incr(b'key', b'foobar')
 
     tools.assert_raises(MemcacheClientError, _bad_int)
 
-    result = client.decr('key1', 1, noreply=False)
+    result = client.decr(b'key1', 1, noreply=False)
     tools.assert_equal(result, None)
 
-    result = client.decr('key', 1, noreply=False)
+    result = client.decr(b'key', 1, noreply=False)
     tools.assert_equal(result, 0)
-    result = client.get('key')
-    tools.assert_equal(result, '0')
+    result = client.get(b'key')
+    tools.assert_equal(result, b'0')
 
 
 def misc_test(host, port, socket_module):
@@ -182,11 +184,11 @@ def misc_test(host, port, socket_module):
 
 def test_serialization_deserialization(host, port, socket_module):
     def _ser(key, value):
-        return json.dumps(value), 1
+        return json.dumps(value).encode('ascii'), 1
 
     def _des(key, value, flags):
         if flags == 1:
-            return json.loads(value)
+            return json.loads(value.decode('ascii'))
         return value
 
     client = Client((host, port), serializer=_ser, deserializer=_des,
@@ -194,8 +196,8 @@ def test_serialization_deserialization(host, port, socket_module):
     client.flush_all()
 
     value = {'a': 'b', 'c': ['d']}
-    client.set('key', value)
-    result = client.get('key')
+    client.set(b'key', value)
+    result = client.get(b'key')
     tools.assert_equal(result, value)
 
 
@@ -204,27 +206,27 @@ def test_errors(host, port, socket_module):
     client.flush_all()
 
     def _key_with_ws():
-        client.set('key with spaces', 'value', noreply=False)
+        client.set(b'key with spaces', b'value', noreply=False)
 
     tools.assert_raises(MemcacheIllegalInputError, _key_with_ws)
 
     def _key_too_long():
-        client.set('x' * 1024, 'value', noreply=False)
+        client.set(b'x' * 1024, b'value', noreply=False)
 
     tools.assert_raises(MemcacheClientError, _key_too_long)
 
     def _unicode_key_in_set():
-        client.set(u'\u0FFF', 'value', noreply=False)
+        client.set(six.u('\u0FFF'), b'value', noreply=False)
 
     tools.assert_raises(MemcacheClientError, _unicode_key_in_set)
 
     def _unicode_key_in_get():
-        client.get(u'\u0FFF')
+        client.get(six.u('\u0FFF'))
 
     tools.assert_raises(MemcacheClientError, _unicode_key_in_get)
 
     def _unicode_value_in_set():
-        client.set('key', u'\u0FFF', noreply=False)
+        client.set(b'key', six.u('\u0FFF'), noreply=False)
 
     tools.assert_raises(MemcacheClientError, _unicode_value_in_set)
 
@@ -245,33 +247,33 @@ def main():
     try:
         from gevent import socket as gevent_socket
     except ImportError:
-        print "Skipping gevent (not installed)"
+        print("Skipping gevent (not installed)")
     else:
         socket_modules.append(gevent_socket)
 
     for socket_module in socket_modules:
-        print "Testing with socket module:", socket_module.__name__
+        print("Testing with socket module:", socket_module.__name__)
 
-        print "Testing get and set..."
+        print("Testing get and set...")
         get_set_test(args.server, args.port, socket_module)
-        print "Testing add and replace..."
+        print("Testing add and replace...")
         add_replace_test(args.server, args.port, socket_module)
-        print "Testing append and prepend..."
+        print("Testing append and prepend...")
         append_prepend_test(args.server, args.port, socket_module)
-        print "Testing cas..."
+        print("Testing cas...")
         cas_test(args.server, args.port, socket_module)
-        print "Testing gets..."
+        print("Testing gets...")
         gets_test(args.server, args.port, socket_module)
-        print "Testing delete..."
+        print("Testing delete...")
         delete_test(args.server, args.port, socket_module)
-        print "Testing incr and decr..."
+        print("Testing incr and decr...")
         incr_decr_test(args.server, args.port, socket_module)
-        print "Testing flush_all..."
+        print("Testing flush_all...")
         misc_test(args.server, args.port, socket_module)
-        print "Testing serialization and deserialization..."
+        print("Testing serialization and deserialization...")
         test_serialization_deserialization(args.server, args.port,
                                            socket_module)
-        print "Testing error cases..."
+        print("Testing error cases...")
         test_errors(args.server, args.port, socket_module)
 
 

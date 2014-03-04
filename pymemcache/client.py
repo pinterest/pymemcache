@@ -71,16 +71,17 @@ __author__ = "Charles Gordon"
 
 
 import socket
+import six
 
 
 RECV_SIZE = 4096
 VALID_STORE_RESULTS = {
-    'set':     ('STORED',),
-    'add':     ('STORED', 'NOT_STORED'),
-    'replace': ('STORED', 'NOT_STORED'),
-    'append':  ('STORED', 'NOT_STORED'),
-    'prepend': ('STORED', 'NOT_STORED'),
-    'cas':     ('STORED', 'EXISTS', 'NOT_FOUND'),
+    b'set':     (b'STORED',),
+    b'add':     (b'STORED', b'NOT_STORED'),
+    b'replace': (b'STORED', b'NOT_STORED'),
+    b'append':  (b'STORED', b'NOT_STORED'),
+    b'prepend': (b'STORED', b'NOT_STORED'),
+    b'cas':     (b'STORED', b'EXISTS', b'NOT_FOUND'),
 }
 
 
@@ -88,24 +89,24 @@ VALID_STORE_RESULTS = {
 # need mapping into native Python types
 STAT_TYPES = {
     # General stats
-    'version': str,
-    'rusage_user': lambda value: float(value.replace(':', '.')),
-    'rusage_system': lambda value: float(value.replace(':', '.')),
-    'hash_is_expanding': lambda value: int(value) != 0,
-    'slab_reassign_running': lambda value: int(value) != 0,
+    b'version': six.binary_type,
+    b'rusage_user': lambda value: float(value.replace(b':', b'.')),
+    b'rusage_system': lambda value: float(value.replace(b':', b'.')),
+    b'hash_is_expanding': lambda value: int(value) != 0,
+    b'slab_reassign_running': lambda value: int(value) != 0,
 
     # Settings stats
-    'inter': str,
-    'evictions': lambda value: value == 'on',
-    'growth_factor': float,
-    'stat_key_prefix': str,
-    'umask': lambda value: int(value, 8),
-    'detail_enabled': lambda value: int(value) != 0,
-    'cas_enabled': lambda value: int(value) != 0,
-    'auth_enabled_sasl': lambda value: value == 'yes',
-    'maxconns_fast': lambda value: int(value) != 0,
-    'slab_reassign': lambda value: int(value) != 0,
-    'slab_automove': lambda value: int(value) != 0,
+    b'inter': six.binary_type,
+    b'evictions': lambda value: value == b'on',
+    b'growth_factor': float,
+    b'stat_key_prefix': six.binary_type,
+    b'umask': lambda value: int(value, 8),
+    b'detail_enabled': lambda value: int(value) != 0,
+    b'cas_enabled': lambda value: int(value) != 0,
+    b'auth_enabled_sasl': lambda value: value == b'yes',
+    b'maxconns_fast': lambda value: int(value) != 0,
+    b'slab_reassign': lambda value: int(value) != 0,
+    b'slab_automove': lambda value: int(value) != 0,
 }
 
 
@@ -262,7 +263,7 @@ class Client(object):
         self.ignore_exc = ignore_exc
         self.socket_module = socket_module
         self.sock = None
-        self.buf = ''
+        self.buf = b''
 
     def _connect(self):
         sock = self.socket_module.socket(self.socket_module.AF_INET,
@@ -284,7 +285,7 @@ class Client(object):
             except Exception:
                 pass
         self.sock = None
-        self.buf = ''
+        self.buf = b''
 
     def set(self, key, value, expire=0, noreply=True):
         """
@@ -302,7 +303,7 @@ class Client(object):
           raised, the set may or may not have occurred. If noreply is True,
           then a successful return does not guarantee a successful set.
         """
-        return self._store_cmd('set', key, expire, noreply, value)
+        return self._store_cmd(b'set', key, expire, noreply, value)
 
     def set_many(self, values, expire=0, noreply=True):
         """
@@ -324,7 +325,7 @@ class Client(object):
 
         # TODO: make this more performant by sending all the values first, then
         # waiting for all the responses.
-        for key, value in values.iteritems():
+        for key, value in six.iteritems(values):
             self.set(key, value, expire, noreply)
         return True
 
@@ -344,7 +345,7 @@ class Client(object):
           return value is True if the value was stgored, and False if it was
           not (because the key already existed).
         """
-        return self._store_cmd('add', key, expire, noreply, value)
+        return self._store_cmd(b'add', key, expire, noreply, value)
 
     def replace(self, key, value, expire=0, noreply=True):
         """
@@ -362,7 +363,7 @@ class Client(object):
           the value was stored and False if it wasn't (because the key didn't
           already exist).
         """
-        return self._store_cmd('replace', key, expire, noreply, value)
+        return self._store_cmd(b'replace', key, expire, noreply, value)
 
     def append(self, key, value, expire=0, noreply=True):
         """
@@ -378,7 +379,7 @@ class Client(object):
         Returns:
           True.
         """
-        return self._store_cmd('append', key, expire, noreply, value)
+        return self._store_cmd(b'append', key, expire, noreply, value)
 
     def prepend(self, key, value, expire=0, noreply=True):
         """
@@ -394,7 +395,7 @@ class Client(object):
         Returns:
           True.
         """
-        return self._store_cmd('prepend', key, expire, noreply, value)
+        return self._store_cmd(b'prepend', key, expire, noreply, value)
 
     def cas(self, key, value, cas, expire=0, noreply=False):
         """
@@ -413,7 +414,7 @@ class Client(object):
           the key didn't exist, False if it existed but had a different cas
           value and True if it existed and was changed.
         """
-        return self._store_cmd('cas', key, expire, noreply, value, cas)
+        return self._store_cmd(b'cas', key, expire, noreply, value, cas)
 
     def get(self, key):
         """
@@ -425,7 +426,7 @@ class Client(object):
         Returns:
           The value for the key, or None if the key wasn't found.
         """
-        return self._fetch_cmd('get', [key], False).get(key, None)
+        return self._fetch_cmd(b'get', [key], False).get(key, None)
 
     def get_many(self, keys):
         """
@@ -442,7 +443,7 @@ class Client(object):
         if not keys:
             return {}
 
-        return self._fetch_cmd('get', keys, False)
+        return self._fetch_cmd(b'get', keys, False)
 
     def gets(self, key):
         """
@@ -454,7 +455,7 @@ class Client(object):
         Returns:
           A tuple of (key, cas), or (None, None) if the key was not found.
         """
-        return self._fetch_cmd('gets', [key], True).get(key, (None, None))
+        return self._fetch_cmd(b'gets', [key], True).get(key, (None, None))
 
     def gets_many(self, keys):
         """
@@ -471,7 +472,7 @@ class Client(object):
         if not keys:
             return {}
 
-        return self._fetch_cmd('gets', keys, True)
+        return self._fetch_cmd(b'gets', keys, True)
 
     def delete(self, key, noreply=True):
         """
@@ -484,11 +485,14 @@ class Client(object):
           If noreply is True, always returns True. Otherwise returns True if
           the key was deleted, and False if it wasn't found.
         """
-        cmd = 'delete {0}{1}\r\n'.format(key, ' noreply' if noreply else '')
-        result = self._misc_cmd(cmd, 'delete', noreply)
+        cmd = b'delete ' + key
+        if noreply:
+            cmd += b' noreply'
+        cmd += b'\r\n'
+        result = self._misc_cmd(cmd, b'delete', noreply)
         if noreply:
             return True
-        return result == 'DELETED'
+        return result == b'DELETED'
 
     def delete_many(self, keys, noreply=True):
         """
@@ -526,14 +530,14 @@ class Client(object):
           If noreply is True, always returns None. Otherwise returns the new
           value of the key, or None if the key wasn't found.
         """
-        cmd = "incr {0} {1}{2}\r\n".format(
-            key,
-            str(value),
-            ' noreply' if noreply else '')
-        result = self._misc_cmd(cmd, 'incr', noreply)
+        cmd = b'incr ' + key + b' ' + six.text_type(value).encode('ascii')
+        if noreply:
+            cmd += b' noreply'
+        cmd += b'\r\n'
+        result = self._misc_cmd(cmd, b'incr', noreply)
         if noreply:
             return None
-        if result == 'NOT_FOUND':
+        if result == b'NOT_FOUND':
             return None
         return int(result)
 
@@ -550,14 +554,14 @@ class Client(object):
           If noreply is True, always returns None. Otherwise returns the new
           value of the key, or None if the key wasn't found.
         """
-        cmd = "decr {0} {1}{2}\r\n".format(
-            key,
-            str(value),
-            ' noreply' if noreply else '')
-        result = self._misc_cmd(cmd, 'decr', noreply)
+        cmd = b'decr ' + key + b' ' + six.text_type(value).encode('ascii')
+        if noreply:
+            cmd += b' noreply'
+        cmd += b'\r\n'
+        result = self._misc_cmd(cmd, b'decr', noreply)
         if noreply:
             return None
-        if result == 'NOT_FOUND':
+        if result == b'NOT_FOUND':
             return None
         return int(result)
 
@@ -575,14 +579,14 @@ class Client(object):
           True if the expiration time was updated, False if the key wasn't
           found.
         """
-        cmd = "touch {0} {1}{2}\r\n".format(
-            key,
-            expire,
-            ' noreply' if noreply else '')
-        result = self._misc_cmd(cmd, 'touch', noreply)
+        cmd = b'touch ' + key + b' ' + six.text_type(expire).encode('ascii')
+        if noreply:
+            cmd += b' noreply'
+        cmd += b'\r\n'
+        result = self._misc_cmd(cmd, b'touch', noreply)
         if noreply:
             return True
-        return result == 'TOUCHED'
+        return result == b'TOUCHED'
 
     def stats(self, *args):
         """
@@ -599,9 +603,9 @@ class Client(object):
         Returns:
           A dict of the returned stats.
         """
-        result = self._fetch_cmd('stats', args, False)
+        result = self._fetch_cmd(b'stats', args, False)
 
-        for key, value in result.iteritems():
+        for key, value in six.iteritems(result):
             converter = STAT_TYPES.get(key, int)
             try:
                 result[key] = converter(value)
@@ -622,11 +626,14 @@ class Client(object):
         Returns:
           True.
         """
-        cmd = "flush_all {0}{1}\r\n".format(delay, ' noreply' if noreply else '')
-        result = self._misc_cmd(cmd, 'flush_all', noreply)
+        cmd = b'flush_all ' + six.text_type(delay).encode('ascii')
+        if noreply:
+            cmd += b' noreply'
+        cmd += b'\r\n'
+        result = self._misc_cmd(cmd, b'flush_all', noreply)
         if noreply:
             return True
-        return result == 'OK'
+        return result == b'OK'
 
     def quit(self):
         """
@@ -636,37 +643,38 @@ class Client(object):
         method on this object will re-open the connection, so this object can
         be re-used after quit.
         """
-        cmd = "quit\r\n"
-        self._misc_cmd(cmd, 'quit', True)
+        cmd = b"quit\r\n"
+        self._misc_cmd(cmd, b'quit', True)
         self.close()
 
     def _raise_errors(self, line, name):
-        if line.startswith('ERROR'):
+        if line.startswith(b'ERROR'):
             raise MemcacheUnknownCommandError(name)
 
-        if line.startswith('CLIENT_ERROR'):
-            error = line[line.find(' ') + 1:]
+        if line.startswith(b'CLIENT_ERROR'):
+            error = line[line.find(b' ') + 1:]
             raise MemcacheClientError(error)
 
-        if line.startswith('SERVER_ERROR'):
-            error = line[line.find(' ') + 1:]
+        if line.startswith(b'SERVER_ERROR'):
+            error = line[line.find(b' ') + 1:]
             raise MemcacheServerError(error)
 
     def _fetch_cmd(self, name, keys, expect_cas):
         if not self.sock:
             self._connect()
 
-        try:
-            key_strs = []
-            for key in keys:
-                key = str(key)
-                if ' ' in key:
-                    raise MemcacheIllegalInputError("Key contains spaces: %s", key)
-                key_strs.append(key)
-        except UnicodeEncodeError as e:
-            raise MemcacheIllegalInputError(str(e))
+        key_strs = []
+        for key in keys:
+            if not isinstance(key, six.binary_type):
+                try:
+                    key = six.text_type(key).encode('ascii')
+                except UnicodeEncodeError as e:
+                    raise MemcacheIllegalInputError(str(e))
+            if b' ' in key:
+                raise MemcacheIllegalInputError("Key contains spaces: %s", key)
+            key_strs.append(key)
 
-        cmd = '{0} {1}\r\n'.format(name, ' '.join(key_strs))
+        cmd = name + b' ' + b' '.join(key_strs) + b'\r\n'
 
         try:
             self.sock.sendall(cmd)
@@ -676,13 +684,17 @@ class Client(object):
                 self.buf, line = _readline(self.sock, self.buf)
                 self._raise_errors(line, name)
 
-                if line == 'END':
+                if line == b'END':
                     return result
-                elif line.startswith('VALUE'):
+                elif line.startswith(b'VALUE'):
                     if expect_cas:
                         _, key, flags, size, cas = line.split()
                     else:
-                        _, key, flags, size = line.split()
+                        try:
+                            _, key, flags, size = line.split()
+                        except Exception as e:
+                            raise ValueError("Unable to parse line %s: %s"
+                                             % (line, str(e)))
 
                     self.buf, value = _readvalue(self.sock,
                                                  self.buf,
@@ -695,7 +707,7 @@ class Client(object):
                         result[key] = (value, cas)
                     else:
                         result[key] = value
-                elif name == 'stats' and line.startswith('STAT'):
+                elif name == b'stats' and line.startswith(b'STAT'):
                     _, key, value = line.split()
                     result[key] = value
                 else:
@@ -707,12 +719,14 @@ class Client(object):
             raise
 
     def _store_cmd(self, name, key, expire, noreply, data, cas=None):
-        try:
-            key = str(key)
-            if ' ' in key:
-                raise MemcacheIllegalInputError("Key contains spaces: %s", key)
-        except UnicodeEncodeError as e:
-            raise MemcacheIllegalInputError(str(e))
+        if not isinstance(key, six.binary_type):
+            try:
+                key = six.text_type(key).encode('ascii')
+            except UnicodeEncodeError as e:
+                raise MemcacheIllegalInputError(str(e))
+
+        if b' ' in key:
+            raise MemcacheIllegalInputError("Key contains spaces: %s", key)
 
         if not self.sock:
             self._connect()
@@ -722,22 +736,22 @@ class Client(object):
         else:
             flags = 0
 
-        try:
-            data = str(data)
-        except UnicodeEncodeError as e:
-            raise MemcacheIllegalInputError(str(e))
+        if not isinstance(data, six.binary_type):
+            try:
+                data = six.text_type(data).encode('ascii')
+            except UnicodeEncodeError as e:
+                raise MemcacheIllegalInputError(str(e))
 
-        if cas is not None and noreply:
-            extra = ' {0} noreply'.format(cas)
-        elif cas is not None and not noreply:
-            extra = ' {0}'.format(cas)
-        elif cas is None and noreply:
-            extra = ' noreply'
-        else:
-            extra = ''
+        extra = b''
+        if cas is not None:
+            extra += b' ' + cas
+        if noreply:
+            extra += b' noreply'
 
-        cmd = '{0} {1} {2} {3} {4}{5}\r\n{6}\r\n'.format(
-            name, key, flags, expire, len(data), extra, data)
+        cmd = (name + b' ' + key + b' ' + six.text_type(flags).encode('ascii')
+               + b' ' + six.text_type(expire).encode('ascii')
+               + b' ' + six.text_type(len(data)).encode('ascii') + extra
+               + b'\r\n' + data + b'\r\n')
 
         try:
             self.sock.sendall(cmd)
@@ -749,13 +763,13 @@ class Client(object):
             self._raise_errors(line, name)
 
             if line in VALID_STORE_RESULTS[name]:
-                if line == 'STORED':
+                if line == b'STORED':
                     return True
-                if line == 'NOT_STORED':
+                if line == b'NOT_STORED':
                     return False
-                if line == 'NOT_FOUND':
+                if line == b'NOT_FOUND':
                     return None
-                if line == 'EXISTS':
+                if line == b'EXISTS':
                     return False
             else:
                 raise MemcacheUnknownError(line[:32])
@@ -773,7 +787,7 @@ class Client(object):
             if noreply:
                 return
 
-            _, line = _readline(self.sock, '')
+            _, line = _readline(self.sock, b'')
             self._raise_errors(line, cmd_name)
 
             return line
@@ -815,7 +829,7 @@ def _readline(sock, buf):
 
     """
     chunks = []
-    last_char = ''
+    last_char = b''
 
     while True:
         # We're reading in chunks, so "\r\n" could appear in one chunk,
@@ -824,18 +838,18 @@ def _readline(sock, buf):
 
         # This case must appear first, since the buffer could have
         # later \r\n characters in it and we want to get the first \r\n.
-        if last_char == '\r' and buf[0] == '\n':
+        if last_char == b'\r' and buf[0:1] == b'\n':
             # Strip the last character from the last chunk.
             chunks[-1] = chunks[-1][:-1]
-            return buf[1:], ''.join(chunks)
-        elif buf.find('\r\n') != -1:
-            before, sep, after = buf.partition("\r\n")
+            return buf[1:], b''.join(chunks)
+        elif buf.find(b'\r\n') != -1:
+            before, sep, after = buf.partition(b"\r\n")
             chunks.append(before)
-            return after, ''.join(chunks)
+            return after, b''.join(chunks)
 
         if buf:
             chunks.append(buf)
-            last_char = buf[-1]
+            last_char = buf[-1:]
 
         buf = sock.recv(RECV_SIZE)
         if not buf:
@@ -884,4 +898,4 @@ def _readvalue(sock, buf, size):
         # Just remove the "\r\n" from the latest chunk
         chunks.append(buf[:rlen - 2])
 
-    return buf[rlen:], ''.join(chunks)
+    return buf[rlen:], b''.join(chunks)
