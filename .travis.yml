@@ -3,6 +3,8 @@ language: python
 services:
   - memcached
 
+install: "pip install six"
+
 python:
   - 2.6
   - 2.7
