@@ -23,21 +23,21 @@ def test_client(name, client, size, count):
 
     start = time.time()
 
-    for i in xrange(count):
+    for i in range(count):
         client.set(str(i), value)
 
-    for i in xrange(count):
+    for i in range(count):
         client.get(str(i))
 
     duration = time.time() - start
-    print "{0}: {1}".format(name, duration)
+    print("{0}: {1}".format(name, duration))
 
 
 def test_pylibmc(host, port, size, count):
     try:
         import pylibmc
     except Exception:
-        print "Could not import pylibmc, skipping test..."
+        print("Could not import pylibmc, skipping test...")
         return
 
     client = pylibmc.Client(['{0}:{1}'.format(host, port)])
@@ -49,7 +49,7 @@ def test_memcache(host, port, size, count):
     try:
         import memcache
     except Exception:
-        print "Could not import pymemcache.client, skipping test..."
+        print("Could not import pymemcache.client, skipping test...")
         return
 
     client = memcache.Client(['{0}:{1}'.format(host, port)])
@@ -60,7 +60,7 @@ def test_pymemcache(host, port, size, count):
     try:
         import pymemcache.client
     except Exception:
-        print "Could not import pymemcache.client, skipping test..."
+        print("Could not import pymemcache.client, skipping test...")
         return
 
     client = pymemcache.client.Client((host, port))

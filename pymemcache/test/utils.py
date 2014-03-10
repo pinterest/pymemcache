@@ -7,6 +7,8 @@ This module is considered public API.
 
 import time
 
+import six
+
 from pymemcache.client import MemcacheIllegalInputError
 
 
@@ -38,7 +40,7 @@ class MockMemcacheClient(object):
         self.ignore_exc = ignore_exc
 
     def get(self, key):
-        if isinstance(key, unicode):
+        if isinstance(key, six.text_type):
             raise MemcacheIllegalInputError(key)
 
         if key not in self._contents:
@@ -62,9 +64,9 @@ class MockMemcacheClient(object):
         return out
 
     def set(self, key, value, expire=0, noreply=True):
-        if isinstance(key, unicode):
+        if isinstance(key, six.text_type):
             raise MemcacheIllegalInputError(key)
-        if isinstance(value, unicode):
+        if isinstance(value, six.text_type):
             raise MemcacheIllegalInputError(value)
 
         was_serialized = False
@@ -78,7 +80,7 @@ class MockMemcacheClient(object):
         return True
 
     def set_many(self, values, expire=None, noreply=True):
-        for key, value in values.iteritems():
+        for key, value in six.iteritems(values):
             self.set(key, value, expire, noreply)
         return True
 
@@ -122,7 +124,7 @@ class MockMemcacheClient(object):
             "evictions": False,
             "growth_factor": 1.0,
             "stat_key_prefix": "",
-            "umask": 0644,
+            "umask": 0o644,
             "detail_enabled": False,
             "cas_enabled": False,
             "auth_enabled_sasl": False,
