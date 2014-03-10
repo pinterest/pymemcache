@@ -83,12 +83,14 @@ Mixpanel's pure Python memcached client:
 Credits
 =======
 
-0. [Charles Gordon](http://github.com/cgordon)
-1. [Dave Dash](http://github.com/davedash)
-2. [Dan Crosta](http://github.com/dcrosta)
-3. [Julian Berman](http://github.com/Julian)
-4. [Mark Shirley](http://github.com/maspwr)
-5. [Tim Bart](http://github.com/pims)
-6. [Thomas Orozco](http://github.com/krallin)
-7. [Marc Abramowitz](http://github.com/msabramo)
-8. [Marc-Andre Courtois](http://github.com/mcourtois)
+* [Charles Gordon](http://github.com/cgordon)
+* [Dave Dash](http://github.com/davedash)
+* [Dan Crosta](http://github.com/dcrosta)
+* [Julian Berman](http://github.com/Julian)
+* [Mark Shirley](http://github.com/maspwr)
+* [Tim Bart](http://github.com/pims)
+* [Thomas Orozco](http://github.com/krallin)
+* [Marc Abramowitz](http://github.com/msabramo)
+* [Marc-Andre Courtois](http://github.com/mcourtois)
+* [Julien Danjou](http://github.com/jd)
+* [INADA Naoki](http://github.com/methane)
