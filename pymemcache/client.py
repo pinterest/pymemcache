@@ -265,6 +265,27 @@ class Client(object):
         self.sock = None
         self.buf = b''
 
+    def check_key(self, key):
+        """Checks key.
+
+        You can override to add prefix::
+
+            class MyClient(pymemcache.client.Client):
+                def check_key(self, key):
+                    return super(MyClient, self).check_key(b'myprefix:' + key)
+
+        """
+        if isinstance(key, six.text_type):
+            try:
+                key = key.encode('ascii')
+            except UnicodeEncodeError as e:
+                raise MemcacheIllegalInputError("No ascii key: %r" % (key,))
+        if b' ' in key:
+            raise MemcacheIllegalInputError("Key contains spaces: %r" % (key,))
+        if len(key) > 250:
+            raise MemcacheIllegalInputError("Key is too long: %r" % (key,))
+        return key
+
     def _connect(self):
         sock = self.socket_module.socket(self.socket_module.AF_INET,
                                          self.socket_module.SOCK_STREAM)
@@ -485,7 +506,7 @@ class Client(object):
           If noreply is True, always returns True. Otherwise returns True if
           the key was deleted, and False if it wasn't found.
         """
-        cmd = b'delete ' + key
+        cmd = b'delete ' + self.check_key(key)
         if noreply:
             cmd += b' noreply'
         cmd += b'\r\n'
@@ -530,6 +551,7 @@ class Client(object):
           If noreply is True, always returns None. Otherwise returns the new
           value of the key, or None if the key wasn't found.
         """
+        key = self.check_key(key)
         cmd = b'incr ' + key + b' ' + six.text_type(value).encode('ascii')
         if noreply:
             cmd += b' noreply'
@@ -554,6 +576,7 @@ class Client(object):
           If noreply is True, always returns None. Otherwise returns the new
           value of the key, or None if the key wasn't found.
         """
+        key = self.check_key(key)
         cmd = b'decr ' + key + b' ' + six.text_type(value).encode('ascii')
         if noreply:
             cmd += b' noreply'
@@ -579,6 +602,7 @@ class Client(object):
           True if the expiration time was updated, False if the key wasn't
           found.
         """
+        key = self.check_key(key)
         cmd = b'touch ' + key + b' ' + six.text_type(expire).encode('ascii')
         if noreply:
             cmd += b' noreply'
@@ -663,17 +687,7 @@ class Client(object):
         if not self.sock:
             self._connect()
 
-        key_strs = []
-        for key in keys:
-            if not isinstance(key, six.binary_type):
-                try:
-                    key = six.text_type(key).encode('ascii')
-                except UnicodeEncodeError as e:
-                    raise MemcacheIllegalInputError(str(e))
-            if b' ' in key:
-                raise MemcacheIllegalInputError("Key contains spaces: %s", key)
-            key_strs.append(key)
-
+        key_strs = [self.check_key(k) for k in keys]
         cmd = name + b' ' + b' '.join(key_strs) + b'\r\n'
 
         try:
@@ -719,15 +733,7 @@ class Client(object):
             raise
 
     def _store_cmd(self, name, key, expire, noreply, data, cas=None):
-        if not isinstance(key, six.binary_type):
-            try:
-                key = six.text_type(key).encode('ascii')
-            except UnicodeEncodeError as e:
-                raise MemcacheIllegalInputError(str(e))
-
-        if b' ' in key:
-            raise MemcacheIllegalInputError("Key contains spaces: %s", key)
-
+        key = self.check_key(key)
         if not self.sock:
             self._connect()
 

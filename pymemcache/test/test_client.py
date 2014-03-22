@@ -614,5 +614,21 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         client.sock = MockSocket([b'DELETED\r\n'])
         del client[b'key']
 
+    def test_too_long_key(self):
+        client = self.Client(None)
+        client.sock = MockSocket([b'END\r\n'])
+        tools.assert_raises(MemcacheClientError, client.get, b'x' * 251)
+
+    def test_key_contains_spae(self):
+        client = self.Client(None)
+        client.sock = MockSocket([b'END\r\n'])
+        tools.assert_raises(MemcacheClientError, client.get, b'abc xyz')
+
+    def test_key_contains_nonascii(self):
+        client = self.Client(None)
+        client.sock = MockSocket([b'END\r\n'])
+        tools.assert_raises(MemcacheClientError, client.get, u'\u3053\u3093\u306b\u3061\u306f')
+
+
 class TestMockClient(ClientTestMixin, unittest.TestCase):
     Client = MockMemcacheClient
