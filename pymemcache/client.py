@@ -228,7 +228,8 @@ class Client(object):
                  timeout=None,
                  no_delay=False,
                  ignore_exc=False,
-                 socket_module=socket):
+                 socket_module=socket,
+                 key_prefix=b''):
         """
         Constructor.
 
@@ -249,6 +250,8 @@ class Client(object):
             misses. Defaults to False.
           socket_module: socket module to use, e.g. gevent.socket. Defaults to
             the standard library's socket module.
+          key_prefix: Prefix of key. You can use this as namespace. Defaults
+            to b''.
 
         Notes:
           The constructor does not make a connection to memcached. The first
@@ -264,22 +267,20 @@ class Client(object):
         self.socket_module = socket_module
         self.sock = None
         self.buf = b''
+        if isinstance(key_prefix, six.text_type):
+            key_prefix = key_prefix.encode('ascii')
+        if not isinstance(key_prefix, bytes):
+            raise TypeError("key_prefix should be bytes.")
+        self.key_prefix = key_prefix
 
     def check_key(self, key):
-        """Checks key.
-
-        You can override to add prefix::
-
-            class MyClient(pymemcache.client.Client):
-                def check_key(self, key):
-                    return super(MyClient, self).check_key(b'myprefix:' + key)
-
-        """
+        """Checks key and add key_prefix."""
         if isinstance(key, six.text_type):
             try:
                 key = key.encode('ascii')
             except UnicodeEncodeError as e:
                 raise MemcacheIllegalInputError("No ascii key: %r" % (key,))
+        key = self.key_prefix + key
         if b' ' in key:
             raise MemcacheIllegalInputError("Key contains spaces: %r" % (key,))
         if len(key) > 250:
