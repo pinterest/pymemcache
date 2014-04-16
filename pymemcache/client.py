@@ -687,8 +687,8 @@ class Client(object):
         if not self.sock:
             self._connect()
 
-        key_strs = [self.check_key(k) for k in keys]
-        cmd = name + b' ' + b' '.join(key_strs) + b'\r\n'
+        checked_keys = dict((self.check_key(k), k) for k in keys)
+        cmd = name + b' ' + b' '.join(checked_keys) + b'\r\n'
 
         try:
             self.sock.sendall(cmd)
@@ -713,6 +713,7 @@ class Client(object):
                     self.buf, value = _readvalue(self.sock,
                                                  self.buf,
                                                  int(size))
+                    key = checked_keys[key]
 
                     if self.deserializer:
                         value = self.deserializer(key, value, int(flags))

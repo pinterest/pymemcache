@@ -632,3 +632,50 @@ class TestClient(ClientTestMixin, unittest.TestCase):
 
 class TestMockClient(ClientTestMixin, unittest.TestCase):
     Client = MockMemcacheClient
+
+
+class PrefixedClient(Client):
+    def check_key(self, key):
+        return b'xyz:' + Client.check_key(self, key)
+
+
+class TestPrefixedClient(ClientTestMixin, unittest.TestCase):
+    Client = PrefixedClient
+
+    def test_get_found(self):
+        client = self.Client(None)
+        client.sock = MockSocket([b'STORED\r\n'])
+        result = client.set(b'key', b'value', noreply=False)
+
+        client.sock = MockSocket([b'VALUE xyz:key 0 5\r\nvalue\r\nEND\r\n'])
+        result = client.get(b'key')
+        tools.assert_equal(result, b'value')
+
+    def test_get_many_some_found(self):
+        client = self.Client(None)
+
+        client.sock = MockSocket([b'STORED\r\n'])
+        result = client.set(b'key1', b'value1', noreply=False)
+
+        client.sock = MockSocket([b'VALUE xyz:key1 0 6\r\nvalue1\r\nEND\r\n'])
+        result = client.get_many([b'key1', b'key2'])
+        tools.assert_equal(result, {b'key1': b'value1'})
+
+    def test_get_many_all_found(self):
+        client = self.Client(None)
+
+        client.sock = MockSocket([b'STORED\r\n'])
+        result = client.set(b'key1', b'value1', noreply=False)
+
+        client.sock = MockSocket([b'STORED\r\n'])
+        result = client.set(b'key2', b'value2', noreply=False)
+
+        client.sock = MockSocket([b'VALUE xyz:key1 0 6\r\nvalue1\r\n'
+                                  b'VALUE xyz:key2 0 6\r\nvalue2\r\nEND\r\n'])
+        result = client.get_many([b'key1', b'key2'])
+        tools.assert_equal(result, {b'key1': b'value1', b'key2': b'value2'})
+
+    def test_python_dict_get_is_supported(self):
+        client = self.Client(None)
+        client.sock = MockSocket([b'VALUE xyz:key 0 5\r\nvalue\r\nEND\r\n'])
+        tools.assert_equal(client[b'key'], b'value')
