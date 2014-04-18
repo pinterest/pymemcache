@@ -634,13 +634,9 @@ class TestMockClient(ClientTestMixin, unittest.TestCase):
     Client = MockMemcacheClient
 
 
-class PrefixedClient(Client):
-    def check_key(self, key):
-        return b'xyz:' + Client.check_key(self, key)
-
-
 class TestPrefixedClient(ClientTestMixin, unittest.TestCase):
-    Client = PrefixedClient
+    def Client(self, *args, **kwargs):
+        return Client(*args, key_prefix=b'xyz:', **kwargs)
 
     def test_get_found(self):
         client = self.Client(None)
