@@ -94,3 +94,4 @@ Credits
 * [Marc-Andre Courtois](http://github.com/mcourtois)
 * [Julien Danjou](http://github.com/jd)
 * [INADA Naoki](http://github.com/methane)
+* [James Socol](http://github.com/jsocol)
