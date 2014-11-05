@@ -685,13 +685,13 @@ class Client(object):
             raise MemcacheServerError(error)
 
     def _fetch_cmd(self, name, keys, expect_cas):
-        if not self.sock:
-            self._connect()
-
         checked_keys = dict((self.check_key(k), k) for k in keys)
         cmd = name + b' ' + b' '.join(checked_keys) + b'\r\n'
 
         try:
+            if not self.sock:
+                self._connect()
+
             self.sock.sendall(cmd)
 
             result = {}
