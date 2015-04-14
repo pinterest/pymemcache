@@ -73,6 +73,8 @@ __author__ = "Charles Gordon"
 import socket
 import six
 
+from pymemcache import pool
+
 
 RECV_SIZE = 4096
 VALID_STORE_RESULTS = {
@@ -229,7 +231,8 @@ class Client(object):
                  no_delay=False,
                  ignore_exc=False,
                  socket_module=socket,
-                 key_prefix=b''):
+                 key_prefix=b'',
+                 pool_max_size=None):
         """
         Constructor.
 
@@ -252,6 +255,8 @@ class Client(object):
             the standard library's socket module.
           key_prefix: Prefix of key. You can use this as namespace. Defaults
             to b''.
+          pool_max_size: Maximum number of sockets to create & maintain
+            in the per-client socket pool.
 
         Notes:
           The constructor does not make a connection to memcached. The first
@@ -265,13 +270,14 @@ class Client(object):
         self.no_delay = no_delay
         self.ignore_exc = ignore_exc
         self.socket_module = socket_module
-        self.sock = None
-        self.buf = b''
         if isinstance(key_prefix, six.text_type):
             key_prefix = key_prefix.encode('ascii')
         if not isinstance(key_prefix, bytes):
             raise TypeError("key_prefix should be bytes.")
         self.key_prefix = key_prefix
+        self.socket_pool = pool.ObjectPool(
+            self._create_socket, before_remove=self._safe_close_socket,
+            max_size=pool_max_size)
 
     def check_key(self, key):
         """Checks key and add key_prefix."""
@@ -287,7 +293,14 @@ class Client(object):
             raise MemcacheIllegalInputError("Key is too long: %r" % (key,))
         return key
 
-    def _connect(self):
+    @staticmethod
+    def _safe_close_socket(sock):
+        try:
+            sock.close()
+        except Exception:
+            pass
+
+    def _create_socket(self):
         sock = self.socket_module.socket(self.socket_module.AF_INET,
                                          self.socket_module.SOCK_STREAM)
         sock.settimeout(self.connect_timeout)
@@ -296,18 +309,12 @@ class Client(object):
         if self.no_delay:
             sock.setsockopt(self.socket_module.IPPROTO_TCP,
                             self.socket_module.TCP_NODELAY, 1)
-        self.sock = sock
+        return sock
 
     def close(self):
-        """Close the connection to memcached, if it is open. The next call to a
-        method that requires a connection will re-open it."""
-        if self.sock is not None:
-            try:
-                self.sock.close()
-            except Exception:
-                pass
-        self.sock = None
-        self.buf = b''
+        """Close the connection(s) to memcached, if it is open. The next call
+        to a method that requires a connection will re-open it."""
+        self.socket_pool.clear()
 
     def set(self, key, value, expire=0, noreply=True):
         """
@@ -688,56 +695,51 @@ class Client(object):
         checked_keys = dict((self.check_key(k), k) for k in keys)
         cmd = name + b' ' + b' '.join(checked_keys) + b'\r\n'
 
-        try:
-            if not self.sock:
-                self._connect()
+        with self.socket_pool.get_and_release() as sock:
+            try:
+                buf = b''
+                sock.sendall(cmd)
 
-            self.sock.sendall(cmd)
+                result = {}
+                while True:
+                    buf, line = _readline(sock, buf)
+                    self._raise_errors(line, name)
 
-            result = {}
-            while True:
-                self.buf, line = _readline(self.sock, self.buf)
-                self._raise_errors(line, name)
+                    if line == b'END':
+                        return result
+                    elif line.startswith(b'VALUE'):
+                        if expect_cas:
+                            _, key, flags, size, cas = line.split()
+                        else:
+                            try:
+                                _, key, flags, size = line.split()
+                            except Exception as e:
+                                raise ValueError("Unable to parse line %s: %s"
+                                                 % (line, str(e)))
+    
+                        buf, value = _readvalue(sock, buf, int(size))
+                        key = checked_keys[key]
 
-                if line == b'END':
-                    return result
-                elif line.startswith(b'VALUE'):
-                    if expect_cas:
-                        _, key, flags, size, cas = line.split()
-                    else:
-                        try:
-                            _, key, flags, size = line.split()
-                        except Exception as e:
-                            raise ValueError("Unable to parse line %s: %s"
-                                             % (line, str(e)))
+                        if self.deserializer:
+                            value = self.deserializer(key, value, int(flags))
 
-                    self.buf, value = _readvalue(self.sock,
-                                                 self.buf,
-                                                 int(size))
-                    key = checked_keys[key]
-
-                    if self.deserializer:
-                        value = self.deserializer(key, value, int(flags))
-
-                    if expect_cas:
-                        result[key] = (value, cas)
-                    else:
+                        if expect_cas:
+                            result[key] = (value, cas)
+                        else:
+                            result[key] = value
+                    elif name == b'stats' and line.startswith(b'STAT'):
+                        _, key, value = line.split()
                         result[key] = value
-                elif name == b'stats' and line.startswith(b'STAT'):
-                    _, key, value = line.split()
-                    result[key] = value
-                else:
-                    raise MemcacheUnknownError(line[:32])
-        except Exception:
-            self.close()
-            if self.ignore_exc:
-                return {}
-            raise
+                    else:
+                        raise MemcacheUnknownError(line[:32])
+            except Exception:
+                self.socket_pool.destroy(sock)
+                if self.ignore_exc:
+                    return {}
+                raise
 
     def _store_cmd(self, name, key, expire, noreply, data, cas=None):
         key = self.check_key(key)
-        if not self.sock:
-            self._connect()
 
         if self.serializer:
             data, flags = self.serializer(key, data)
@@ -761,47 +763,46 @@ class Client(object):
                + b' ' + six.text_type(len(data)).encode('ascii') + extra
                + b'\r\n' + data + b'\r\n')
 
-        try:
-            self.sock.sendall(cmd)
+        with self.socket_pool.get_and_release() as sock:
+            try:
+                sock.sendall(cmd)
 
-            if noreply:
-                return True
-
-            self.buf, line = _readline(self.sock, self.buf)
-            self._raise_errors(line, name)
-
-            if line in VALID_STORE_RESULTS[name]:
-                if line == b'STORED':
+                if noreply:
                     return True
-                if line == b'NOT_STORED':
-                    return False
-                if line == b'NOT_FOUND':
-                    return None
-                if line == b'EXISTS':
-                    return False
-            else:
-                raise MemcacheUnknownError(line[:32])
-        except Exception:
-            self.close()
-            raise
+
+                buf = b''
+                buf, line = _readline(sock, buf)
+                self._raise_errors(line, name)
+
+                if line in VALID_STORE_RESULTS[name]:
+                    if line == b'STORED':
+                        return True
+                    if line == b'NOT_STORED':
+                        return False
+                    if line == b'NOT_FOUND':
+                        return None
+                    if line == b'EXISTS':
+                        return False
+                else:
+                    raise MemcacheUnknownError(line[:32])
+            except Exception:
+                self.socket_pool.destroy(sock)
+                raise
 
     def _misc_cmd(self, cmd, cmd_name, noreply):
-        if not self.sock:
-            self._connect()
+        with self.socket_pool.get_and_release() as sock:
+            try:
+                sock.sendall(cmd)
 
-        try:
-            self.sock.sendall(cmd)
+                if noreply:
+                    return
 
-            if noreply:
-                return
-
-            _, line = _readline(self.sock, b'')
-            self._raise_errors(line, cmd_name)
-
-            return line
-        except Exception:
-            self.close()
-            raise
+                _buf, line = _readline(sock, b'')
+                self._raise_errors(line, cmd_name)
+                return line
+            except Exception:
+                self.socket_pool.destroy(sock)
+                raise
 
     def __setitem__(self, key, value):
         self.set(key, value, noreply=True)
