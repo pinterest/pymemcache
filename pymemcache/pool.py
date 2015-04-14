@@ -24,8 +24,7 @@ class ObjectPool(object):
     """A pool of objects that release/creates/destroys as needed."""
 
     def __init__(self, obj_creator,
-                 after_remove=None, max_size=None,
-                 ):
+                 after_remove=None, max_size=None):
         self._used_objs = collections.deque()
         self._free_objs = collections.deque()
         self._obj_creator = obj_creator
