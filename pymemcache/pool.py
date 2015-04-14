@@ -61,17 +61,25 @@ class ObjectPool(object):
                 self._used_objs.append(self._free_objs.pop())
                 return self._used_objs[-1]
 
-    def destroy(self, obj):
+    def destroy(self, obj, silent=True):
         with self._lock:
-            idx = self._used_objs.index(obj)
-            if self._before_remove is not None:
-                self._before_remove(obj)
-            self._used_objs.pop(idx)
+            try:
+                idx = self._used_objs.index(obj)
+                if self._before_remove is not None:
+                    self._before_remove(obj)
+                self._used_objs.pop(idx)
+            except (ValueError, IndexError):
+                if not silent:
+                    raise
 
-    def release(self, obj):
+    def release(self, obj, silent=True):
         with self._lock:
-            self._used_objs.remove(obj)
-            self._free_objs.append(obj)
+            try:
+                self._used_objs.remove(obj)
+                self._free_objs.append(obj)
+            except (ValueError, IndexError):
+                if not silent:
+                    raise
 
     def clear(self):
         with self._lock:
