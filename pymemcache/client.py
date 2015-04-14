@@ -951,6 +951,10 @@ class PooledClient(object):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             return client.delete_many(keys, noreply=noreply)
 
+    def add(self, key, value, expire=0, noreply=True):
+        with self.client_pool.get_and_release(destroy_on_fail=True) as client:
+            return client.add(key, value, expire=expire, noreply=noreply)
+
     def incr(self, key, value, noreply=False):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             return client.incr(key, value, noreply=noreply)
