@@ -231,7 +231,8 @@ class Client(object):
                  no_delay=False,
                  ignore_exc=False,
                  socket_module=socket,
-                 key_prefix=b''):
+                 key_prefix=b'',
+                 pool_max_size=None):
         """
         Constructor.
 
@@ -254,6 +255,8 @@ class Client(object):
             the standard library's socket module.
           key_prefix: Prefix of key. You can use this as namespace. Defaults
             to b''.
+          pool_max_size: Maximum number of sockets to create & maintain
+            in the per-client socket pool.
 
         Notes:
           The constructor does not make a connection to memcached. The first
@@ -273,7 +276,8 @@ class Client(object):
             raise TypeError("key_prefix should be bytes.")
         self.key_prefix = key_prefix
         self.socket_pool = pool.ObjectPool(
-            self._create_socket, before_remove=self._safe_close_socket)
+            self._create_socket, before_remove=self._safe_close_socket,
+            max_size=pool_max_size)
 
     def check_key(self, key):
         """Checks key and add key_prefix."""
