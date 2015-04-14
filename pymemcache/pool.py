@@ -65,19 +65,21 @@ class ObjectPool(object):
         with self._lock:
             try:
                 idx = self._used_objs.index(obj)
-                if self._before_remove is not None:
-                    self._before_remove(obj)
-                self._used_objs.pop(idx)
-            except (ValueError, IndexError):
+            except ValueError:
                 if not silent:
                     raise
+                else:
+                    return
+            if self._before_remove is not None:
+                self._before_remove(obj)
+            self._used_objs.pop(idx)
 
     def release(self, obj, silent=True):
         with self._lock:
             try:
                 self._used_objs.remove(obj)
                 self._free_objs.append(obj)
-            except (ValueError, IndexError):
+            except ValueError:
                 if not silent:
                     raise
 
