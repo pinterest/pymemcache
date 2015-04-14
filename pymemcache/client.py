@@ -695,12 +695,12 @@ class Client(object):
             try:
                 buf = b''
                 sock.sendall(cmd)
-    
+
                 result = {}
                 while True:
                     buf, line = _readline(sock, buf)
                     self._raise_errors(line, name)
-    
+
                     if line == b'END':
                         return result
                     elif line.startswith(b'VALUE'):
@@ -715,10 +715,10 @@ class Client(object):
     
                         buf, value = _readvalue(sock, buf, int(size))
                         key = checked_keys[key]
-    
+
                         if self.deserializer:
                             value = self.deserializer(key, value, int(flags))
-    
+
                         if expect_cas:
                             result[key] = (value, cas)
                         else:
@@ -762,14 +762,14 @@ class Client(object):
         with self.socket_pool.get_and_release() as sock:
             try:
                 sock.sendall(cmd)
-    
+
                 if noreply:
                     return True
-    
+
                 buf = b''
                 buf, line = _readline(sock, buf)
                 self._raise_errors(line, name)
-    
+
                 if line in VALID_STORE_RESULTS[name]:
                     if line == b'STORED':
                         return True
@@ -789,10 +789,10 @@ class Client(object):
         with self.socket_pool.get_and_release() as sock:
             try:
                 sock.sendall(cmd)
-    
+
                 if noreply:
                     return
-    
+
                 _buf, line = _readline(sock, b'')
                 self._raise_errors(line, cmd_name)
                 return line
