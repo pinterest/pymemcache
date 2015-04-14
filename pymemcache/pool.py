@@ -83,8 +83,6 @@ class ObjectPool(object):
             except ValueError:
                 if not silent:
                     raise
-                else:
-                    return
 
     def release(self, obj, silent=True):
         with self._lock:
