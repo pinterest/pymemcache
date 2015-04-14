@@ -23,7 +23,10 @@ class ObjectPool(object):
         self._obj_creator = obj_creator
         self._lock = threading.Lock()
         self._before_remove = before_remove
-        self.max_size = max_size or 2 ** 31
+        max_size = max_size or 2 ** 31
+        if not isinstance(max_size, (int, long)) or max_size < 0:
+            raise ValueError('"max_size" must be a positive integer')
+        self.max_size = max_size
 
     @property
     def used(self):
