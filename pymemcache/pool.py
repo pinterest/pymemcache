@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import six
+
 import contextlib
 import threading
 
@@ -24,7 +26,7 @@ class ObjectPool(object):
         self._lock = threading.Lock()
         self._before_remove = before_remove
         max_size = max_size or 2 ** 31
-        if not isinstance(max_size, (int, long)) or max_size < 0:
+        if not isinstance(max_size, six.integer_types) or max_size < 0:
             raise ValueError('"max_size" must be a positive integer')
         self.max_size = max_size
 
