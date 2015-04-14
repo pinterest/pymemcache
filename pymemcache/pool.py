@@ -46,7 +46,7 @@ class ObjectPool(object):
         finally:
             try:
                 self.release(obj)
-            except (ValueError, IndexError):
+            except ValueError:
                 pass
 
     def get(self):
