@@ -44,10 +44,7 @@ class ObjectPool(object):
         try:
             yield obj
         finally:
-            try:
-                self.release(obj)
-            except ValueError:
-                pass
+            self.release(obj)
 
     def get(self):
         with self._lock:
