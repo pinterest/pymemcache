@@ -266,7 +266,6 @@ class Client(object):
         self.ignore_exc = ignore_exc
         self.socket_module = socket_module
         self.sock = None
-        self.buf = b''
         if isinstance(key_prefix, six.text_type):
             key_prefix = key_prefix.encode('ascii')
         if not isinstance(key_prefix, bytes):
@@ -307,7 +306,6 @@ class Client(object):
             except Exception:
                 pass
         self.sock = None
-        self.buf = b''
 
     def set(self, key, value, expire=0, noreply=True):
         """
@@ -694,9 +692,10 @@ class Client(object):
 
             self.sock.sendall(cmd)
 
+            buf = b''
             result = {}
             while True:
-                self.buf, line = _readline(self.sock, self.buf)
+                buf, line = _readline(self.sock, buf)
                 self._raise_errors(line, name)
 
                 if line == b'END':
@@ -711,9 +710,7 @@ class Client(object):
                             raise ValueError("Unable to parse line %s: %s"
                                              % (line, str(e)))
 
-                    self.buf, value = _readvalue(self.sock,
-                                                 self.buf,
-                                                 int(size))
+                    buf, value = _readvalue(self.sock, buf, int(size))
                     key = checked_keys[key]
 
                     if self.deserializer:
@@ -767,7 +764,8 @@ class Client(object):
             if noreply:
                 return True
 
-            self.buf, line = _readline(self.sock, self.buf)
+            buf = b''
+            buf, line = _readline(self.sock, buf)
             self._raise_errors(line, name)
 
             if line in VALID_STORE_RESULTS[name]:

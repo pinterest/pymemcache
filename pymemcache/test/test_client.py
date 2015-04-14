@@ -329,7 +329,6 @@ class TestClient(ClientTestMixin, unittest.TestCase):
 
         tools.assert_raises(Exception, _delete)
         tools.assert_equal(client.sock, None)
-        tools.assert_equal(client.buf, b'')
 
     def test_flush_all(self):
         client = self.Client(None)
@@ -346,7 +345,6 @@ class TestClient(ClientTestMixin, unittest.TestCase):
 
         tools.assert_raises(Exception, _incr)
         tools.assert_equal(client.sock, None)
-        tools.assert_equal(client.buf, b'')
 
     def test_get_error(self):
         client = self.Client(None)
@@ -415,7 +413,6 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         result = client.quit()
         tools.assert_equal(result, None)
         tools.assert_equal(client.sock, None)
-        tools.assert_equal(client.buf, b'')
 
     def test_replace_stored(self):
         client = self.Client(None)
@@ -466,7 +463,6 @@ class TestClient(ClientTestMixin, unittest.TestCase):
 
         tools.assert_raises(Exception, _set)
         tools.assert_equal(client.sock, None)
-        tools.assert_equal(client.buf, b'')
 
     def test_set_client_error(self):
         client = self.Client(None)
@@ -513,7 +509,6 @@ class TestClient(ClientTestMixin, unittest.TestCase):
 
         tools.assert_raises(Exception, _set)
         tools.assert_equal(client.sock, None)
-        tools.assert_equal(client.buf, b'')
 
     def test_stats(self):
         client = self.Client(None)
