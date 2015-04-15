@@ -74,14 +74,16 @@ class ObjectPool(object):
                 return obj
 
     def destroy(self, obj, silent=True):
+        was_dropped = False
         with self._lock:
             try:
                 self._used_objs.remove(obj)
-                if self._after_remove is not None:
-                    self._after_remove(obj)
+                was_dropped = True
             except ValueError:
                 if not silent:
                     raise
+        if was_dropped and self._after_remove is not None:
+            self._after_remove(obj)
 
     def release(self, obj, silent=True):
         with self._lock:
@@ -93,12 +95,16 @@ class ObjectPool(object):
                     raise
 
     def clear(self):
-        with self._lock:
-            if self._after_remove is not None:
-                while self._used_objs:
-                    self._after_remove(self._used_objs.pop())
-                while self._free_objs:
-                    self._after_remove(self._free_objs.pop())
-            else:
+        if self._after_remove is not None:
+            needs_destroy = []
+            with self._lock:
+                needs_destroy.extend(self._used_objs)
+                needs_destroy.extend(self._free_objs)
+                self._free_objs.clear()
+                self._used_objs.clear()
+            for obj in needs_destroy:
+                self._after_remove(obj)
+        else:
+            with self._lock:
                 self._free_objs.clear()
                 self._used_objs.clear()
