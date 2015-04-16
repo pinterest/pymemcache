@@ -31,3 +31,5 @@ pip-log.txt
 
 # Swap files.
 *.swp
+
+.pypirc
