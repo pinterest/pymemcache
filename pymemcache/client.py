@@ -836,7 +836,10 @@ class PooledClient(object):
                  ignore_exc=False,
                  socket_module=socket,
                  key_prefix=b'',
-                 max_pool_size=None):
+                 max_pool_size=None,
+                 # Allow this to be a different style of lock (eventlet
+                 # lock/semaphore for example, that works with greenthreads).
+                 lock_generator=None):
         self.server = server
         self.serializer = serializer
         self.deserializer = deserializer
@@ -853,7 +856,8 @@ class PooledClient(object):
         self.client_pool = pool.ObjectPool(
             self._create_client,
             after_remove=lambda client: client.close(),
-            max_size=max_pool_size)
+            max_size=max_pool_size,
+            lock_generator=lock_generator)
 
     def check_key(self, key):
         """Checks key and add key_prefix."""
