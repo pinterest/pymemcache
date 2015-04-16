@@ -69,8 +69,11 @@ Best Practices:
 
 __author__ = "Charles Gordon"
 
-
+import contextlib
+import logging
 import socket
+import sys
+
 import six
 
 from pymemcache import pool
@@ -110,6 +113,22 @@ STAT_TYPES = {
     b'slab_reassign': lambda value: int(value) != 0,
     b'slab_automove': lambda value: int(value) != 0,
 }
+
+LOG = logging.getLogger(__name__)
+
+
+@contextlib.contextmanager
+def _capture_and_reraise():
+    exc_info = sys.exc_info()
+    if not any(exc_info):
+        raise RuntimeError("No active exception being handled")
+    try:
+        yield
+    except Exception:
+        LOG.exception("During exception capturing a secondary exception"
+                      " was raised (it is being dropped)", exc_info=True)
+    finally:
+        six.reraise(exc_info[0], exc_info[1], exc_info[2])
 
 
 class MemcacheError(Exception):
@@ -735,10 +754,12 @@ class Client(object):
                 else:
                     raise MemcacheUnknownError(line[:32])
         except Exception:
-            self.close()
             if self.ignore_exc:
+                self.close()
                 return {}
-            raise
+            else:
+                with _capture_and_reraise():
+                    self.close()
 
     def _store_cmd(self, name, key, expire, noreply, data, cas=None):
         key = self.check_key(key)
@@ -789,8 +810,8 @@ class Client(object):
             else:
                 raise MemcacheUnknownError(line[:32])
         except Exception:
-            self.close()
-            raise
+            with _capture_and_reraise():
+                self.close()
 
     def _misc_cmd(self, cmd, cmd_name, noreply):
         if not self.sock:
@@ -807,8 +828,8 @@ class Client(object):
 
             return line
         except Exception:
-            self.close()
-            raise
+            with _capture_and_reraise():
+                self.close()
 
     def __setitem__(self, key, value):
         self.set(key, value, noreply=True)
