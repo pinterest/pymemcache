@@ -824,7 +824,18 @@ class Client(object):
 
 
 class PooledClient(object):
-    """A thread-safe pool of clients (with the same client api)."""
+    """A thread-safe pool of clients (with the same client api).
+
+    :param max_pool_size: maximum pool size to use (going about this
+                          amount triggers a runtime error), by default this
+                          is 2147483648L when not provided.
+    :param lock_generator: a callback/type that takes no arguments that will
+                           be called to create a lock or sempahore that can
+                           protect the pool from concurrent
+                           access (for example a eventlet lock or semaphore)
+
+    Further arguments are interpreted as for :py:class:`.Client` constructor.
+    """
 
     def __init__(self,
                  server,
