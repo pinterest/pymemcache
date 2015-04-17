@@ -848,8 +848,6 @@ class PooledClient(object):
                  socket_module=socket,
                  key_prefix=b'',
                  max_pool_size=None,
-                 # Allow this to be a different style of lock (eventlet
-                 # lock/semaphore for example, that works with greenthreads).
                  lock_generator=None):
         self.server = server
         self.serializer = serializer
