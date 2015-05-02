@@ -69,10 +69,11 @@ Best Practices:
 
 __author__ = "Charles Gordon"
 
-
+import time
 import socket
 import six
 
+from .ring import HashRing
 from pymemcache import pool
 
 
@@ -113,11 +114,13 @@ STAT_TYPES = {
 
 
 class MemcacheError(Exception):
+
     "Base exception class"
     pass
 
 
 class MemcacheClientError(MemcacheError):
+
     """Raised when memcached fails to parse the arguments to a request, likely
     due to a malformed key and/or value, a bug in this library, or a version
     mismatch with memcached."""
@@ -125,24 +128,28 @@ class MemcacheClientError(MemcacheError):
 
 
 class MemcacheUnknownCommandError(MemcacheClientError):
+
     """Raised when memcached fails to parse a request, likely due to a bug in
     this library or a version mismatch with memcached."""
     pass
 
 
 class MemcacheIllegalInputError(MemcacheClientError):
+
     """Raised when a key or value is not legal for Memcache (see the class docs
     for Client for more details)."""
     pass
 
 
 class MemcacheServerError(MemcacheError):
+
     """Raised when memcached reports a failure while processing a request,
     likely due to a bug or transient issue in memcached."""
     pass
 
 
 class MemcacheUnknownError(MemcacheError):
+
     """Raised when this library receives a response from memcached that it
     cannot parse, likely due to a bug in this library or a version mismatch
     with memcached."""
@@ -150,6 +157,7 @@ class MemcacheUnknownError(MemcacheError):
 
 
 class MemcacheUnexpectedCloseError(MemcacheServerError):
+
     "Raised when the connection with memcached closes unexpectedly."
     pass
 
@@ -172,6 +180,7 @@ def _check_key(key, key_prefix=b''):
 
 
 class Client(object):
+
     """
     A client for a single memcached server.
 
@@ -824,6 +833,7 @@ class Client(object):
 
 
 class PooledClient(object):
+
     """A thread-safe pool of clients (with the same client api)."""
 
     def __init__(self,
@@ -997,6 +1007,244 @@ class PooledClient(object):
 
     def __delitem__(self, key):
         self.delete(key, noreply=True)
+
+
+class ShardingClient(object):
+
+    def __init__(self, clients, black_list_timeout=30):
+
+        self.servers = {}
+        for client in clients:
+            self.servers[client.server] = client
+        self.ring = HashRing(self.servers.keys())
+        self.black_list = {}
+        self.black_list_timeout = black_list_timeout
+
+    def check_key(self, key):
+        """Checks key and add key_prefix."""
+        client = self.get_client(key)
+        return client.check_key(key)
+
+    def in_black_list(self, key):
+        if key not in self.black_list or \
+            (time.time() - self.black_list[k]) > self.black_list_timeout:
+            return False
+        return True
+
+    def get_client(self, key):
+        if not self.in_black_list(key):
+            return self.servers[self.ring.get_node(key)]
+        for node in self.ring.nodes:
+            if not self.in_black_list(node):
+                return self.servers[node]
+
+    def close(self):
+        for server in self.servers.values():
+            server.close()
+
+    def set(self, key, value, expire=0, noreply=True):
+        client = self.get_client(key)
+        try:
+            return client.set(key, value, expire, noreply)
+        except BaseException as e:
+            self.black_list[client.server] = self.black_list_timeout
+            raise e
+
+    def set_many(self, values, expire=0, noreply=True):
+        batch = {}
+        for key, value in values.items():
+            client = self.get_client(key)
+            if client not in batch:
+                batch[client] = {key: value}
+            else:
+                batch[client][key] = value
+
+        for client, batch_dict in batch.items():
+            try:
+                client.set_many(batch_dict)
+            except BaseException as e:
+                self.black_list[client.server] = self.black_list_timeout
+                raise e
+        return True
+
+    def replace(self, key, value, expire=0, noreply=True):
+        client = self.get_client(key)
+        try:
+            return client.replace(key, value, expire, noreply)
+        except BaseException as e:
+            self.black_list[client.server] = self.black_list_timeout
+            raise e
+
+    def append(self, key, value, expire=0, noreply=True):
+        client = self.get_client(key)
+        try:
+            return client.append(key, value, expire, noreply)
+        except BaseException as e:
+            self.black_list[client.server] = self.black_list_timeout
+            raise e
+
+    def prepend(self, key, value, expire=0, noreply=True):
+        client = self.get_client(key)
+        try:
+            return client.prepend(key, value, expire, noreply)
+        except BaseException as e:
+            self.black_list[client.server] = self.black_list_timeout
+            raise e
+
+    def cas(self, key, value, cas, expire=0, noreply=False):
+        client = self.get_client(key)
+        try:
+            return client.cas(key, value, cas, expire, noreply)
+        except BaseException as e:
+            self.black_list[client.server] = self.black_list_timeout
+            raise e
+
+    def get(self, key):
+        client = self.get_client(key)
+        try:
+            return client.get(key)
+        except BaseException as e:
+            self.black_list[client.server] = self.black_list_timeout
+            raise e
+
+    def get_many(self, keys):
+        batch = {}
+        results = {}
+        for key in keys:
+            client = self.get_client(key)
+            if client not in batch:
+                batch[client] = [key]
+            else:
+                batch[client].append(key)
+        for client, keys in batch.items():
+            try:
+                results.update(client.get_many(keys))
+            except BaseException as e:
+                self.black_list[client.server] = self.black_list_timeout
+                raise e
+        return results
+
+    def gets(self, key):
+        client = self.get_client(key)
+        try:
+            return client.gets(key)
+        except BaseException as e:
+            self.black_list[client.server] = self.black_list_timeout
+            raise e
+
+    def gets_many(self, keys):
+        batch = {}
+        results = {}
+        for key in keys:
+            client = self.get_client(key)
+            if client not in batch:
+                batch[client] = [key]
+            else:
+                batch[client].append(key)
+        for client, keys in batch:
+            try:
+                results.update(client.gets_many(keys))
+            except BaseException as e:
+                self.black_list[client.server] = self.black_list_timeout
+                raise e
+        return results
+
+    def delete(self, key, noreply=True):
+        client = self.get_client(key)
+        try:
+            return client.delete(key, noreply)
+        except BaseException as e:
+            self.black_list[client.server] = self.black_list_timeout
+            raise e
+
+    def delete_many(self, keys, noreply=True):
+        batch = {}
+        for key in keys:
+            client = self.get_client(key)
+            if client not in batch:
+                batch[client] = [key]
+            else:
+                batch[client].append(key)
+        for client, keys in batch:
+            try:
+                client.delete_many(keys)
+            except BaseException as e:
+                self.black_list[client.server] = self.black_list_timeout
+                raise e
+        return True
+
+    def add(self, key, value, expire=0, noreply=True):
+        client = self.get_client(key)
+        try:
+            return client.add(key, value, expire, noreply)
+        except BaseException as e:
+            self.black_list[client.server] = self.black_list_timeout
+            raise e
+
+    def incr(self, key, value, noreply=False):
+        client = self.get_client(key)
+        try:
+            return client.incr(key, value, noreply)
+        except BaseException as e:
+            self.black_list[client.server] = self.black_list_timeout
+            raise e
+
+    def decr(self, key, value, noreply=False):
+        client = self.get_client(key)
+        try:
+            return client.decr(key, value, noreply)
+        except BaseException as e:
+            self.black_list[client.server] = self.black_list_timeout
+            raise e
+
+    def touch(self, key, expire=0, noreply=True):
+        client = self.get_client(key)
+        try:
+            return client.touch(key, expire, noreply)
+        except BaseException as e:
+            self.black_list[client.server] = self.black_list_timeout
+            raise e
+
+    def stats(self, *args):
+        results ={}
+        for client in self.clients:
+            results.update(client.stats(*args))
+        return results
+
+    def flush_all(self, delay=0, noreply=True):
+        ok = True
+        for client in self.clients:
+            if not client.flush_all(delay, noreply):
+                ok = False
+        return ok
+
+    def quit(self):
+        for client in self.clients:
+            client.quit()
+
+    def __setitem__(self, key, value):
+        client = self.get_client(key)
+        try:
+            return client.__setitem__(key, value)
+        except BaseException as e:
+            self.black_list[client.server] = self.black_list_timeout
+            raise e
+
+    def __getitem__(self, key):
+        client = self.get_client(key)
+        try:
+            return client.__getitem__(key)
+        except BaseException as e:
+            self.black_list[client.server] = self.black_list_timeout
+            raise e
+
+    def __delitem__(self, key):
+        client = self.get_client(key)
+        try:
+            return client.__delitem__(key)
+        except BaseException as e:
+            self.black_list[client.server] = self.black_list_timeout
+            raise e
 
 
 def _readline(sock, buf):
