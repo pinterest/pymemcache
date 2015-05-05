@@ -15,6 +15,7 @@
 import collections
 import json
 import socket
+import time
 import unittest
 
 from nose import tools
@@ -573,14 +574,15 @@ class TestPooledClient(ClientTestMixin, unittest.TestCase):
 
 class TestShardingClient(ClientTestMixin, unittest.TestCase):
 
+
     def make_client_pool(self, hostname, mock_socket_values, serializer=None):
-        mock_client = Client(None, serializer=serializer)
+        mock_client = Client(hostname, serializer=serializer)
         mock_client.sock = MockSocket(mock_socket_values)
         client = PooledClient(hostname, serializer=serializer)
         client.client_pool = pool.ObjectPool(lambda: mock_client)
         return mock_client
 
-    def make_client(self, mock_socket_values, serializer=None):
+    def make_client(self, mock_socket_values, serializer=None, black_list_timeout=1):
         client1 = self.make_client_pool(
             "127.0.0.1:11012",
             mock_socket_values,
@@ -592,7 +594,17 @@ class TestShardingClient(ClientTestMixin, unittest.TestCase):
             serializer
         )
         
-        return ShardingClient([client1, client2])
+        return ShardingClient([client1, client2], black_list_timeout)
+
+    def test_black_list(self):
+        client = self.make_client([])
+        client.add_black_list("127.0.0.1:11013")
+        tools.assert_equal(len(client.ring.nodes), 1)
+        tools.assert_equal("127.0.0.1:11013" in client.ring.nodes, False)
+        time.sleep(1)
+        client.sync_black_list()
+        tools.assert_equal(len(client.ring.nodes), 2)
+        tools.assert_equal("127.0.0.1:11013" in client.ring.nodes, True)
 
 
 class TestMockClient(ClientTestMixin, unittest.TestCase):
