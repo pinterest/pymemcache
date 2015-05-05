@@ -1,17 +1,21 @@
 # -*- coding: utf-8 -*-
 import sys
+import six
 
 if sys.version_info[0] < 3:
     xrange = xrange
     # sounds weird but I need to set the encoding for python3.3
-    bytes = lambda x, y: str(x)
+    def _bytes(x, encoding="utf-8"):
+        if isinstance(x, six.text_type):
+            return x.encode(encoding)
+        return six.binary_type(x)
+    bytes = _bytes
 else:
     xrange = range
-    bytes_klass = bytes
     def _bytes(x, encoding="utf-8"):
-        if isinstance(x, bytes_klass):
-            return x
-        return bytes_klass(x, encoding)
+        if isinstance(x, six.text_type):
+            return six.binary_type(x, encoding)
+        return x
     bytes = _bytes
 """
     hash_ring
