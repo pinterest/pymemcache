@@ -567,22 +567,30 @@ class TestPooledClient(ClientTestMixin, unittest.TestCase):
     def make_client(self, mock_socket_values, serializer=None):
         mock_client = Client(None, serializer=serializer)
         mock_client.sock = MockSocket(list(mock_socket_values))
-        client = PooledClient(None, serializer=serializer)
+        client = PooledClient("127.0.0.1:17124", serializer=serializer)
         client.client_pool = pool.ObjectPool(lambda: mock_client)
         return client
 
 class TestShardingClient(ClientTestMixin, unittest.TestCase):
+
+    def make_client_pool(self, hostname, mock_socket_values, serializer=None):
+        mock_client = Client(None, serializer=serializer)
+        mock_client.sock = MockSocket(mock_socket_values)
+        client = PooledClient(hostname, serializer=serializer)
+        client.client_pool = pool.ObjectPool(lambda: mock_client)
+        return mock_client
+
     def make_client(self, mock_socket_values, serializer=None):
-        mock_client1 = Client(None, serializer=serializer)
-        mock_client1.sock = MockSocket(list(mock_socket_values))
-        client1 = PooledClient("127.0.0.1:17124", serializer=serializer)
-        client1.client_pool = pool.ObjectPool(lambda: mock_client1)
-
-        mock_client2 = Client(None, serializer=serializer)
-        mock_client2.sock = MockSocket(list(mock_socket_values))
-        client2 = PooledClient("127.0.0.1:17125", serializer=serializer)
-        client2.client_pool = pool.ObjectPool(lambda: mock_client2)
-
+        client1 = self.make_client_pool(
+            "127.0.0.1:11012",
+            mock_socket_values,
+            serializer
+        )
+        client2 = self.make_client_pool(
+            "127.0.0.1:11013",
+            mock_socket_values,
+            serializer
+        )
         
         return ShardingClient([client1, client2])
 
