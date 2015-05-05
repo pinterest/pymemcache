@@ -582,7 +582,7 @@ class TestShardingClient(ClientTestMixin, unittest.TestCase):
         client.client_pool = pool.ObjectPool(lambda: mock_client)
         return mock_client
 
-    def make_client(self, mock_socket_values, serializer=None, black_list_timeout=1):
+    def make_client(self, mock_socket_values, serializer=None, black_list_timeout=0.1):
         client1 = self.make_client_pool(
             "127.0.0.1:11012",
             mock_socket_values,
@@ -593,15 +593,43 @@ class TestShardingClient(ClientTestMixin, unittest.TestCase):
             mock_socket_values,
             serializer
         )
-        
         return ShardingClient([client1, client2], black_list_timeout)
+
+    def test_get_many_all_found(self):
+        client1 = self.make_client_pool(
+            "127.0.0.1:11012",
+            [b'STORED\r\n', b'VALUE key1 0 6\r\nvalue1\r\nEND\r\n',]
+        )
+        client2 = self.make_client_pool(
+            "127.0.0.1:11013",
+            [b'STORED\r\n', b'VALUE key2 0 6\r\nvalue2\r\nEND\r\n',]
+        )
+        client = ShardingClient([client1, client2])
+        result = client.set(b'key1', b'value1', noreply=False)
+        result = client.set(b'key2', b'value2', noreply=False)
+        result = client.get_many([b'key1', b'key2'])
+        tools.assert_equal(result, {b'key1': b'value1', b'key2': b'value2'})
+
+    def test_get_many_some_found(self):
+        client1 = self.make_client_pool(
+            "127.0.0.1:11012",
+            [b'STORED\r\n', b'VALUE key1 0 6\r\nvalue1\r\nEND\r\n',]
+        )
+        client2 = self.make_client_pool(
+            "127.0.0.1:11013",
+            [b'END\r\n']
+        )
+        client = ShardingClient([client1, client2])
+        client.set(b'key1', b'value1', noreply=False)
+        result = client.get_many([b'key1', b'key2'])
+        tools.assert_equal(result, {b'key1': b'value1'})
 
     def test_black_list(self):
         client = self.make_client([])
         client.add_black_list("127.0.0.1:11013")
         tools.assert_equal(len(client.ring.nodes), 1)
         tools.assert_equal("127.0.0.1:11013" in client.ring.nodes, False)
-        time.sleep(1)
+        time.sleep(0.2)
         client.sync_black_list()
         tools.assert_equal(len(client.ring.nodes), 2)
         tools.assert_equal("127.0.0.1:11013" in client.ring.nodes, True)

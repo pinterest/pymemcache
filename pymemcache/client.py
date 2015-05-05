@@ -1047,7 +1047,8 @@ class ShardingClient(object):
     def get_client(self, key):
         if self.black_list:
             self.sync_black_list()
-        return self.servers[self.ring.get_node(key)]
+        client = self.servers[self.ring.get_node(key)]
+        return client
 
     def close(self):
         for server in self.servers.values():
