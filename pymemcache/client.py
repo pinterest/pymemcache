@@ -70,6 +70,7 @@ Best Practices:
 __author__ = "Charles Gordon"
 
 
+import errno
 import socket
 import six
 
@@ -699,7 +700,7 @@ class Client(object):
             if not self.sock:
                 self._connect()
 
-            self.sock.sendall(cmd)
+            _sendall(self.sock, cmd)
 
             buf = b''
             result = {}
@@ -768,8 +769,7 @@ class Client(object):
                + b'\r\n' + data + b'\r\n')
 
         try:
-            self.sock.sendall(cmd)
-
+            _sendall(self.sock, cmd)
             if noreply:
                 return True
 
@@ -797,8 +797,7 @@ class Client(object):
             self._connect()
 
         try:
-            self.sock.sendall(cmd)
-
+            _sendall(self.sock, cmd)
             if noreply:
                 return
 
@@ -1042,7 +1041,7 @@ def _readline(sock, buf):
             chunks.append(buf)
             last_char = buf[-1:]
 
-        buf = sock.recv(RECV_SIZE)
+        buf = _recv(sock, RECV_SIZE)
         if not buf:
             raise MemcacheUnexpectedCloseError()
 
@@ -1073,7 +1072,7 @@ def _readvalue(sock, buf, size):
         if buf:
             rlen -= len(buf)
             chunks.append(buf)
-        buf = sock.recv(RECV_SIZE)
+        buf = _recv(sock, RECV_SIZE)
         if not buf:
             raise MemcacheUnexpectedCloseError()
 
@@ -1090,3 +1089,26 @@ def _readvalue(sock, buf, size):
         chunks.append(buf[:rlen - 2])
 
     return buf[rlen:], b''.join(chunks)
+
+
+def _sendall(sock, data):
+    """sock.sendall() with retry on EINTR
+
+    See https://www.python.org/dev/peps/pep-0475/
+    """
+    while True:
+        try:
+            return sock.sendall(data)
+        except OSError as e:
+            if e.errno != errno.EINTR:
+                raise
+
+
+def _recv(sock, size):
+    """sock.recv() with retry on EINTR"""
+    while True:
+        try:
+            return sock.recv(size)
+        except OSError as e:
+            if e.errno != errno.EINTR:
+                raise
