@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import collections
+import errno
 import json
 import socket
 import unittest
@@ -627,3 +628,20 @@ class TestPrefixedPooledClient(TestPrefixedClient):
         client = PooledClient(None, serializer=serializer, key_prefix=b'xyz:')
         client.client_pool = pool.ObjectPool(lambda: mock_client)
         return client
+
+
+class TestRetryOnEINTR(unittest.TestCase):
+    def make_client(self, values):
+        client = Client(None)
+        client.sock = MockSocket(list(values))
+        return client
+
+    def test_recv(self):
+        client = self.make_client([
+            b'VALUE ',
+            socket.error(errno.EINTR, "Interrupted system call"),
+            b'key1 0 6\r\nval',
+            socket.error(errno.EINTR, "Interrupted system call"),
+            b'ue1\r\nEND\r\n',
+            ])
+        tools.assert_equal(client[b'key1'], b'value1')
