@@ -824,7 +824,19 @@ class Client(object):
 
 
 class PooledClient(object):
-    """A thread-safe pool of clients (with the same client api)."""
+    """A thread-safe pool of clients (with the same client api).
+
+    Args:
+      max_pool_size: maximum pool size to use (going about this amount
+                     triggers a runtime error), by default this is 2147483648L
+                     when not provided (or none).
+      lock_generator: a callback/type that takes no arguments that will
+                      be called to create a lock or sempahore that can
+                      protect the pool from concurrent access (for example a
+                      eventlet lock or semaphore could be used instead)
+
+    Further arguments are interpreted as for :py:class:`.Client` constructor.
+    """
 
     def __init__(self,
                  server,
@@ -836,7 +848,8 @@ class PooledClient(object):
                  ignore_exc=False,
                  socket_module=socket,
                  key_prefix=b'',
-                 max_pool_size=None):
+                 max_pool_size=None,
+                 lock_generator=None):
         self.server = server
         self.serializer = serializer
         self.deserializer = deserializer
@@ -853,7 +866,8 @@ class PooledClient(object):
         self.client_pool = pool.ObjectPool(
             self._create_client,
             after_remove=lambda client: client.close(),
-            max_size=max_pool_size)
+            max_size=max_pool_size,
+            lock_generator=lock_generator)
 
     def check_key(self, key):
         """Checks key and add key_prefix."""
