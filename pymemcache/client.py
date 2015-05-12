@@ -1219,19 +1219,19 @@ class ShardingClient(object):
 
     def stats(self, *args):
         results = {}
-        for client in self.clients:
+        for client in self.servers.values():
             results.update(client.stats(*args))
         return results
 
     def flush_all(self, delay=0, noreply=True):
         ok = True
-        for client in self.clients:
+        for client in self.servers.values():
             if not client.flush_all(delay, noreply):
                 ok = False
         return ok
 
     def quit(self):
-        for client in self.clients:
+        for client in self.servers.values():
             client.quit()
 
     def __setitem__(self, key, value):
