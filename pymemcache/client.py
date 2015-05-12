@@ -69,7 +69,7 @@ Best Practices:
 
 __author__ = "Charles Gordon"
 
-
+import errno
 import socket
 import six
 
@@ -1056,7 +1056,7 @@ def _readline(sock, buf):
             chunks.append(buf)
             last_char = buf[-1:]
 
-        buf = sock.recv(RECV_SIZE)
+        buf = _recv(sock, RECV_SIZE)
         if not buf:
             raise MemcacheUnexpectedCloseError()
 
@@ -1087,7 +1087,7 @@ def _readvalue(sock, buf, size):
         if buf:
             rlen -= len(buf)
             chunks.append(buf)
-        buf = sock.recv(RECV_SIZE)
+        buf = _recv(sock, RECV_SIZE)
         if not buf:
             raise MemcacheUnexpectedCloseError()
 
@@ -1104,3 +1104,13 @@ def _readvalue(sock, buf, size):
         chunks.append(buf[:rlen - 2])
 
     return buf[rlen:], b''.join(chunks)
+
+
+def _recv(sock, size):
+    """sock.recv() with retry on EINTR"""
+    while True:
+        try:
+            return sock.recv(size)
+        except IOError as e:
+            if e.errno != errno.EINTR:
+                raise
