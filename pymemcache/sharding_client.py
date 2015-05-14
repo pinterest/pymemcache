@@ -1,17 +1,80 @@
+# -*- coding: utf-8 -*-
+
+"""
+A comprehensive, fast, pure-Python memcached client library.
+Basic Usage:
+------------
+ from pymemcache.client import Client
+ client = Client(('localhost', 11211))
+ client.set('some_key', 'some_value')
+ result = client.get('some_key')
+
+"""
+
+__author__ = "Duan Hongyi"
+
+
 import time
-from .ring import HashRing
+import six
+from .ring import HashRing, md5_constructor
+
+
+class HashBucket(object):
+    """A container, it obtains data through hash key.
+    @param nodes: a str list.
+    """
+
+    def __init__(self, nodes):
+        self.nodes = nodes
+        self.nodes.sort()
+
+    def _hash(self, key):
+        m = md5_constructor()
+        if isinstance(key, six.text_type):
+            key = key.encode("utf-8")
+        m.update(six.binary_type(key))
+        return int(m.hexdigest(), base=16)
+
+    def get_node(self, key):
+        return self.nodes[self._hash(key) % len(self.nodes)]
+
+
+class RingHashBucket(HashBucket):
+    """A container, it obtains data through ring hash key.
+    Further arguments are interpreted as for :py:class:`.HashBucket` constructor.
+    """
+
+    def __init__(self, nodes):
+        HashBucket.__init__(self, nodes)
+        self.ring = HashRing(self.nodes)
+
+    def get_node(self, key):
+        return self.ring.get_node(key)
 
 
 class ShardingClient(object):
 
-    def __init__(self, clients, black_list_timeout=30):
+    """A consistent hash of clients (with the same client api).
+
+    Args:
+        @param clients: a list of clients (Can be pymemcache.client.Client, 
+                    or pymemcache.client.PooledClient).
+                    need to comply with client API standard.
+        @param black_list_timeout: number of seconds before retrying a
+                    blacklisted server. Default to 30 s
+        @param hash_bucket_cls: a hash_bucket impl, by default this is RingHashBucket
+    """
+
+    def __init__(self, clients, black_list_timeout=30,
+                 hash_bucket_cls=RingHashBucket):
+        self.hash_bucket_cls = hash_bucket_cls
+        self.black_list_timeout = black_list_timeout
 
         self.servers = {}
         for client in clients:
             self.servers[client.server] = client
-        self.ring = HashRing(self.servers.keys())
+        self.hash_bucket = hash_bucket_cls(list(self.servers.keys()))
         self.black_list = {}
-        self.black_list_timeout = black_list_timeout
         self.last_sync_black_list_time = time.time()
 
     def check_key(self, key):
@@ -28,20 +91,21 @@ class ShardingClient(object):
                     del self.black_list[key]
                     need_change_ring = True
             if need_change_ring:
-                self.ring = HashRing(
-                    set(self.servers.keys()) ^ set(self.black_list.keys())
+                self.hash_bucket = self.hash_bucket_cls(
+                    list(
+                        set(self.servers.keys()) ^ set(self.black_list.keys()))
                 )
                 self.last_sync_black_list_time = time.time()
-
-    def add_black_list(self, key):
-        self.black_list[key] = time.time()
-        self.sync_black_list(True)
 
     def get_client(self, key):
         if self.black_list:
             self.sync_black_list()
-        client = self.servers[self.ring.get_node(key)]
+        client = self.servers[self.hash_bucket.get_node(key)]
         return client
+
+    def add_black_list(self, key):
+        self.black_list[key] = time.time()
+        self.sync_black_list(True)
 
     def close(self):
         for server in self.servers.values():

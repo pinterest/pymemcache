@@ -22,6 +22,7 @@ import unittest
 from nose import tools
 from pymemcache.client import PooledClient
 from pymemcache.sharding_client import ShardingClient
+from pymemcache.sharding_client import HashBucket, RingHashBucket
 from pymemcache.client import Client, MemcacheUnknownCommandError
 from pymemcache.client import MemcacheClientError, MemcacheServerError
 from pymemcache.client import MemcacheUnknownError, MemcacheIllegalInputError
@@ -30,6 +31,7 @@ from pymemcache.test.utils import MockMemcacheClient
 
 
 class MockSocket(object):
+
     def __init__(self, recv_bufs):
         self.recv_bufs = collections.deque(recv_bufs)
         self.send_bufs = []
@@ -61,6 +63,7 @@ class MockSocket(object):
 
 
 class MockSocketModule(object):
+
     def socket(self, family, type):
         return MockSocket([])
 
@@ -69,6 +72,7 @@ class MockSocketModule(object):
 
 
 class ClientTestMixin(object):
+
     def make_client(self, mock_socket_values, serializer=None):
         client = Client(None, serializer=serializer)
         client.sock = MockSocket(list(mock_socket_values))
@@ -102,7 +106,7 @@ class ClientTestMixin(object):
 
     def test_set_many_success(self):
         client = self.make_client([b'STORED\r\n'])
-        result = client.set_many({b'key' : b'value'}, noreply=False)
+        result = client.set_many({b'key': b'value'}, noreply=False)
         tools.assert_equal(result, True)
 
     def test_add_stored(self):
@@ -265,7 +269,6 @@ class TestClient(ClientTestMixin, unittest.TestCase):
                                    b'END\r\n'])
         result = client.get_many([b'key1', b'key2'])
         tools.assert_equals(result, {b'key1': b'value1', b'key2': b'value2'})
-
 
         client = self.make_client([b'VALUE key1 0 6\r\n',
                                    b'value1\r\n',
@@ -538,10 +541,12 @@ class TestClient(ClientTestMixin, unittest.TestCase):
 
     def test_key_contains_nonascii(self):
         client = self.make_client([b'END\r\n'])
-        tools.assert_raises(MemcacheClientError, client.get, u'\u3053\u3093\u306b\u3061\u306f')
+        tools.assert_raises(
+            MemcacheClientError, client.get, u'\u3053\u3093\u306b\u3061\u306f')
 
 
 class TestClientSocketConnect(unittest.TestCase):
+
     def test_socket_connect(self):
         server = ("example.com", 11211)
 
@@ -551,8 +556,8 @@ class TestClientSocketConnect(unittest.TestCase):
 
         timeout = 2
         connect_timeout = 3
-        client = Client(server, connect_timeout=connect_timeout, timeout=timeout,
-                        socket_module=MockSocketModule())
+        client = Client(server, connect_timeout=connect_timeout,
+                        timeout=timeout, socket_module=MockSocketModule())
         client._connect()
         tools.assert_equal(client.sock.timeouts, [connect_timeout, timeout])
 
@@ -560,13 +565,15 @@ class TestClientSocketConnect(unittest.TestCase):
         client._connect()
         tools.assert_equal(client.sock.socket_options, [])
 
-        client = Client(server, socket_module=MockSocketModule(), no_delay=True)
+        client = Client(
+            server, socket_module=MockSocketModule(), no_delay=True)
         client._connect()
-        tools.assert_equal(client.sock.socket_options, [(socket.IPPROTO_TCP,
-                                                        socket.TCP_NODELAY, 1)])
+        tools.assert_equal(client.sock.socket_options,
+                           [(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)])
 
 
 class TestPooledClient(ClientTestMixin, unittest.TestCase):
+
     def make_client(self, mock_socket_values, serializer=None):
         mock_client = Client(None, serializer=serializer)
         mock_client.sock = MockSocket(list(mock_socket_values))
@@ -576,6 +583,7 @@ class TestPooledClient(ClientTestMixin, unittest.TestCase):
 
 
 class TestMockClient(ClientTestMixin, unittest.TestCase):
+
     def make_client(self, mock_socket_values, serializer=None):
         client = MockMemcacheClient(None, serializer=serializer)
         client.sock = MockSocket(list(mock_socket_values))
@@ -583,6 +591,7 @@ class TestMockClient(ClientTestMixin, unittest.TestCase):
 
 
 class TestPrefixedClient(ClientTestMixin, unittest.TestCase):
+
     def make_client(self, mock_socket_values, serializer=None):
         client = Client(None, serializer=serializer, key_prefix=b'xyz:')
         client.sock = MockSocket(list(mock_socket_values))
@@ -624,6 +633,7 @@ class TestPrefixedClient(ClientTestMixin, unittest.TestCase):
 
 
 class TestPrefixedPooledClient(TestPrefixedClient):
+
     def make_client(self, mock_socket_values, serializer=None):
         mock_client = Client(None, serializer=serializer, key_prefix=b'xyz:')
         mock_client.sock = MockSocket(list(mock_socket_values))
@@ -633,6 +643,7 @@ class TestPrefixedPooledClient(TestPrefixedClient):
 
 
 class TestRetryOnEINTR(unittest.TestCase):
+
     def make_client(self, values):
         client = Client(None)
         client.sock = MockSocket(list(values))
@@ -645,12 +656,11 @@ class TestRetryOnEINTR(unittest.TestCase):
             b'key1 0 6\r\nval',
             socket.error(errno.EINTR, "Interrupted system call"),
             b'ue1\r\nEND\r\n',
-            ])
+        ])
         tools.assert_equal(client[b'key1'], b'value1')
 
 
 class TestShardingClient(ClientTestMixin, unittest.TestCase):
-
 
     def make_client_pool(self, hostname, mock_socket_values, serializer=None):
         mock_client = Client(hostname, serializer=serializer)
@@ -659,7 +669,9 @@ class TestShardingClient(ClientTestMixin, unittest.TestCase):
         client.client_pool = pool.ObjectPool(lambda: mock_client)
         return mock_client
 
-    def make_client(self, mock_socket_values, serializer=None, black_list_timeout=0.1):
+    def make_client(self, mock_socket_values,
+                    serializer=None, black_list_timeout=0.1,
+                    hash_bucket_cls=HashBucket):
         client1 = self.make_client_pool(
             "127.0.0.1:11012",
             mock_socket_values,
@@ -670,43 +682,92 @@ class TestShardingClient(ClientTestMixin, unittest.TestCase):
             mock_socket_values,
             serializer
         )
-        return ShardingClient([client1, client2], black_list_timeout)
+        return ShardingClient([client1, client2], black_list_timeout,
+                              hash_bucket_cls=hash_bucket_cls)
 
     def test_get_many_all_found(self):
-        client1 = self.make_client_pool(
-            "127.0.0.1:11012",
-            [b'STORED\r\n', b'VALUE key1 0 6\r\nvalue1\r\nEND\r\n',]
-        )
-        client2 = self.make_client_pool(
-            "127.0.0.1:11013",
-            [b'STORED\r\n', b'VALUE key2 0 6\r\nvalue2\r\nEND\r\n',]
-        )
-        client = ShardingClient([client1, client2])
+        def gen_ring_hash_client():
+            client1 = self.make_client_pool(
+                "127.0.0.1:11012",
+                [b'STORED\r\n', b'VALUE key1 0 6\r\nvalue1\r\nEND\r\n', ]
+            )
+            client2 = self.make_client_pool(
+                "127.0.0.1:11013",
+                [b'STORED\r\n', b'VALUE key2 0 6\r\nvalue2\r\nEND\r\n', ]
+            )
+            client = ShardingClient(
+                [client1, client2], hash_bucket_cls=RingHashBucket)
+            return client
+        client = gen_ring_hash_client()
+        result = client.set(b'key1', b'value1', noreply=False)
+        result = client.set(b'key2', b'value2', noreply=False)
+        result = client.get_many([b'key1', b'key2'])
+        tools.assert_equal(result, {b'key1': b'value1', b'key2': b'value2'})
+
+        def gen_hash_client():
+            client1 = self.make_client_pool(
+                "127.0.0.1:11012",
+                [b'STORED\r\n', b'VALUE key2 0 6\r\nvalue2\r\nEND\r\n',]
+            )
+            client2 = self.make_client_pool(
+                "127.0.0.1:11013",
+                [b'STORED\r\n', b'VALUE key1 0 6\r\nvalue1\r\nEND\r\n',]
+            )
+            client = ShardingClient(
+                [client1, client2], hash_bucket_cls=HashBucket)
+            return client
+        client = gen_hash_client()
         result = client.set(b'key1', b'value1', noreply=False)
         result = client.set(b'key2', b'value2', noreply=False)
         result = client.get_many([b'key1', b'key2'])
         tools.assert_equal(result, {b'key1': b'value1', b'key2': b'value2'})
 
     def test_get_many_some_found(self):
-        client1 = self.make_client_pool(
-            "127.0.0.1:11012",
-            [b'STORED\r\n', b'VALUE key1 0 6\r\nvalue1\r\nEND\r\n',]
-        )
-        client2 = self.make_client_pool(
-            "127.0.0.1:11013",
-            [b'END\r\n']
-        )
-        client = ShardingClient([client1, client2])
+        def gen_ring_hash_client():
+            client1 = self.make_client_pool(
+                "127.0.0.1:11012",
+                [b'STORED\r\n', b'VALUE key1 0 6\r\nvalue1\r\nEND\r\n', ]
+            )
+            client2 = self.make_client_pool(
+                "127.0.0.1:11013",
+                [b'END\r\n']
+            )
+            client = ShardingClient(
+                [client1, client2], hash_bucket_cls=RingHashBucket)
+            return client
+        client = gen_ring_hash_client()
         client.set(b'key1', b'value1', noreply=False)
         result = client.get_many([b'key1', b'key2'])
         tools.assert_equal(result, {b'key1': b'value1'})
 
+        def get_hash_client():
+            client1 = self.make_client_pool(
+                "127.0.0.1:11012",
+                [b'END\r\n']
+            )
+            client2 = self.make_client_pool(
+                "127.0.0.1:11013",
+                [b'STORED\r\n', b'VALUE key1 0 6\r\nvalue1\r\nEND\r\n', ]
+                
+            )
+            client = ShardingClient(
+                [client1, client2], hash_bucket_cls=HashBucket)
+            return client
+        client = get_hash_client()
+        client.set(b'key1', b'value1', noreply=False)
+        result = client.get_many([b'key1', b'key2'])
+        tools.assert_equal(result, {b'key1': b'value1'})
+
+
     def test_black_list(self):
-        client = self.make_client([])
-        client.add_black_list("127.0.0.1:11013")
-        tools.assert_equal(len(client.ring.nodes), 1)
-        tools.assert_equal("127.0.0.1:11013" in client.ring.nodes, False)
-        time.sleep(0.2)
-        client.sync_black_list()
-        tools.assert_equal(len(client.ring.nodes), 2)
-        tools.assert_equal("127.0.0.1:11013" in client.ring.nodes, True)
+        c1 = self.make_client([], hash_bucket_cls=HashBucket)
+        c2 = self.make_client([], hash_bucket_cls=RingHashBucket)
+        for client in [c1, c2]:
+            client.add_black_list("127.0.0.1:11013")
+            tools.assert_equal(len(client.hash_bucket.nodes), 1)
+            tools.assert_equal(
+                "127.0.0.1:11013" in client.hash_bucket.nodes, False)
+            time.sleep(0.2)
+            client.sync_black_list()
+            tools.assert_equal(len(client.hash_bucket.nodes), 2)
+            tools.assert_equal("127.0.0.1:11013" in client.hash_bucket.nodes, True)
