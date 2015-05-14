@@ -13,13 +13,14 @@
 # limitations under the License.
 
 import collections
+import errno
 import json
 import socket
-import time
 import unittest
 
 from nose import tools
-from pymemcache.client import PooledClient, ShardingClient
+from pymemcache.client import PooledClient
+from pymemcache.sharding_client import ShardingClient
 from pymemcache.client import Client, MemcacheUnknownCommandError
 from pymemcache.client import MemcacheClientError, MemcacheServerError
 from pymemcache.client import MemcacheUnknownError, MemcacheIllegalInputError
@@ -568,9 +569,67 @@ class TestPooledClient(ClientTestMixin, unittest.TestCase):
     def make_client(self, mock_socket_values, serializer=None):
         mock_client = Client(None, serializer=serializer)
         mock_client.sock = MockSocket(list(mock_socket_values))
-        client = PooledClient("127.0.0.1:17124", serializer=serializer)
+        client = PooledClient(None, serializer=serializer)
         client.client_pool = pool.ObjectPool(lambda: mock_client)
         return client
+
+
+class TestMockClient(ClientTestMixin, unittest.TestCase):
+    def make_client(self, mock_socket_values, serializer=None):
+        client = MockMemcacheClient(None, serializer=serializer)
+        client.sock = MockSocket(list(mock_socket_values))
+        return client
+
+
+class TestPrefixedClient(ClientTestMixin, unittest.TestCase):
+    def make_client(self, mock_socket_values, serializer=None):
+        client = Client(None, serializer=serializer, key_prefix=b'xyz:')
+        client.sock = MockSocket(list(mock_socket_values))
+        return client
+
+    def test_get_found(self):
+        client = self.make_client([
+            b'STORED\r\n',
+            b'VALUE xyz:key 0 5\r\nvalue\r\nEND\r\n',
+        ])
+        result = client.set(b'key', b'value', noreply=False)
+        result = client.get(b'key')
+        tools.assert_equal(result, b'value')
+
+    def test_get_many_some_found(self):
+        client = self.make_client([
+            b'STORED\r\n',
+            b'VALUE xyz:key1 0 6\r\nvalue1\r\nEND\r\n',
+        ])
+        result = client.set(b'key1', b'value1', noreply=False)
+        result = client.get_many([b'key1', b'key2'])
+        tools.assert_equal(result, {b'key1': b'value1'})
+
+    def test_get_many_all_found(self):
+        client = self.make_client([
+            b'STORED\r\n',
+            b'STORED\r\n',
+            b'VALUE xyz:key1 0 6\r\nvalue1\r\n',
+            b'VALUE xyz:key2 0 6\r\nvalue2\r\nEND\r\n',
+        ])
+        result = client.set(b'key1', b'value1', noreply=False)
+        result = client.set(b'key2', b'value2', noreply=False)
+        result = client.get_many([b'key1', b'key2'])
+        tools.assert_equal(result, {b'key1': b'value1', b'key2': b'value2'})
+
+    def test_python_dict_get_is_supported(self):
+        client = self.make_client([b'VALUE xyz:key 0 5\r\nvalue\r\nEND\r\n'])
+        tools.assert_equal(client[b'key'], b'value')
+
+
+class TestPrefixedPooledClient(TestPrefixedClient):
+    def make_client(self, mock_socket_values, serializer=None):
+        mock_client = Client(None, serializer=serializer, key_prefix=b'xyz:')
+        mock_client.sock = MockSocket(list(mock_socket_values))
+        client = PooledClient(None, serializer=serializer, key_prefix=b'xyz:')
+        client.client_pool = pool.ObjectPool(lambda: mock_client)
+        return client
+
 
 class TestShardingClient(ClientTestMixin, unittest.TestCase):
 
@@ -635,58 +694,18 @@ class TestShardingClient(ClientTestMixin, unittest.TestCase):
         tools.assert_equal("127.0.0.1:11013" in client.ring.nodes, True)
 
 
-class TestMockClient(ClientTestMixin, unittest.TestCase):
-    def make_client(self, mock_socket_values, serializer=None):
-        client = MockMemcacheClient(None, serializer=serializer)
-        client.sock = MockSocket(list(mock_socket_values))
+class TestRetryOnEINTR(unittest.TestCase):
+    def make_client(self, values):
+        client = Client(None)
+        client.sock = MockSocket(list(values))
         return client
 
-
-class TestPrefixedClient(ClientTestMixin, unittest.TestCase):
-    def make_client(self, mock_socket_values, serializer=None):
-        client = Client(None, serializer=serializer, key_prefix=b'xyz:')
-        client.sock = MockSocket(list(mock_socket_values))
-        return client
-
-    def test_get_found(self):
+    def test_recv(self):
         client = self.make_client([
-            b'STORED\r\n',
-            b'VALUE xyz:key 0 5\r\nvalue\r\nEND\r\n',
-        ])
-        result = client.set(b'key', b'value', noreply=False)
-        result = client.get(b'key')
-        tools.assert_equal(result, b'value')
-
-    def test_get_many_some_found(self):
-        client = self.make_client([
-            b'STORED\r\n',
-            b'VALUE xyz:key1 0 6\r\nvalue1\r\nEND\r\n',
-        ])
-        result = client.set(b'key1', b'value1', noreply=False)
-        result = client.get_many([b'key1', b'key2'])
-        tools.assert_equal(result, {b'key1': b'value1'})
-
-    def test_get_many_all_found(self):
-        client = self.make_client([
-            b'STORED\r\n',
-            b'STORED\r\n',
-            b'VALUE xyz:key1 0 6\r\nvalue1\r\n',
-            b'VALUE xyz:key2 0 6\r\nvalue2\r\nEND\r\n',
-        ])
-        result = client.set(b'key1', b'value1', noreply=False)
-        result = client.set(b'key2', b'value2', noreply=False)
-        result = client.get_many([b'key1', b'key2'])
-        tools.assert_equal(result, {b'key1': b'value1', b'key2': b'value2'})
-
-    def test_python_dict_get_is_supported(self):
-        client = self.make_client([b'VALUE xyz:key 0 5\r\nvalue\r\nEND\r\n'])
-        tools.assert_equal(client[b'key'], b'value')
-
-
-class TestPrefixedPooledClient(TestPrefixedClient):
-    def make_client(self, mock_socket_values, serializer=None):
-        mock_client = Client(None, serializer=serializer, key_prefix=b'xyz:')
-        mock_client.sock = MockSocket(list(mock_socket_values))
-        client = PooledClient(None, serializer=serializer, key_prefix=b'xyz:')
-        client.client_pool = pool.ObjectPool(lambda: mock_client)
-        return client
+            b'VALUE ',
+            socket.error(errno.EINTR, "Interrupted system call"),
+            b'key1 0 6\r\nval',
+            socket.error(errno.EINTR, "Interrupted system call"),
+            b'ue1\r\nEND\r\n',
+            ])
+        tools.assert_equal(client[b'key1'], b'value1')
