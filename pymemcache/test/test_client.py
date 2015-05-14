@@ -16,6 +16,7 @@ import collections
 import errno
 import json
 import socket
+import time
 import unittest
 
 from nose import tools
@@ -631,6 +632,23 @@ class TestPrefixedPooledClient(TestPrefixedClient):
         return client
 
 
+class TestRetryOnEINTR(unittest.TestCase):
+    def make_client(self, values):
+        client = Client(None)
+        client.sock = MockSocket(list(values))
+        return client
+
+    def test_recv(self):
+        client = self.make_client([
+            b'VALUE ',
+            socket.error(errno.EINTR, "Interrupted system call"),
+            b'key1 0 6\r\nval',
+            socket.error(errno.EINTR, "Interrupted system call"),
+            b'ue1\r\nEND\r\n',
+            ])
+        tools.assert_equal(client[b'key1'], b'value1')
+
+
 class TestShardingClient(ClientTestMixin, unittest.TestCase):
 
 
@@ -692,20 +710,3 @@ class TestShardingClient(ClientTestMixin, unittest.TestCase):
         client.sync_black_list()
         tools.assert_equal(len(client.ring.nodes), 2)
         tools.assert_equal("127.0.0.1:11013" in client.ring.nodes, True)
-
-
-class TestRetryOnEINTR(unittest.TestCase):
-    def make_client(self, values):
-        client = Client(None)
-        client.sock = MockSocket(list(values))
-        return client
-
-    def test_recv(self):
-        client = self.make_client([
-            b'VALUE ',
-            socket.error(errno.EINTR, "Interrupted system call"),
-            b'key1 0 6\r\nval',
-            socket.error(errno.EINTR, "Interrupted system call"),
-            b'ue1\r\nEND\r\n',
-            ])
-        tools.assert_equal(client[b'key1'], b'value1')

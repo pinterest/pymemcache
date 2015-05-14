@@ -24,11 +24,15 @@ class ObjectPool(object):
     """A pool of objects that release/creates/destroys as needed."""
 
     def __init__(self, obj_creator,
-                 after_remove=None, max_size=None):
+                 after_remove=None, max_size=None,
+                 lock_generator=None):
         self._used_objs = collections.deque()
         self._free_objs = collections.deque()
         self._obj_creator = obj_creator
-        self._lock = threading.Lock()
+        if lock_generator is None:
+            self._lock = threading.Lock()
+        else:
+            self._lock = lock_generator()
         self._after_remove = after_remove
         max_size = max_size or 2 ** 31
         if not isinstance(max_size, six.integer_types) or max_size < 0:
