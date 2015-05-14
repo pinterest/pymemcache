@@ -37,7 +37,9 @@ from .ring import HashRing, md5_constructor
 
 class HashBucket(object):
     """A container, it obtains data through hash key.
-    @param nodes: a str list.
+
+    Args:
+        @param nodes: a str list.
     """
 
     def __init__(self, nodes):
