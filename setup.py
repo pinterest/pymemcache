@@ -11,6 +11,7 @@ setup(
     author_email = 'charles@pinterest.com',
     packages = find_packages(),
     tests_require = ['nose>=1.0'],
+    test_suite = 'nose.collector',
     install_requires = ['six'],
     description = 'A comprehensive, fast, pure Python memcached client',
     long_description = open('README.md').read(),
