@@ -33,3 +33,4 @@ pip-log.txt
 *.swp
 
 .pypirc
+docs/_build
