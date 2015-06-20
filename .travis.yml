@@ -4,15 +4,17 @@ language: python
 services:
   - memcached
 
-install: "pip install six"
+env:
+  - TOXENV=py26
+  - TOXENV=py27
+  - TOXENV=py33
+  - TOXENV=py34
+  - TOXENV=pypy
+  - TOXENV=pypy3
 
-python:
-  - 2.6
-  - 2.7
-  - 3.3
-  - 3.4
-  - pypy
+install:
+  - travis_retry pip install tox
 
 script:
-  - python setup.py nosetests
+  - travis_retry tox
   - PYTHONPATH=. python pymemcache/test/integration.py -s localhost -p 11211
