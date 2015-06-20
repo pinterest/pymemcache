@@ -60,6 +60,8 @@ class HashClient(object):
         self.dead_timeout = dead_timeout
         self.use_pooling = use_pooling
         self._failed_clients = {}
+        self._dead_clients = {}
+        self._last_dead_check_time = time.time()
 
         if hasher is None:
             self.hasher = RendezvousHash()
@@ -102,10 +104,25 @@ class HashClient(object):
         self.hasher.add_node(key)
 
     def _remove_server(self, server, port):
+        dead_time = time.time()
+        self._failed_clients.pop((server, port))
+        self._dead_clients[(server, port)] = dead_time
         key = '%s:%s' % (server, port)
         self.hasher.remove_node(key)
 
     def _get_client(self, key):
+        if len(self._dead_clients) > 0:
+            current_time = time.time()
+            ldc = self._last_dead_check_time
+            # we have dead clients and we have reached the
+            # timeout retry
+            if current_time - ldc > self.dead_timeout:
+                for server, dead_time in self._dead_clients.items():
+                    if current_time - dead_time > self.dead_timeout:
+                        print('bringing server back in rotation')
+                        self._add_server(*server)
+                        self._last_dead_check_time = current_time
+
         server = self.hasher.get_node(key)
         print('got server %s' % server)
         client = self.clients[server]
@@ -155,7 +172,6 @@ class HashClient(object):
                 self._failed_clients[client.server] = {
                     'failed_time': time.time(),
                     'attempts': 0,
-                    'is_dead': False
                 }
             # We aren't allowing any retries, we should mark the server as
             # dead immediately
@@ -166,7 +182,6 @@ class HashClient(object):
                 self._failed_clients[client.server] = {
                     'failed_time': time.time(),
                     'attempts': 0,
-                    'is_dead': True
                 }
                 print("marking node as dead %s" % client.server)
                 self._remove_server(*client.server)
