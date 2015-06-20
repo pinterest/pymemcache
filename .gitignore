@@ -35,3 +35,4 @@ pip-log.txt
 .pypirc
 coverage.xml
 \#*\#
+docs/_build

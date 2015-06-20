@@ -31,7 +31,7 @@ You can also use pip:
 Usage
 =====
 
-See the module documentation in pymemcache.client for details.
+See the documentation here: http://pymemcache.readthedocs.org/en/latest/
 
 Comparison with Other Libraries
 ===============================
