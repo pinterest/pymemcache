@@ -1,6 +1,7 @@
 import pytest
 import socket
 
+
 def pytest_addoption(parser):
     parser.addoption('--server', action='store',
                      default='localhost',

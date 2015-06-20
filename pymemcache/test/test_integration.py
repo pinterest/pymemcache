@@ -12,14 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import argparse
 import json
-import socket
 import pytest
 import six
 
-from pymemcache.client import (Client, MemcacheClientError,
-                               MemcacheUnknownCommandError)
+from pymemcache.client import (Client, MemcacheClientError)
 from pymemcache.client import MemcacheIllegalInputError
 
 

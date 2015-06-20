@@ -4,6 +4,7 @@ import pytest
 from pymemcache.test.utils import MockMemcacheClient
 
 
+@pytest.mark.unit()
 def test_get_set():
     client = MockMemcacheClient()
     assert client.get(b"hello") is None
@@ -12,6 +13,7 @@ def test_get_set():
     assert client.get(b"hello") == 12
 
 
+@pytest.mark.unit()
 def test_get_many_set_many():
     client = MockMemcacheClient()
     client.set(b"h", 1)
@@ -26,6 +28,7 @@ def test_get_many_set_many():
     assert client.get_many([b"h", b"e", b"l", b"o"]) == d
 
 
+@pytest.mark.unit()
 def test_add():
     client = MockMemcacheClient()
 
@@ -36,6 +39,7 @@ def test_add():
     assert client.get(b"k") == 2
 
 
+@pytest.mark.unit()
 def test_delete():
     client = MockMemcacheClient()
 
@@ -46,6 +50,7 @@ def test_delete():
     assert client.get(b"k") is None
 
 
+@pytest.mark.unit()
 def test_incr_decr():
     client = MockMemcacheClient()
 

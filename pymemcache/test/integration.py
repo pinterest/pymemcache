@@ -18,8 +18,7 @@ import socket
 
 import six
 
-from pymemcache.client import (Client, MemcacheClientError,
-                               MemcacheUnknownCommandError)
+from pymemcache.client import (Client, MemcacheClientError)
 from pymemcache.client import MemcacheIllegalInputError
 from nose import tools
 

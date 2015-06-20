@@ -103,7 +103,7 @@ class ClientTestMixin(object):
 
     def test_set_many_success(self):
         client = self.make_client([b'STORED\r\n'])
-        result = client.set_many({b'key' : b'value'}, noreply=False)
+        result = client.set_many({b'key': b'value'}, noreply=False)
         assert result is True
 
     def test_add_stored(self):
@@ -268,7 +268,6 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         result = client.get_many([b'key1', b'key2'])
         assert result == {b'key1': b'value1', b'key2': b'value2'}
 
-
         client = self.make_client([b'VALUE key1 0 6\r\n',
                                    b'value1\r\n',
                                    b'VALUE key2 0 6\r\n',
@@ -426,7 +425,7 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         with pytest.raises(Exception):
             _set()
 
-        assert client.sock == None
+        assert client.sock is None
 
     def test_set_client_error(self):
         client = self.make_client([b'CLIENT_ERROR some message\r\n'])
@@ -535,7 +534,7 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         client = self.make_client([b'END\r\n'])
 
         def _get():
-            _ = client[b'key']
+            client[b'key']
 
         with pytest.raises(KeyError):
             _get()
@@ -573,8 +572,9 @@ class TestClientSocketConnect(unittest.TestCase):
 
         timeout = 2
         connect_timeout = 3
-        client = Client(server, connect_timeout=connect_timeout, timeout=timeout,
-                        socket_module=MockSocketModule())
+        client = Client(
+            server, connect_timeout=connect_timeout, timeout=timeout,
+            socket_module=MockSocketModule())
         client._connect()
         assert client.sock.timeouts == [connect_timeout, timeout]
 
@@ -582,7 +582,8 @@ class TestClientSocketConnect(unittest.TestCase):
         client._connect()
         assert client.sock.socket_options == []
 
-        client = Client(server, socket_module=MockSocketModule(), no_delay=True)
+        client = Client(
+            server, socket_module=MockSocketModule(), no_delay=True)
         client._connect()
         assert client.sock.socket_options == [(socket.IPPROTO_TCP,
                                                socket.TCP_NODELAY, 1)]
