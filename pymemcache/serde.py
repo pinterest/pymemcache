@@ -21,9 +21,9 @@ except ImportError:
     from StringIO import StringIO
 
 
-FLAG_PICKLE  = 1<<0
-FLAG_INTEGER = 1<<1
-FLAG_LONG    = 1<<2
+FLAG_PICKLE = 1 << 0
+FLAG_INTEGER = 1 << 1
+FLAG_LONG = 1 << 2
 
 
 def python_memcache_serializer(key, value):
@@ -46,6 +46,7 @@ def python_memcache_serializer(key, value):
 
     return value, flags
 
+
 def python_memcache_deserializer(key, value, flags):
     if flags == 0:
         return value
@@ -61,7 +62,7 @@ def python_memcache_deserializer(key, value, flags):
             buf = StringIO(value)
             unpickler = pickle.Unpickler(buf)
             return unpickler.load()
-        except Exception as e:
+        except Exception:
             logging.info('Pickle error', exc_info=True)
             return None
 

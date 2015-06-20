@@ -128,9 +128,9 @@ class Client(object):
      strings must be encoded (as UTF-8, for example) unless they consist only
      of ASCII characters that are neither whitespace nor control characters.
 
-     Values must have a __str__() method to convert themselves to a byte string.
-     Unicode objects can be a problem since str() on a Unicode object will
-     attempt to encode it as ASCII (which will fail if the value contains
+     Values must have a __str__() method to convert themselves to a byte
+     string. Unicode objects can be a problem since str() on a Unicode object
+     will attempt to encode it as ASCII (which will fail if the value contains
      code points larger than U+127). You can fix this will a serializer or by
      just calling encode on the string (using UTF-8, for instance).
 
@@ -602,7 +602,8 @@ class Client(object):
         Args:
           delay: optional int, the number of seconds to wait before flushing,
                  or zero to flush immediately (the default).
-          noreply: optional bool, True to not wait for the response (the default).
+          noreply: optional bool, True to not wait for the response
+                   (the default).
 
         Returns:
           True.

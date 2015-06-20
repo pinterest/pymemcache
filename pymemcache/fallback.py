@@ -42,6 +42,7 @@ Best Practices:
    old cluster before you switch away from FallbackClient.
 """
 
+
 class FallbackClient(object):
     def __init__(self, caches):
         assert len(caches) > 0
