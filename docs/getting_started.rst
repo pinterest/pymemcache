@@ -7,10 +7,27 @@ Basic Usage
 
 .. code-block:: python
 
-    from pymemcache.client import Client
+    from pymemcache.client.base import Client
 
     client = Client(('localhost', 11211))
     client.set('some_key', 'some_value')
+    result = client.get('some_key')
+
+Using a memcached cluster
+-------------------------
+This will use a consistent hashing algorithm to choose which server to
+set/get the values from. It will also automatically rebalance depending
+on if a server goes down.
+
+.. code-block:: python
+
+    from pymemcache.client.hash import HashClient
+
+    client = HashClient([
+        ('127.0.0.1', 11211),
+        ('127.0.0.1', 11212)
+    ])
+    client.set('some_key', 'some value')
     result = client.get('some_key')
 
 
@@ -20,7 +37,7 @@ Serialization
 .. code-block:: python
 
      import json
-     from pymemcache.client import Client
+     from pymemcache.client.base import Client
 
      def json_serializer(key, value):
          if type(value) == str:

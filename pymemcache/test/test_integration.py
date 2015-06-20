@@ -16,8 +16,11 @@ import json
 import pytest
 import six
 
-from pymemcache.client import (Client, MemcacheClientError)
-from pymemcache.client import MemcacheIllegalInputError
+from pymemcache.client.base import Client
+from pymemcache.exceptions import (
+    MemcacheIllegalInputError,
+    MemcacheClientError
+)
 
 
 @pytest.mark.integration()

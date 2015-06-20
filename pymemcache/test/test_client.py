@@ -19,10 +19,15 @@ import socket
 import unittest
 import pytest
 
-from pymemcache.client import PooledClient
-from pymemcache.client import Client, MemcacheUnknownCommandError
-from pymemcache.client import MemcacheClientError, MemcacheServerError
-from pymemcache.client import MemcacheUnknownError, MemcacheIllegalInputError
+from pymemcache.client.base import PooledClient, Client
+from pymemcache.exceptions import (
+    MemcacheClientError,
+    MemcacheServerError,
+    MemcacheUnknownCommandError,
+    MemcacheUnknownError,
+    MemcacheIllegalInputError
+)
+
 from pymemcache import pool
 from pymemcache.test.utils import MockMemcacheClient
 

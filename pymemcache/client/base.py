@@ -20,6 +20,16 @@ import six
 
 from pymemcache import pool
 
+from pymemcache.exceptions import (
+    MemcacheError,
+    MemcacheClientError,
+    MemcacheUnknownCommandError,
+    MemcacheIllegalInputError,
+    MemcacheServerError,
+    MemcacheUnknownError,
+    MemcacheUnexpectedCloseError
+)
+
 
 RECV_SIZE = 4096
 VALID_STORE_RESULTS = {
@@ -56,49 +66,6 @@ STAT_TYPES = {
     b'slab_automove': lambda value: int(value) != 0,
 }
 
-
-class MemcacheError(Exception):
-    "Base exception class"
-    pass
-
-
-class MemcacheClientError(MemcacheError):
-    """Raised when memcached fails to parse the arguments to a request, likely
-    due to a malformed key and/or value, a bug in this library, or a version
-    mismatch with memcached."""
-    pass
-
-
-class MemcacheUnknownCommandError(MemcacheClientError):
-    """Raised when memcached fails to parse a request, likely due to a bug in
-    this library or a version mismatch with memcached."""
-    pass
-
-
-class MemcacheIllegalInputError(MemcacheClientError):
-    """Raised when a key or value is not legal for Memcache (see the class docs
-    for Client for more details)."""
-    pass
-
-
-class MemcacheServerError(MemcacheError):
-    """Raised when memcached reports a failure while processing a request,
-    likely due to a bug or transient issue in memcached."""
-    pass
-
-
-class MemcacheUnknownError(MemcacheError):
-    """Raised when this library receives a response from memcached that it
-    cannot parse, likely due to a bug in this library or a version mismatch
-    with memcached."""
-    pass
-
-
-class MemcacheUnexpectedCloseError(MemcacheServerError):
-    "Raised when the connection with memcached closes unexpectedly."
-    pass
-
-
 # Common helper functions.
 
 def _check_key(key, key_prefix=b''):
@@ -131,7 +98,7 @@ class Client(object):
      Values must have a __str__() method to convert themselves to a byte
      string. Unicode objects can be a problem since str() on a Unicode object
      will attempt to encode it as ASCII (which will fail if the value contains
-     code points larger than U+127). You can fix this will a serializer or by
+     code points larger than U+127). You can fix this with a serializer or by
      just calling encode on the string (using UTF-8, for instance).
 
      If you intend to use anything but str as a value, it is a good idea to use
