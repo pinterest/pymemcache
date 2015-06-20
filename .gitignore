@@ -34,4 +34,3 @@ pip-log.txt
 
 .pypirc
 docs/_build
-docs/apidoc
