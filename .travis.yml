@@ -16,5 +16,4 @@ install:
   - travis_retry pip install tox
 
 script:
-  - travis_retry tox
-  - python pymemcache/test/integration.py -s localhost -p 11211
+  - travis_retry tox -- -m unit,integration

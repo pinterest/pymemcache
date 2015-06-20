@@ -66,6 +66,7 @@ class MockSocketModule(object):
         return getattr(socket, name)
 
 
+@pytest.mark.unit()
 class ClientTestMixin(object):
     def make_client(self, mock_socket_values, serializer=None):
         client = Client(None, serializer=serializer)
@@ -561,6 +562,7 @@ class TestClient(ClientTestMixin, unittest.TestCase):
             client.get(u'\u3053\u3093\u306b\u3061\u306f')
 
 
+@pytest.mark.unit()
 class TestClientSocketConnect(unittest.TestCase):
     def test_socket_connect(self):
         server = ("example.com", 11211)
@@ -652,6 +654,7 @@ class TestPrefixedPooledClient(TestPrefixedClient):
         return client
 
 
+@pytest.mark.unit()
 class TestRetryOnEINTR(unittest.TestCase):
     def make_client(self, values):
         client = Client(None)
