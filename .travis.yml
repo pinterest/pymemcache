@@ -17,4 +17,4 @@ install:
 
 script:
   - travis_retry tox
-  - PYTHONPATH=. python pymemcache/test/integration.py -s localhost -p 11211
+  - python pymemcache/test/integration.py -s localhost -p 11211
