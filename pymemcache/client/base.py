@@ -623,7 +623,6 @@ class Client(object):
             while True:
                 buf, line = _readline(self.sock, buf)
                 self._raise_errors(line, name)
-
                 if line == b'END':
                     return result
                 elif line.startswith(b'VALUE'):
@@ -651,7 +650,7 @@ class Client(object):
                     result[key] = value
                 else:
                     raise MemcacheUnknownError(line[:32])
-        except Exception:
+        except Exception as e:
             self.close()
             if self.ignore_exc:
                 return {}

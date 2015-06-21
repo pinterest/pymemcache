@@ -87,9 +87,9 @@ class HashClient(object):
             })
 
         for server, port in servers:
-            self._add_server(server, port)
+            self.add_server(server, port)
 
-    def _add_server(self, server, port):
+    def add_server(self, server, port):
         key = '%s:%s' % (server, port)
 
         if self.use_pooling:
@@ -103,7 +103,7 @@ class HashClient(object):
         self.clients[key] = client
         self.hasher.add_node(key)
 
-    def _remove_server(self, server, port):
+    def remove_server(self, server, port):
         dead_time = time.time()
         self._failed_clients.pop((server, port))
         self._dead_clients[(server, port)] = dead_time
@@ -121,7 +121,7 @@ class HashClient(object):
                 for server, dead_time in self._dead_clients.items():
                     if current_time - dead_time > self.dead_timeout:
                         print('bringing server back in rotation')
-                        self._add_server(*server)
+                        self.add_server(*server)
                         self._last_dead_check_time = current_time
 
         server = self.hasher.get_node(key)
@@ -153,7 +153,7 @@ class HashClient(object):
                     # We've reached our max retry attempts, we need to mark
                     # the sever as dead
                     print('marking as dead')
-                    self._remove_server(*client.server)
+                    self.remove_server(*client.server)
 
             result = func(*args, **kwargs)
             return result
@@ -181,7 +181,7 @@ class HashClient(object):
                     'attempts': 0,
                 }
                 print("marking node as dead %s" % client.server)
-                self._remove_server(*client.server)
+                self.remove_server(*client.server)
             # This client has failed previously, we need to update the metadata
             # to reflect that we have attempted it again
             else:
@@ -204,11 +204,39 @@ class HashClient(object):
     def get(self, key, *args, **kwargs):
         return self._run_cmd('get', key, *args, **kwargs)
 
+    def incr(self, key, *args, **kwargs):
+        return self._run_cmd('incr', key, *args, **kwargs)
+
+    def decr(self, key, *args, **kwargs):
+        return self._run_cmd('decr', key, *args, **kwargs)
+
+    def set_many(self, values, *args, **kwargs):
+        client_batches = {}
+        for key, value in values.items():
+            client = self._get_client(key)
+            if client.server not in client_batches:
+                client_batches[client.server] = {}
+
+            client_batches[client.server][key] = value
+
+        end = []
+
+        for server, values in client_batches.items():
+            client = self.clients['%s:%s' % server]
+            new_args = list(args)
+            new_args.insert(0, values)
+            result = self._safely_run_func(
+                client,
+                client.set_many, *new_args, **kwargs
+            )
+            end.append(result)
+
+        return all(end)
+
     def get_many(self, keys, *args, **kwargs):
         client_batches = {}
         for key in keys:
             client = self._get_client(key)
-
             if client.server not in client_batches:
                 client_batches[client.server] = []
 
@@ -218,7 +246,8 @@ class HashClient(object):
 
         for server, keys in client_batches.items():
             client = self.clients['%s:%s' % server]
-            new_args = [keys] + list(args)
+            new_args = list(args)
+            new_args.insert(0, keys)
             result = self._safely_run_func(
                 client,
                 client.get_many, *new_args, **kwargs
