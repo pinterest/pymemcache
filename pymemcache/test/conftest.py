@@ -37,9 +37,12 @@ def pytest_generate_tests(metafunc):
     if 'client_class' in metafunc.fixturenames:
         from pymemcache.client.base import PooledClient, Client
         from pymemcache.client.hash import HashClient
+
         class HashClientSingle(HashClient):
             def __init__(self, server, *args, **kwargs):
-                super(HashClientSingle, self).__init__([server], *args, **kwargs)
+                super(HashClientSingle, self).__init__(
+                    [server], *args, **kwargs
+                )
 
         metafunc.parametrize(
             "client_class", [Client, PooledClient, HashClientSingle]

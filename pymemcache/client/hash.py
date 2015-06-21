@@ -1,7 +1,6 @@
 import socket
-import zlib
 import time
-from pymemcache.client.base import Client, PooledClient
+from pymemcache.client.base import Client, PooledClient, _check_key
 from clandestined import RendezvousHash as RH
 
 
@@ -36,10 +35,10 @@ class HashClient(object):
           servers: list(tuple(hostname, port))
           serializer: optional class with ``serialize`` and ``deserialize``
                       functions.
-          hasher: optional class three functions ``get_node``, ``add_node``, and
-                  ``remove_node``
-
+          hasher: optional class three functions ``get_node``, ``add_node``,
+                  and ``remove_node``
                   defaults to Rendezvous (HRW) hash.
+
           use_pooling: use py:class:`.PooledClient` as the default underlying
                        class. ``max_pool_size`` and ``lock_generator`` can
                        be used with this. default: False
@@ -59,6 +58,7 @@ class HashClient(object):
         self.retry_timeout = retry_timeout
         self.dead_timeout = dead_timeout
         self.use_pooling = use_pooling
+        self.key_prefix = key_prefix
         self._failed_clients = {}
         self._dead_clients = {}
         self._last_dead_check_time = time.time()
@@ -111,6 +111,7 @@ class HashClient(object):
         self.hasher.remove_node(key)
 
     def _get_client(self, key):
+        _check_key(key, self.key_prefix)
         if len(self._dead_clients) > 0:
             current_time = time.time()
             ldc = self._last_dead_check_time
@@ -131,8 +132,8 @@ class HashClient(object):
     def _safely_run_func(self, client, func, *args, **kwargs):
         try:
             if client.server in self._failed_clients:
-                # This server is currently failing, lets check if it is in retry
-                # or marked as dead
+                # This server is currently failing, lets check if it is in
+                # retry or marked as dead
                 failed_metadata = self._failed_clients[client.server]
 
                 # we haven't tried our max amount yet, if it has been enough
@@ -199,9 +200,6 @@ class HashClient(object):
 
     def set(self, key, *args, **kwargs):
         return self._run_cmd('set', key, *args, **kwargs)
-
-    def get(self, key, *args, **kwargs):
-        return self._run_cmd('get', key, *args, **kwargs)
 
     def get(self, key, *args, **kwargs):
         return self._run_cmd('get', key, *args, **kwargs)

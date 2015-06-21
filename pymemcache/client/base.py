@@ -21,7 +21,6 @@ import six
 from pymemcache import pool
 
 from pymemcache.exceptions import (
-    MemcacheError,
     MemcacheClientError,
     MemcacheUnknownCommandError,
     MemcacheIllegalInputError,
@@ -67,6 +66,7 @@ STAT_TYPES = {
 }
 
 # Common helper functions.
+
 
 def _check_key(key, key_prefix=b''):
     """Checks key and add key_prefix."""
