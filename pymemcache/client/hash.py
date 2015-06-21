@@ -128,12 +128,8 @@ class HashClient(object):
         client = self.clients[server]
         return client
 
-    def _run_cmd(self, cmd, key, *args, **kwargs):
+    def _safely_run_func(self, client, func, *args, **kwargs):
         try:
-            can_run = True
-            client = self._get_client(key)
-            func = getattr(client, cmd)
-
             if client.server in self._failed_clients:
                 # This server is currently failing, lets check if it is in retry
                 # or marked as dead
@@ -146,7 +142,7 @@ class HashClient(object):
                     if time.time() - failed_time > self.retry_timeout:
                         print(failed_metadata)
                         print('retrying')
-                        result = func(key, *args, **kwargs)
+                        result = func(*args, **kwargs)
                         # we were successful, lets remove it from the failed
                         # clients
                         self._failed_clients.pop(client.server)
@@ -158,7 +154,7 @@ class HashClient(object):
                     print('marking as dead')
                     self._remove_server(*client.server)
 
-            result = func(key, *args, **kwargs)
+            result = func(*args, **kwargs)
             return result
 
         # Connecting to the server fail, we should enter
@@ -194,8 +190,66 @@ class HashClient(object):
                 failed_metadata['failed_time'] = time.time()
                 self._failed_clients[client.server] = failed_metadata
 
+    def _run_cmd(self, cmd, key, *args, **kwargs):
+        client = self._get_client(key)
+        func = getattr(client, cmd)
+        args = list(args)
+        args.insert(0, key)
+        return self._safely_run_func(client, func, *args, **kwargs)
+
     def set(self, key, *args, **kwargs):
         return self._run_cmd('set', key, *args, **kwargs)
 
     def get(self, key, *args, **kwargs):
         return self._run_cmd('get', key, *args, **kwargs)
+
+    def get(self, key, *args, **kwargs):
+        return self._run_cmd('get', key, *args, **kwargs)
+
+    def get_many(self, keys, *args, **kwargs):
+        client_batches = {}
+        for key in keys:
+            client = self._get_client(key)
+
+            if client.server not in client_batches:
+                client_batches[client.server] = []
+
+            client_batches[client.server].append(key)
+
+        end = {}
+
+        for server, keys in client_batches.items():
+            client = self.clients['%s:%s' % server]
+            new_args = [keys] + list(args)
+            result = self._safely_run_func(
+                client,
+                client.get_many, *new_args, **kwargs
+            )
+            end.update(result)
+
+        return end
+
+    def gets(self, key, *args, **kwargs):
+        return self._run_cmd('gets', key, *args, **kwargs)
+
+    def add(self, key, *args, **kwargs):
+        return self._run_cmd('add', key, *args, **kwargs)
+
+    def prepend(self, key, *args, **kwargs):
+        return self._run_cmd('prepend', key, *args, **kwargs)
+
+    def append(self, key, *args, **kwargs):
+        return self._run_cmd('append', key, *args, **kwargs)
+
+    def delete(self, key, *args, **kwargs):
+        return self._run_cmd('delete', key, *args, **kwargs)
+
+    def cas(self, key, *args, **kwargs):
+        return self._run_cmd('cas', key, *args, **kwargs)
+
+    def replace(self, key, *args, **kwargs):
+        return self._run_cmd('replace', key, *args, **kwargs)
+
+    def flush_all(self):
+        for _, client in self.clients.items():
+            self._safely_run_func(client, client.flush_all)
