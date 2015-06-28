@@ -33,4 +33,6 @@ pip-log.txt
 *.swp
 
 .pypirc
+coverage.xml
+\#*\#
 docs/_build
