@@ -4,18 +4,18 @@ pymemcache.test package
 Submodules
 ----------
 
-pymemcache.test.benchmark module
---------------------------------
+pymemcache.test.conftest module
+-------------------------------
 
-.. automodule:: pymemcache.test.benchmark
+.. automodule:: pymemcache.test.conftest
     :members:
     :undoc-members:
     :show-inheritance:
 
-pymemcache.test.integration module
-----------------------------------
+pymemcache.test.test_benchmark module
+-------------------------------------
 
-.. automodule:: pymemcache.test.integration
+.. automodule:: pymemcache.test.test_benchmark
     :members:
     :undoc-members:
     :show-inheritance:
@@ -24,6 +24,14 @@ pymemcache.test.test_client module
 ----------------------------------
 
 .. automodule:: pymemcache.test.test_client
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pymemcache.test.test_integration module
+---------------------------------------
+
+.. automodule:: pymemcache.test.test_integration
     :members:
     :undoc-members:
     :show-inheritance:
