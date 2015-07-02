@@ -1,7 +1,11 @@
 import socket
 import time
+import logging
+
 from pymemcache.client.base import Client, PooledClient, _check_key
 from clandestined import RendezvousHash as RH
+
+logger = logging.getLogger(__name__)
 
 
 class RendezvousHash(RH):
@@ -18,6 +22,7 @@ class HashClient(object):
         servers,
         hasher=None,
         serializer=None,
+        deserializer=None,
         connect_timeout=None,
         timeout=None,
         no_delay=False,
@@ -31,10 +36,10 @@ class HashClient(object):
         use_pooling=False,
     ):
         """
+        Constructor.
+
         Args:
           servers: list(tuple(hostname, port))
-          serializer: optional class with ``serialize`` and ``deserialize``
-                      functions.
           hasher: optional class three functions ``get_node``, ``add_node``,
                   and ``remove_node``
                   defaults to Rendezvous (HRW) hash.
@@ -45,10 +50,10 @@ class HashClient(object):
 
           retry_attempts: Amount of times a client should be tried before it
                           is marked dead and removed from the pool.
-          retry_timeout: Time in seconds that should pass between retry
-                         attempts.
-          dead_timeout: Time in seconds before attempting to add a node back in
-                        the pool.
+          retry_timeout (float): Time in seconds that should pass between retry
+                                 attempts.
+          dead_timeout (float): Time in seconds before attempting to add a node
+                                back in the pool.
 
         Further arguments are interpreted as for :py:class:`.Client`
         constructor.
@@ -72,13 +77,9 @@ class HashClient(object):
             'no_delay': no_delay,
             'socket_module': socket_module,
             'key_prefix': key_prefix,
+            'serializer': serializer,
+            'deserializer': deserializer,
         }
-
-        if serializer is not None:
-            self.default.kwargs.update({
-                'serializer': serializer.serialize,
-                'deserializer': serializer.deserialize,
-            })
 
         if use_pooling is True:
             self.default_kwargs.update({
@@ -120,12 +121,14 @@ class HashClient(object):
             if current_time - ldc > self.dead_timeout:
                 for server, dead_time in self._dead_clients.items():
                     if current_time - dead_time > self.dead_timeout:
-                        print('bringing server back in rotation')
+                        logger.debug(
+                            'bringing server back into rotation %s',
+                            server
+                        )
                         self.add_server(*server)
                         self._last_dead_check_time = current_time
 
         server = self.hasher.get_node(key)
-        print('got server %s' % server)
         client = self.clients[server]
         return client
 
@@ -141,8 +144,9 @@ class HashClient(object):
                 if failed_metadata['attempts'] < self.retry_attempts:
                     failed_time = failed_metadata['failed_time']
                     if time.time() - failed_time > self.retry_timeout:
-                        print(failed_metadata)
-                        print('retrying')
+                        logger.debug(
+                            'retrying failed server: %s', client.server
+                        )
                         result = func(*args, **kwargs)
                         # we were successful, lets remove it from the failed
                         # clients
@@ -152,7 +156,7 @@ class HashClient(object):
                 else:
                     # We've reached our max retry attempts, we need to mark
                     # the sever as dead
-                    print('marking as dead')
+                    logger.debug('marking server as dead: %s', client.server)
                     self.remove_server(*client.server)
 
             result = func(*args, **kwargs)
@@ -180,12 +184,11 @@ class HashClient(object):
                     'failed_time': time.time(),
                     'attempts': 0,
                 }
-                print("marking node as dead %s" % client.server)
+                logger.debug("marking server as dead %s" % client.server)
                 self.remove_server(*client.server)
             # This client has failed previously, we need to update the metadata
             # to reflect that we have attempted it again
             else:
-                print('incrementing')
                 failed_metadata = self._failed_clients[client.server]
                 failed_metadata['attempts'] += 1
                 failed_metadata['failed_time'] = time.time()

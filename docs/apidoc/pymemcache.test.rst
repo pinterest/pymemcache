@@ -12,10 +12,10 @@ pymemcache.test.benchmark module
     :undoc-members:
     :show-inheritance:
 
-pymemcache.test.integration module
-----------------------------------
+pymemcache.test.conftest module
+-------------------------------
 
-.. automodule:: pymemcache.test.integration
+.. automodule:: pymemcache.test.conftest
     :members:
     :undoc-members:
     :show-inheritance:
@@ -24,6 +24,22 @@ pymemcache.test.test_client module
 ----------------------------------
 
 .. automodule:: pymemcache.test.test_client
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pymemcache.test.test_client_hash module
+---------------------------------------
+
+.. automodule:: pymemcache.test.test_client_hash
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pymemcache.test.test_integration module
+---------------------------------------
+
+.. automodule:: pymemcache.test.test_integration
     :members:
     :undoc-members:
     :show-inheritance:

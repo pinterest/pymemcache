@@ -87,8 +87,7 @@ class Client(object):
     """
     A client for a single memcached server.
 
-    Keys and Values
-    ----------------
+    *Keys and Values*
 
      Keys must have a __str__() method which should return a str with no more
      than 250 ASCII characters and no whitespace or control characters. Unicode
@@ -106,8 +105,7 @@ class Client(object):
      already implemented serializers, including one that is compatible with
      the python-memcache library.
 
-    Serialization and Deserialization
-    ----------------------------------
+    *Serialization and Deserialization*
 
      The constructor takes two optional functions, one for "serialization" of
      values, and one for "deserialization". The serialization function takes
@@ -134,8 +132,7 @@ class Client(object):
 
              raise Exception("Unknown flags for value: {1}".format(flags))
 
-    Error Handling
-    ---------------
+    *Error Handling*
 
      All of the methods in this class that talk to memcached can throw one of
      the following exceptions:
@@ -650,7 +647,7 @@ class Client(object):
                     result[key] = value
                 else:
                     raise MemcacheUnknownError(line[:32])
-        except Exception as e:
+        except Exception:
             self.close()
             if self.ignore_exc:
                 return {}
