@@ -3,14 +3,9 @@ import time
 import logging
 
 from pymemcache.client.base import Client, PooledClient, _check_key
-from clandestined import RendezvousHash as RH
+from pymemcache.client.rendezvous import RendezvousHash
 
 logger = logging.getLogger(__name__)
-
-
-class RendezvousHash(RH):
-    def get_node(self, key):
-        return self.find_node(key)
 
 
 class HashClient(object):
@@ -57,6 +52,11 @@ class HashClient(object):
 
         Further arguments are interpreted as for :py:class:`.Client`
         constructor.
+
+        The default ``hasher`` is using a pure python implementation that can
+        be significantly improved performance wise by switching to a C based
+        version. We recommend using ``python-clandestined`` if having a C
+        dependency is acceptable.
         """
         self.clients = {}
         self.retry_attempts = retry_attempts
