@@ -86,9 +86,9 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         client._get_client = get_clients
 
         with pytest.raises(MemcacheUnknownError):
-            result = client.set(b'key1', b'value1', noreply=False)
-            result = client.set(b'key3', b'value2', noreply=False)
-            result = client.get_many([b'key1', b'key3'])
+            client.set(b'key1', b'value1', noreply=False)
+            client.set(b'key3', b'value2', noreply=False)
+            client.get_many([b'key1', b'key3'])
 
     def test_get_many_bad_server_data_ignore(self):
         client = self.make_client(*[
@@ -104,8 +104,8 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
 
         client._get_client = get_clients
 
-        result = client.set(b'key1', b'value1', noreply=False)
-        result = client.set(b'key3', b'value2', noreply=False)
+        client.set(b'key1', b'value1', noreply=False)
+        client.set(b'key3', b'value2', noreply=False)
         result = client.get_many([b'key1', b'key3'])
         assert result == {}
     # TODO: Test failover logic

@@ -215,7 +215,9 @@ class HashClient(object):
         func = getattr(client, cmd)
         args = list(args)
         args.insert(0, key)
-        return self._safely_run_func(client, func, default_val, *args, **kwargs)
+        return self._safely_run_func(
+            client, func, default_val, *args, **kwargs
+        )
 
     def set(self, key, *args, **kwargs):
         return self._run_cmd('set', key, False, *args, **kwargs)
