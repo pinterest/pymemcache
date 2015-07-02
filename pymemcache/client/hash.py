@@ -53,8 +53,8 @@ class HashClient(object):
         Further arguments are interpreted as for :py:class:`.Client`
         constructor.
 
-        The default ``hasher`` is using a pure python implementation that can be
-        significantly improved performance wise by switching to a C based
+        The default ``hasher`` is using a pure python implementation that can
+        be significantly improved performance wise by switching to a C based
         version. We recommend using ``python-clandestined`` if having a C
         dependency is acceptable.
         """
