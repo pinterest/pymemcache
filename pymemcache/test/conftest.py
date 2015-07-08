@@ -11,6 +11,14 @@ def pytest_addoption(parser):
                      default='11211',
                      help='memcached server port')
 
+    parser.addoption('--size', action='store',
+                     default=1024,
+                     help='size of data in benchmarks')
+
+    parser.addoption('--count', action='store',
+                     default=10000,
+                     help='amount of values to use in  benchmarks')
+
 
 @pytest.fixture(scope='session')
 def host(request):
@@ -20,6 +28,16 @@ def host(request):
 @pytest.fixture(scope='session')
 def port(request):
     return int(request.config.option.port)
+
+
+@pytest.fixture(scope='session')
+def size(request):
+    return int(request.config.option.size)
+
+
+@pytest.fixture(scope='session')
+def count(request):
+    return int(request.config.option.count)
 
 
 def pytest_generate_tests(metafunc):
