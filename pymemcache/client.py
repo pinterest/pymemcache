@@ -693,7 +693,12 @@ class Client(object):
     def _store_cmd(self, name, key, expire, noreply, data, cas=None):
         key = self.check_key(key)
         if not self.sock:
-            self._connect()
+            try:
+                self._connect()
+            except Exception:
+                if self.ignore_exc:
+                    return None
+                raise
 
         if self.serializer:
             data, flags = self.serializer(key, data)
@@ -743,8 +748,13 @@ class Client(object):
             raise
 
     def _misc_cmd(self, cmd, cmd_name, noreply):
-        if not self.sock:
-            self._connect()
+        try:
+            if not self.sock:
+                self._connect()
+        except Exception:
+            if self.ignore_exc:
+                return None
+            raise
 
         try:
             self.sock.sendall(cmd)
