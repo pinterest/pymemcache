@@ -1,8 +1,8 @@
 pymemcache
 ==========
 
-[![Build
-Status](https://travis-ci.org/pinterest/pymemcache.png)](https://travis-ci.org/pinterest/pymemcache)
+.. image:: https://travis-ci.org/pinterest/pymemcache.png
+    :target: https://travis-ci.org/pinterest/pymemcache
 
 A comprehensive, fast, pure-Python memcached client.
 
@@ -19,12 +19,16 @@ Installing pymemcache
 
 You can install pymemcache manually, with Nose tests, by doing the following:
 
+.. code-block:: bash
+
     git clone https://github.com/pinterest/pymemcache.git
     cd pymemcache
     python setup.py nosetests
     sudo python setup.py install
 
 You can also use pip:
+
+.. code-block:: bash
 
     sudo pip install https://github.com/pinterest/pymemcache.git
 
@@ -83,17 +87,17 @@ Mixpanel's pure Python memcached client:
 Credits
 =======
 
-* [Charles Gordon](http://github.com/cgordon)
-* [Dave Dash](http://github.com/davedash)
-* [Dan Crosta](http://github.com/dcrosta)
-* [Julian Berman](http://github.com/Julian)
-* [Mark Shirley](http://github.com/maspwr)
-* [Tim Bart](http://github.com/pims)
-* [Thomas Orozco](http://github.com/krallin)
-* [Marc Abramowitz](http://github.com/msabramo)
-* [Marc-Andre Courtois](http://github.com/mcourtois)
-* [Julien Danjou](http://github.com/jd)
-* [INADA Naoki](http://github.com/methane)
-* [James Socol](http://github.com/jsocol)
-* [Joshua Harlow](http://github.com/harlowja)
-* [John Anderson](http://github.com/sontek)
+* `Charles Gordon <http://github.com/cgordon>`_
+* `Dave Dash <http://github.com/davedash>`_
+* `Dan Crosta <http://github.com/dcrosta>`_
+* `Julian Berman <http://github.com/Julian>`_
+* `Mark Shirley <http://github.com/maspwr>`_
+* `Tim Bart <http://github.com/pims>`_
+* `Thomas Orozco <http://github.com/krallin>`_
+* `Marc Abramowitz <http://github.com/msabramo>`_
+* `Marc-Andre Courtois <http://github.com/mcourtois>`_
+* `Julien Danjou <http://github.com/jd>`_
+* `INADA Naoki <http://github.com/methane>`_
+* `James Socol <http://github.com/jsocol>`_
+* `Joshua Harlow <http://github.com/harlowja>`_
+* `John Anderson <http://github.com/sontek>`_
