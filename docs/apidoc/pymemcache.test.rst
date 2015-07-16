@@ -28,10 +28,26 @@ pymemcache.test.test_client module
     :undoc-members:
     :show-inheritance:
 
+pymemcache.test.test_client_hash module
+---------------------------------------
+
+.. automodule:: pymemcache.test.test_client_hash
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pymemcache.test.test_integration module
 ---------------------------------------
 
 .. automodule:: pymemcache.test.test_integration
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pymemcache.test.test_rendezvous module
+--------------------------------------
+
+.. automodule:: pymemcache.test.test_rendezvous
     :members:
     :undoc-members:
     :show-inheritance:

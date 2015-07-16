@@ -20,6 +20,22 @@ pymemcache.client.hash module
     :undoc-members:
     :show-inheritance:
 
+pymemcache.client.murmur3 module
+--------------------------------
+
+.. automodule:: pymemcache.client.murmur3
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pymemcache.client.rendezvous module
+-----------------------------------
+
+.. automodule:: pymemcache.client.rendezvous
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------
