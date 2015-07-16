@@ -29,6 +29,7 @@ class HashClient(object):
         retry_timeout=1,
         dead_timeout=60,
         use_pooling=False,
+        ignore_exc=False,
     ):
         """
         Constructor.
@@ -64,6 +65,7 @@ class HashClient(object):
         self.dead_timeout = dead_timeout
         self.use_pooling = use_pooling
         self.key_prefix = key_prefix
+        self.ignore_exc = ignore_exc
         self._failed_clients = {}
         self._dead_clients = {}
         self._last_dead_check_time = time.time()
@@ -132,7 +134,7 @@ class HashClient(object):
         client = self.clients[server]
         return client
 
-    def _safely_run_func(self, client, func, *args, **kwargs):
+    def _safely_run_func(self, client, func, default_val, *args, **kwargs):
         try:
             if client.server in self._failed_clients:
                 # This server is currently failing, lets check if it is in
@@ -152,7 +154,7 @@ class HashClient(object):
                         # clients
                         self._failed_clients.pop(client.server)
                         return result
-                    return
+                    return default_val
                 else:
                     # We've reached our max retry attempts, we need to mark
                     # the sever as dead
@@ -194,24 +196,40 @@ class HashClient(object):
                 failed_metadata['failed_time'] = time.time()
                 self._failed_clients[client.server] = failed_metadata
 
-    def _run_cmd(self, cmd, key, *args, **kwargs):
+            # if we haven't enabled ignore_exc, don't move on gracefully, just
+            # raise the exception
+            if not self.ignore_exc:
+                raise
+
+            return default_val
+        except:
+            # any exceptions that aren't socket.error we need to handle
+            # gracefully as well
+            if not self.ignore_exc:
+                raise
+
+            return default_val
+
+    def _run_cmd(self, cmd, key, default_val, *args, **kwargs):
         client = self._get_client(key)
         func = getattr(client, cmd)
         args = list(args)
         args.insert(0, key)
-        return self._safely_run_func(client, func, *args, **kwargs)
+        return self._safely_run_func(
+            client, func, default_val, *args, **kwargs
+        )
 
     def set(self, key, *args, **kwargs):
-        return self._run_cmd('set', key, *args, **kwargs)
+        return self._run_cmd('set', key, False, *args, **kwargs)
 
     def get(self, key, *args, **kwargs):
-        return self._run_cmd('get', key, *args, **kwargs)
+        return self._run_cmd('get', key, None, *args, **kwargs)
 
     def incr(self, key, *args, **kwargs):
-        return self._run_cmd('incr', key, *args, **kwargs)
+        return self._run_cmd('incr', key, False, *args, **kwargs)
 
     def decr(self, key, *args, **kwargs):
-        return self._run_cmd('decr', key, *args, **kwargs)
+        return self._run_cmd('decr', key, False, *args, **kwargs)
 
     def set_many(self, values, *args, **kwargs):
         client_batches = {}
@@ -230,7 +248,7 @@ class HashClient(object):
             new_args.insert(0, values)
             result = self._safely_run_func(
                 client,
-                client.set_many, *new_args, **kwargs
+                client.set_many, False, *new_args, **kwargs
             )
             end.append(result)
 
@@ -253,33 +271,33 @@ class HashClient(object):
             new_args.insert(0, keys)
             result = self._safely_run_func(
                 client,
-                client.get_many, *new_args, **kwargs
+                client.get_many, {}, *new_args, **kwargs
             )
             end.update(result)
 
         return end
 
     def gets(self, key, *args, **kwargs):
-        return self._run_cmd('gets', key, *args, **kwargs)
+        return self._run_cmd('gets', key, None, *args, **kwargs)
 
     def add(self, key, *args, **kwargs):
-        return self._run_cmd('add', key, *args, **kwargs)
+        return self._run_cmd('add', key, False, *args, **kwargs)
 
     def prepend(self, key, *args, **kwargs):
-        return self._run_cmd('prepend', key, *args, **kwargs)
+        return self._run_cmd('prepend', key, False, *args, **kwargs)
 
     def append(self, key, *args, **kwargs):
-        return self._run_cmd('append', key, *args, **kwargs)
+        return self._run_cmd('append', key, False, *args, **kwargs)
 
     def delete(self, key, *args, **kwargs):
-        return self._run_cmd('delete', key, *args, **kwargs)
+        return self._run_cmd('delete', key, False, *args, **kwargs)
 
     def cas(self, key, *args, **kwargs):
-        return self._run_cmd('cas', key, *args, **kwargs)
+        return self._run_cmd('cas', key, False, *args, **kwargs)
 
     def replace(self, key, *args, **kwargs):
-        return self._run_cmd('replace', key, *args, **kwargs)
+        return self._run_cmd('replace', key, False, *args, **kwargs)
 
     def flush_all(self):
         for _, client in self.clients.items():
-            self._safely_run_func(client, client.flush_all)
+            self._safely_run_func(client, client.flush_all, False)
