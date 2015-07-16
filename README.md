@@ -72,7 +72,7 @@ The memcached text protocol reference page:
   https://github.com/memcached/memcached/blob/master/doc/protocol.txt
 
 The python-memcached library (another pure-Python library):
-  http://www.tummy.com/Community/software/python-memcached/
+  https://github.com/linsomniac/python-memcached
 
 Mixpanel's Blog post about their memcached client for Python:
   http://code.mixpanel.com/2012/07/16/we-went-down-so-we-wrote-a-better-pure-python-memcache-client/
