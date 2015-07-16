@@ -1,8 +1,15 @@
 #!/usr/bin/env python
+import os
 
 from setuptools import setup, find_packages
 
 from pymemcache import __version__
+
+def read(fname):
+    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+
+readme = read('README.md')
+changelog = read('ChangeLog.rst')
 
 setup(
     name='pymemcache',
@@ -12,7 +19,7 @@ setup(
     packages=find_packages(),
     install_requires=['six'],
     description='A comprehensive, fast, pure Python memcached client',
-    long_description=open('README.md').read(),
+    long_description=readme + '\n' + changelog,
     license='Apache License 2.0',
     url='https://github.com/Pinterest/pymemcache',
     classifiers=[
