@@ -6,15 +6,16 @@ Subpackages
 
 .. toctree::
 
+    pymemcache.client
     pymemcache.test
 
 Submodules
 ----------
 
-pymemcache.client module
-------------------------
+pymemcache.exceptions module
+----------------------------
 
-.. automodule:: pymemcache.client
+.. automodule:: pymemcache.exceptions
     :members:
     :undoc-members:
     :show-inheritance:

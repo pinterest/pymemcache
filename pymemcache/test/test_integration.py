@@ -16,13 +16,16 @@ import json
 import pytest
 import six
 
-from pymemcache.client import (Client, MemcacheClientError)
-from pymemcache.client import MemcacheIllegalInputError
+from pymemcache.client.base import Client
+from pymemcache.exceptions import (
+    MemcacheIllegalInputError,
+    MemcacheClientError
+)
 
 
 @pytest.mark.integration()
-def test_get_set(host, port, socket_module):
-    client = Client((host, port), socket_module=socket_module)
+def test_get_set(client_class, host, port, socket_module):
+    client = client_class((host, port), socket_module=socket_module)
     client.flush_all()
 
     result = client.get('key')
@@ -44,8 +47,8 @@ def test_get_set(host, port, socket_module):
 
 
 @pytest.mark.integration()
-def test_add_replace(host, port, socket_module):
-    client = Client((host, port), socket_module=socket_module)
+def test_add_replace(client_class, host, port, socket_module):
+    client = client_class((host, port), socket_module=socket_module)
     client.flush_all()
 
     result = client.add(b'key', b'value', noreply=False)
@@ -70,8 +73,8 @@ def test_add_replace(host, port, socket_module):
 
 
 @pytest.mark.integration()
-def test_append_prepend(host, port, socket_module):
-    client = Client((host, port), socket_module=socket_module)
+def test_append_prepend(client_class, host, port, socket_module):
+    client = client_class((host, port), socket_module=socket_module)
     client.flush_all()
 
     result = client.append(b'key', b'value', noreply=False)
@@ -98,10 +101,9 @@ def test_append_prepend(host, port, socket_module):
 
 
 @pytest.mark.integration()
-def test_cas(host, port, socket_module):
-    client = Client((host, port), socket_module=socket_module)
+def test_cas(client_class, host, port, socket_module):
+    client = client_class((host, port), socket_module=socket_module)
     client.flush_all()
-
     result = client.cas(b'key', b'value', b'1', noreply=False)
     assert result is None
 
@@ -122,8 +124,8 @@ def test_cas(host, port, socket_module):
 
 
 @pytest.mark.integration()
-def test_gets(host, port, socket_module):
-    client = Client((host, port), socket_module=socket_module)
+def test_gets(client_class, host, port, socket_module):
+    client = client_class((host, port), socket_module=socket_module)
     client.flush_all()
 
     result = client.gets(b'key')
@@ -136,8 +138,8 @@ def test_gets(host, port, socket_module):
 
 
 @pytest.mark.delete()
-def test_delete(host, port, socket_module):
-    client = Client((host, port), socket_module=socket_module)
+def test_delete(client_class, host, port, socket_module):
+    client = client_class((host, port), socket_module=socket_module)
     client.flush_all()
 
     result = client.delete(b'key', noreply=False)
@@ -154,7 +156,7 @@ def test_delete(host, port, socket_module):
 
 
 @pytest.mark.integration()
-def test_incr_decr(host, port, socket_module):
+def test_incr_decr(client_class, host, port, socket_module):
     client = Client((host, port), socket_module=socket_module)
     client.flush_all()
 
@@ -182,7 +184,7 @@ def test_incr_decr(host, port, socket_module):
 
 
 @pytest.mark.integration()
-def test_misc(host, port, socket_module):
+def test_misc(client_class, host, port, socket_module):
     client = Client((host, port), socket_module=socket_module)
     client.flush_all()
 
@@ -208,8 +210,8 @@ def test_serialization_deserialization(host, port, socket_module):
 
 
 @pytest.mark.integration()
-def test_errors(host, port, socket_module):
-    client = Client((host, port), socket_module=socket_module)
+def test_errors(client_class, host, port, socket_module):
+    client = client_class((host, port), socket_module=socket_module)
     client.flush_all()
 
     def _key_with_ws():
