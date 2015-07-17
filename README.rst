@@ -4,6 +4,10 @@ pymemcache
 .. image:: https://travis-ci.org/pinterest/pymemcache.png
     :target: https://travis-ci.org/pinterest/pymemcache
 
+.. image:: https://readthedocs.org/projects/pymemcache/badge/?version=master
+        :target: http://pymemcache.readthedocs.org/en/latest/
+        :alt: Master Documentation Status
+
 A comprehensive, fast, pure-Python memcached client.
 
 pymemcache supports the following features:
