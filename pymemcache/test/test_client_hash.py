@@ -6,6 +6,7 @@ from pymemcache import pool
 from .test_client import ClientTestMixin, MockSocket
 import unittest
 import pytest
+import mock
 
 
 class TestHashClient(ClientTestMixin, unittest.TestCase):
@@ -33,6 +34,16 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
             current_port += 1
 
         return client
+
+    def test_setup_client_without_pooling(self):
+        with mock.patch('pymemcache.client.hash.Client') as internal_client:
+            client = HashClient([], timeout=999, key_prefix='foo_bar_baz')
+            client.add_server('127.0.0.1', '11211')
+
+        assert internal_client.call_args[0][0] == ('127.0.0.1', '11211')
+        kwargs = internal_client.call_args[1]
+        assert kwargs['timeout'] == 999
+        assert kwargs['key_prefix'] == 'foo_bar_baz'
 
     def test_get_many_all_found(self):
         client = self.make_client(*[
