@@ -101,7 +101,7 @@ class HashClient(object):
                 **self.default_kwargs
             )
         else:
-            client = Client((server, port))
+            client = Client((server, port), **self.default_kwargs)
 
         self.clients[key] = client
         self.hasher.add_node(key)
