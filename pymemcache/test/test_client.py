@@ -148,6 +148,11 @@ class ClientTestMixin(object):
         result = client.get_many([b'key1', b'key2'])
         assert result == {}
 
+    def test_get_multi_none_found(self):
+        client = self.make_client([b'END\r\n'])
+        result = client.get_multi([b'key1', b'key2'])
+        assert result == {}
+
     def test_get_many_some_found(self):
         client = self.make_client([
             b'STORED\r\n',

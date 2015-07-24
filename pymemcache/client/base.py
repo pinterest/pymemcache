@@ -389,6 +389,8 @@ class Client(object):
 
         return self._fetch_cmd(b'get', keys, False)
 
+    get_multi = get_many
+
     def gets(self, key):
         """
         The memcached "gets" command for one key, as a convenience.
@@ -851,6 +853,8 @@ class PooledClient(object):
                     return {}
                 else:
                     raise
+
+    get_multi = get_many
 
     def gets(self, key):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:

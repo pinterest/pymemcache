@@ -279,6 +279,8 @@ class HashClient(object):
 
         return end
 
+    get_multi = get_many
+
     def gets(self, key, *args, **kwargs):
         return self._run_cmd('gets', key, None, *args, **kwargs)
 

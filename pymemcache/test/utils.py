@@ -63,6 +63,8 @@ class MockMemcacheClient(object):
                 out[key] = value
         return out
 
+    get_multi = get_many
+
     def set(self, key, value, expire=0, noreply=True):
         if isinstance(key, six.text_type):
             raise MemcacheIllegalInputError(key)
