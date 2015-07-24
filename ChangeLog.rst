@@ -1,7 +1,7 @@
 Change Log
 ==========
 New in version 1.3.0
-----------
+--------------------
 * Python 3 Support
 * Introduced HashClient that uses consistent hasing for allocating keys
   across many memcached nodes. It also can detect servers going down
