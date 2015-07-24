@@ -4,6 +4,9 @@ pymemcache
 .. image:: https://travis-ci.org/pinterest/pymemcache.png
     :target: https://travis-ci.org/pinterest/pymemcache
 
+.. image:: https://img.shields.io/pypi/v/pymemcache.svg
+    :target: https://pypi.python.org/pypi/pymemcache
+
 .. image:: https://readthedocs.org/projects/pymemcache/badge/?version=master
         :target: http://pymemcache.readthedocs.org/en/latest/
         :alt: Master Documentation Status
@@ -21,20 +24,19 @@ pymemcache supports the following features:
 Installing pymemcache
 =====================
 
-You can install pymemcache manually, with Nose tests, by doing the following:
+Install from pip:
+
+.. code-block:: bash
+
+  pip install pymemcache
+
+For development, clone from github and run the tests with:
 
 .. code-block:: bash
 
     git clone https://github.com/pinterest/pymemcache.git
     cd pymemcache
     python setup.py nosetests
-    sudo python setup.py install
-
-You can also use pip:
-
-.. code-block:: bash
-
-    sudo pip install https://github.com/pinterest/pymemcache.git
 
 Usage
 =====
