@@ -115,6 +115,11 @@ class MockMemcacheClient(object):
         present = current is not None
         return noreply or present
 
+    def delete_many(self, keys, noreply=True):
+        for key in keys:
+            self.delete(key, noreply)
+        return True
+
     def stats(self):
         # I make no claim that these values make any sense, but the format
         # of the output is the same as for pymemcache.client.Client.stats()

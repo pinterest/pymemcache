@@ -199,6 +199,32 @@ class ClientTestMixin(object):
         result = client.delete(b'key', noreply=True)
         assert result is True
 
+    def test_delete_many_no_keys(self):
+        client = self.make_client([])
+        result = client.delete_many([], noreply=False)
+        assert result is True
+
+    def test_delete_many_none_found(self):
+        client = self.make_client([b'NOT_FOUND\r\n'])
+        result = client.delete_many([b'key'], noreply=False)
+        assert result is True
+
+    def test_delete_many_found(self):
+        client = self.make_client([b'STORED\r', b'\n', b'DELETED\r\n'])
+        result = client.add(b'key', b'value', noreply=False)
+        result = client.delete_many([b'key'], noreply=False)
+        assert result is True
+
+    def test_delete_many_some_found(self):
+        client = self.make_client([
+            b'STORED\r\n',
+            b'DELETED\r\n',
+            b'NOT_FOUND\r\n'
+        ])
+        result = client.add(b'key', b'value', noreply=False)
+        result = client.delete_many([b'key', b'key2'], noreply=False)
+        assert result is True
+
     def test_incr_not_found(self):
         client = self.make_client([b'NOT_FOUND\r\n'])
         result = client.incr(b'key', 1, noreply=False)

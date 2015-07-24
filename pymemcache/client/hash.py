@@ -296,6 +296,11 @@ class HashClient(object):
     def delete(self, key, *args, **kwargs):
         return self._run_cmd('delete', key, False, *args, **kwargs)
 
+    def delete_many(self, keys, *args, **kwargs):
+        for key in keys:
+            self._run_cmd('delete', key, False, *args, **kwargs)
+        return True
+
     def cas(self, key, *args, **kwargs):
         return self._run_cmd('cas', key, False, *args, **kwargs)
 
