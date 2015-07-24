@@ -271,6 +271,8 @@ class Client(object):
             self.set(key, value, expire, noreply)
         return True
 
+    set_multi = set_many
+
     def add(self, key, value, expire=0, noreply=True):
         """
         The memcached "add" command.
@@ -810,6 +812,8 @@ class PooledClient(object):
     def set_many(self, values, expire=0, noreply=True):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             return client.set_many(values, expire=expire, noreply=noreply)
+
+    set_multi = set_many
 
     def replace(self, key, value, expire=0, noreply=True):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:

@@ -84,6 +84,8 @@ class MockMemcacheClient(object):
             self.set(key, value, expire, noreply)
         return True
 
+    set_multi = set_many
+
     def incr(self, key, value, noreply=False):
         current = self.get(key)
         present = current is not None

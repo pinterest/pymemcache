@@ -111,6 +111,12 @@ class ClientTestMixin(object):
         result = client.set_many({b'key': b'value'}, noreply=False)
         assert result is True
 
+    def test_set_multi_success(self):
+        # Should just map to set_many
+        client = self.make_client([b'STORED\r\n'])
+        result = client.set_multi({b'key': b'value'}, noreply=False)
+        assert result is True
+
     def test_add_stored(self):
         client = self.make_client([b'STORED\r', b'\n'])
         result = client.add(b'key', b'value', noreply=False)

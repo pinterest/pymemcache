@@ -254,6 +254,8 @@ class HashClient(object):
 
         return all(end)
 
+    set_multi = set_many
+
     def get_many(self, keys, *args, **kwargs):
         client_batches = {}
         for key in keys:
