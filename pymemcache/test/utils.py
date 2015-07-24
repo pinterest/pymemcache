@@ -63,6 +63,8 @@ class MockMemcacheClient(object):
                 out[key] = value
         return out
 
+    get_multi = get_many
+
     def set(self, key, value, expire=0, noreply=True):
         if isinstance(key, six.text_type):
             raise MemcacheIllegalInputError(key)
@@ -83,6 +85,8 @@ class MockMemcacheClient(object):
         for key, value in six.iteritems(values):
             self.set(key, value, expire, noreply)
         return True
+
+    set_multi = set_many
 
     def incr(self, key, value, noreply=False):
         current = self.get(key)
@@ -110,6 +114,13 @@ class MockMemcacheClient(object):
         current = self._contents.pop(key, None)
         present = current is not None
         return noreply or present
+
+    def delete_many(self, keys, noreply=True):
+        for key in keys:
+            self.delete(key, noreply)
+        return True
+
+    delete_multi = delete_many
 
     def stats(self):
         # I make no claim that these values make any sense, but the format

@@ -271,6 +271,8 @@ class Client(object):
             self.set(key, value, expire, noreply)
         return True
 
+    set_multi = set_many
+
     def add(self, key, value, expire=0, noreply=True):
         """
         The memcached "add" command.
@@ -387,6 +389,8 @@ class Client(object):
 
         return self._fetch_cmd(b'get', keys, False)
 
+    get_multi = get_many
+
     def gets(self, key):
         """
         The memcached "gets" command for one key, as a convenience.
@@ -458,6 +462,8 @@ class Client(object):
             self.delete(key, noreply)
 
         return True
+
+    delete_multi = delete_many
 
     def incr(self, key, value, noreply=False):
         """
@@ -811,6 +817,8 @@ class PooledClient(object):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             return client.set_many(values, expire=expire, noreply=noreply)
 
+    set_multi = set_many
+
     def replace(self, key, value, expire=0, noreply=True):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             return client.replace(key, value, expire=expire, noreply=noreply)
@@ -848,6 +856,8 @@ class PooledClient(object):
                 else:
                     raise
 
+    get_multi = get_many
+
     def gets(self, key):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             try:
@@ -875,6 +885,8 @@ class PooledClient(object):
     def delete_many(self, keys, noreply=True):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             return client.delete_many(keys, noreply=noreply)
+
+    delete_multi = delete_many
 
     def add(self, key, value, expire=0, noreply=True):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:

@@ -254,6 +254,8 @@ class HashClient(object):
 
         return all(end)
 
+    set_multi = set_many
+
     def get_many(self, keys, *args, **kwargs):
         client_batches = {}
         for key in keys:
@@ -277,6 +279,8 @@ class HashClient(object):
 
         return end
 
+    get_multi = get_many
+
     def gets(self, key, *args, **kwargs):
         return self._run_cmd('gets', key, None, *args, **kwargs)
 
@@ -291,6 +295,13 @@ class HashClient(object):
 
     def delete(self, key, *args, **kwargs):
         return self._run_cmd('delete', key, False, *args, **kwargs)
+
+    def delete_many(self, keys, *args, **kwargs):
+        for key in keys:
+            self._run_cmd('delete', key, False, *args, **kwargs)
+        return True
+
+    delete_multi = delete_many
 
     def cas(self, key, *args, **kwargs):
         return self._run_cmd('cas', key, False, *args, **kwargs)

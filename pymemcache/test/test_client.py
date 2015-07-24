@@ -111,6 +111,12 @@ class ClientTestMixin(object):
         result = client.set_many({b'key': b'value'}, noreply=False)
         assert result is True
 
+    def test_set_multi_success(self):
+        # Should just map to set_many
+        client = self.make_client([b'STORED\r\n'])
+        result = client.set_multi({b'key': b'value'}, noreply=False)
+        assert result is True
+
     def test_add_stored(self):
         client = self.make_client([b'STORED\r', b'\n'])
         result = client.add(b'key', b'value', noreply=False)
@@ -140,6 +146,11 @@ class ClientTestMixin(object):
     def test_get_many_none_found(self):
         client = self.make_client([b'END\r\n'])
         result = client.get_many([b'key1', b'key2'])
+        assert result == {}
+
+    def test_get_multi_none_found(self):
+        client = self.make_client([b'END\r\n'])
+        result = client.get_multi([b'key1', b'key2'])
         assert result == {}
 
     def test_get_many_some_found(self):
@@ -186,6 +197,42 @@ class ClientTestMixin(object):
     def test_delete_noreply(self):
         client = self.make_client([])
         result = client.delete(b'key', noreply=True)
+        assert result is True
+
+    def test_delete_many_no_keys(self):
+        client = self.make_client([])
+        result = client.delete_many([], noreply=False)
+        assert result is True
+
+    def test_delete_many_none_found(self):
+        client = self.make_client([b'NOT_FOUND\r\n'])
+        result = client.delete_many([b'key'], noreply=False)
+        assert result is True
+
+    def test_delete_many_found(self):
+        client = self.make_client([b'STORED\r', b'\n', b'DELETED\r\n'])
+        result = client.add(b'key', b'value', noreply=False)
+        result = client.delete_many([b'key'], noreply=False)
+        assert result is True
+
+    def test_delete_many_some_found(self):
+        client = self.make_client([
+            b'STORED\r\n',
+            b'DELETED\r\n',
+            b'NOT_FOUND\r\n'
+        ])
+        result = client.add(b'key', b'value', noreply=False)
+        result = client.delete_many([b'key', b'key2'], noreply=False)
+        assert result is True
+
+    def test_delete_multi_some_found(self):
+        client = self.make_client([
+            b'STORED\r\n',
+            b'DELETED\r\n',
+            b'NOT_FOUND\r\n'
+        ])
+        result = client.add(b'key', b'value', noreply=False)
+        result = client.delete_multi([b'key', b'key2'], noreply=False)
         assert result is True
 
     def test_incr_not_found(self):
