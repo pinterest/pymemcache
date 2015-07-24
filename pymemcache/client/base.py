@@ -463,6 +463,8 @@ class Client(object):
 
         return True
 
+    delete_multi = delete_many
+
     def incr(self, key, value, noreply=False):
         """
         The memcached "incr" command.
@@ -883,6 +885,8 @@ class PooledClient(object):
     def delete_many(self, keys, noreply=True):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             return client.delete_many(keys, noreply=noreply)
+
+    delete_multi = delete_many
 
     def add(self, key, value, expire=0, noreply=True):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:

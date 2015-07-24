@@ -120,6 +120,8 @@ class MockMemcacheClient(object):
             self.delete(key, noreply)
         return True
 
+    delete_multi = delete_many
+
     def stats(self):
         # I make no claim that these values make any sense, but the format
         # of the output is the same as for pymemcache.client.Client.stats()
