@@ -107,3 +107,4 @@ Credits
 * `James Socol <http://github.com/jsocol>`_
 * `Joshua Harlow <http://github.com/harlowja>`_
 * `John Anderson <http://github.com/sontek>`_
+* `Adam Chainz <http://github.com/adamchainz>`_
