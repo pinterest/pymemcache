@@ -1,6 +1,6 @@
 Change Log
 ==========
-New in version 1.3.1
+New in version 1.3.2
 --------------------
 * Making the location of Memcache Exceptions backwards compatible.
 New in version 1.3.0
