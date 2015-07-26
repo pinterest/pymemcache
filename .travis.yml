@@ -1,4 +1,7 @@
 sudo: false
+cache:
+  directories:
+    - $HOME/.cache/pip
 language: python
 
 services:
