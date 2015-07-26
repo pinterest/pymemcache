@@ -1,5 +1,8 @@
 Change Log
 ==========
+New in version 1.3.1
+--------------------
+* Making the location of Memcache Exceptions backwards compatible.
 New in version 1.3.0
 --------------------
 * Python 3 Support
