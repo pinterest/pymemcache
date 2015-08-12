@@ -15,7 +15,7 @@ class HashClient(object):
     def __init__(
         self,
         servers,
-        hasher=None,
+        hasher=RendezvousHash,
         serializer=None,
         deserializer=None,
         connect_timeout=None,
@@ -70,8 +70,7 @@ class HashClient(object):
         self._dead_clients = {}
         self._last_dead_check_time = time.time()
 
-        if hasher is None:
-            self.hasher = RendezvousHash()
+        self.hasher = hasher()
 
         self.default_kwargs = {
             'connect_timeout': connect_timeout,
