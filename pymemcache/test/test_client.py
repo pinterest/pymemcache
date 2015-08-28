@@ -73,8 +73,8 @@ class MockSocketModule(object):
 
 @pytest.mark.unit()
 class ClientTestMixin(object):
-    def make_client(self, mock_socket_values, serializer=None):
-        client = Client(None, serializer=serializer)
+    def make_client(self, mock_socket_values, **kwargs):
+        client = Client(None, **kwargs)
         client.sock = MockSocket(list(mock_socket_values))
         return client
 
@@ -612,6 +612,46 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         with pytest.raises(MemcacheClientError):
             client.get(u'\u3053\u3093\u306b\u3061\u306f')
 
+    def test_default_noreply_set(self):
+        client = self.make_client([b'STORED\r\n'], default_noreply=False)
+        result = client.set(b'key', b'value')
+        assert result is True
+
+    def test_default_noreply_set_many(self):
+        client = self.make_client([b'STORED\r\n'], default_noreply=False)
+        result = client.set_many({b'key': b'value'})
+        assert result is True
+
+    def test_default_noreply_add(self):
+        client = self.make_client([b'STORED\r', b'\n'], default_noreply=False)
+        result = client.add(b'key', b'value')
+        assert result is True
+
+    def test_default_noreply_replace(self):
+        client = self.make_client([b'STORED\r\n'], default_noreply=False)
+        result = client.replace(b'key', b'value')
+        assert result is True
+
+    def test_default_noreply_append(self):
+        client = self.make_client([b'STORED\r\n'], default_noreply=False)
+        result = client.append(b'key', b'value')
+        assert result is True
+
+    def test_default_noreply_prepend(self):
+        client = self.make_client([b'STORED\r\n'], default_noreply=False)
+        result = client.prepend(b'key', b'value')
+        assert result is True
+
+    def test_default_noreply_touch(self):
+        client = self.make_client([b'TOUCHED\r\n'], default_noreply=False)
+        result = client.touch(b'key')
+        assert result is True
+
+    def test_default_noreply_flush_all(self):
+        client = self.make_client([b'OK\r\n'], default_noreply=False)
+        result = client.flush_all()
+        assert result is True
+
 
 @pytest.mark.unit()
 class TestClientSocketConnect(unittest.TestCase):
@@ -642,24 +682,24 @@ class TestClientSocketConnect(unittest.TestCase):
 
 
 class TestPooledClient(ClientTestMixin, unittest.TestCase):
-    def make_client(self, mock_socket_values, serializer=None):
-        mock_client = Client(None, serializer=serializer)
+    def make_client(self, mock_socket_values, **kwargs):
+        mock_client = Client(None, **kwargs)
         mock_client.sock = MockSocket(list(mock_socket_values))
-        client = PooledClient(None, serializer=serializer)
+        client = PooledClient(None, **kwargs)
         client.client_pool = pool.ObjectPool(lambda: mock_client)
         return client
 
 
 class TestMockClient(ClientTestMixin, unittest.TestCase):
-    def make_client(self, mock_socket_values, serializer=None):
-        client = MockMemcacheClient(None, serializer=serializer)
+    def make_client(self, mock_socket_values, **kwargs):
+        client = MockMemcacheClient(None, **kwargs)
         client.sock = MockSocket(list(mock_socket_values))
         return client
 
 
 class TestPrefixedClient(ClientTestMixin, unittest.TestCase):
-    def make_client(self, mock_socket_values, serializer=None):
-        client = Client(None, serializer=serializer, key_prefix=b'xyz:')
+    def make_client(self, mock_socket_values, **kwargs):
+        client = Client(None, key_prefix=b'xyz:', **kwargs)
         client.sock = MockSocket(list(mock_socket_values))
         return client
 
@@ -699,10 +739,10 @@ class TestPrefixedClient(ClientTestMixin, unittest.TestCase):
 
 
 class TestPrefixedPooledClient(TestPrefixedClient):
-    def make_client(self, mock_socket_values, serializer=None):
-        mock_client = Client(None, serializer=serializer, key_prefix=b'xyz:')
+    def make_client(self, mock_socket_values, **kwargs):
+        mock_client = Client(None, key_prefix=b'xyz:', **kwargs)
         mock_client.sock = MockSocket(list(mock_socket_values))
-        client = PooledClient(None, serializer=serializer, key_prefix=b'xyz:')
+        client = PooledClient(None, key_prefix=b'xyz:', **kwargs)
         client.client_pool = pool.ObjectPool(lambda: mock_client)
         return client
 

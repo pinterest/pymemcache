@@ -25,7 +25,8 @@ class MockMemcacheClient(object):
                  connect_timeout=None,
                  timeout=None,
                  no_delay=False,
-                 ignore_exc=False):
+                 ignore_exc=False,
+                 default_noreply=True):
 
         self._contents = {}
 

@@ -161,7 +161,8 @@ class Client(object):
                  no_delay=False,
                  ignore_exc=False,
                  socket_module=socket,
-                 key_prefix=b''):
+                 key_prefix=b'',
+                 default_noreply=True):
         """
         Constructor.
 
@@ -184,6 +185,9 @@ class Client(object):
             the standard library's socket module.
           key_prefix: Prefix of key. You can use this as namespace. Defaults
             to b''.
+          default_noreply: bool, the default value for 'noreply' as passed to
+            store commands (except from cas, incr, and decr, which default to
+            False).
 
         Notes:
           The constructor does not make a connection to memcached. The first
@@ -203,6 +207,7 @@ class Client(object):
         if not isinstance(key_prefix, bytes):
             raise TypeError("key_prefix should be bytes.")
         self.key_prefix = key_prefix
+        self.default_noreply = default_noreply
 
     def check_key(self, key):
         """Checks key and add key_prefix."""
@@ -229,7 +234,7 @@ class Client(object):
                 pass
         self.sock = None
 
-    def set(self, key, value, expire=0, noreply=True):
+    def set(self, key, value, expire=0, noreply=None):
         """
         The memcached "set" command.
 
@@ -238,16 +243,19 @@ class Client(object):
           value: str, see class docs for details.
           expire: optional int, number of seconds until the item is expired
                   from the cache, or zero for no expiry (the default).
-          noreply: optional bool, True to not wait for the reply (the default).
+          noreply: optional bool, True to not wait for the reply (defaults to
+                   self.default_noreply).
 
         Returns:
           If no exception is raised, always returns True. If an exception is
           raised, the set may or may not have occurred. If noreply is True,
           then a successful return does not guarantee a successful set.
         """
+        if noreply is None:
+            noreply = self.default_noreply
         return self._store_cmd(b'set', key, expire, noreply, value)
 
-    def set_many(self, values, expire=0, noreply=True):
+    def set_many(self, values, expire=0, noreply=None):
         """
         A convenience function for setting multiple values.
 
@@ -256,7 +264,8 @@ class Client(object):
                   for details.
           expire: optional int, number of seconds until the item is expired
                   from the cache, or zero for no expiry (the default).
-          noreply: optional bool, True to not wait for the reply (the default).
+          noreply: optional bool, True to not wait for the reply (defaults to
+                   self.default_noreply).
 
         Returns:
           If no exception is raised, always returns True. Otherwise all, some
@@ -273,7 +282,7 @@ class Client(object):
 
     set_multi = set_many
 
-    def add(self, key, value, expire=0, noreply=True):
+    def add(self, key, value, expire=0, noreply=None):
         """
         The memcached "add" command.
 
@@ -282,16 +291,19 @@ class Client(object):
           value: str, see class docs for details.
           expire: optional int, number of seconds until the item is expired
                   from the cache, or zero for no expiry (the default).
-          noreply: optional bool, True to not wait for the reply (the default).
+          noreply: optional bool, True to not wait for the reply (defaults to
+                   self.default_noreply).
 
         Returns:
           If noreply is True, the return value is always True. Otherwise the
           return value is True if the value was stgored, and False if it was
           not (because the key already existed).
         """
+        if noreply is None:
+            noreply = self.default_noreply
         return self._store_cmd(b'add', key, expire, noreply, value)
 
-    def replace(self, key, value, expire=0, noreply=True):
+    def replace(self, key, value, expire=0, noreply=None):
         """
         The memcached "replace" command.
 
@@ -300,16 +312,19 @@ class Client(object):
           value: str, see class docs for details.
           expire: optional int, number of seconds until the item is expired
                   from the cache, or zero for no expiry (the default).
-          noreply: optional bool, True to not wait for the reply (the default).
+          noreply: optional bool, True to not wait for the reply (defaults to
+                   self.default_noreply).
 
         Returns:
           If noreply is True, always returns True. Otherwise returns True if
           the value was stored and False if it wasn't (because the key didn't
           already exist).
         """
+        if noreply is None:
+            noreply = self.default_noreply
         return self._store_cmd(b'replace', key, expire, noreply, value)
 
-    def append(self, key, value, expire=0, noreply=True):
+    def append(self, key, value, expire=0, noreply=None):
         """
         The memcached "append" command.
 
@@ -318,14 +333,17 @@ class Client(object):
           value: str, see class docs for details.
           expire: optional int, number of seconds until the item is expired
                   from the cache, or zero for no expiry (the default).
-          noreply: optional bool, True to not wait for the reply (the default).
+          noreply: optional bool, True to not wait for the reply (defaults to
+                   self.default_noreply).
 
         Returns:
           True.
         """
+        if noreply is None:
+            noreply = self.default_noreply
         return self._store_cmd(b'append', key, expire, noreply, value)
 
-    def prepend(self, key, value, expire=0, noreply=True):
+    def prepend(self, key, value, expire=0, noreply=None):
         """
         The memcached "prepend" command.
 
@@ -334,11 +352,14 @@ class Client(object):
           value: str, see class docs for details.
           expire: optional int, number of seconds until the item is expired
                   from the cache, or zero for no expiry (the default).
-          noreply: optional bool, True to not wait for the reply (the default).
+          noreply: optional bool, True to not wait for the reply (defaults to
+                   self.default_noreply).
 
         Returns:
           True.
         """
+        if noreply is None:
+            noreply = self.default_noreply
         return self._store_cmd(b'prepend', key, expire, noreply, value)
 
     def cas(self, key, value, cas, expire=0, noreply=False):
@@ -420,17 +441,21 @@ class Client(object):
 
         return self._fetch_cmd(b'gets', keys, True)
 
-    def delete(self, key, noreply=True):
+    def delete(self, key, noreply=None):
         """
         The memcached "delete" command.
 
         Args:
           key: str, see class docs for details.
+          noreply: optional bool, True to not wait for the reply (defaults to
+                   self.default_noreply).
 
         Returns:
           If noreply is True, always returns True. Otherwise returns True if
           the key was deleted, and False if it wasn't found.
         """
+        if noreply is None:
+            noreply = self.default_noreply
         cmd = b'delete ' + self.check_key(key)
         if noreply:
             cmd += b' noreply'
@@ -440,12 +465,14 @@ class Client(object):
             return True
         return result == b'DELETED'
 
-    def delete_many(self, keys, noreply=True):
+    def delete_many(self, keys, noreply=None):
         """
         A convenience function to delete multiple keys.
 
         Args:
           keys: list(str), the list of keys to delete.
+          noreply: optional bool, True to not wait for the reply (defaults to
+                   self.default_noreply).
 
         Returns:
           True. If an exception is raised then all, some or none of the keys
@@ -455,6 +482,9 @@ class Client(object):
         """
         if not keys:
             return True
+
+        if noreply is None:
+            noreply = self.default_noreply
 
         # TODO: make this more performant by sending all keys first, then
         # waiting for all values.
@@ -515,7 +545,7 @@ class Client(object):
             return None
         return int(result)
 
-    def touch(self, key, expire=0, noreply=True):
+    def touch(self, key, expire=0, noreply=None):
         """
         The memcached "touch" command.
 
@@ -523,12 +553,15 @@ class Client(object):
           key: str, see class docs for details.
           expire: optional int, number of seconds until the item is expired
                   from the cache, or zero for no expiry (the default).
-          noreply: optional bool, True to not wait for the reply (the default).
+          noreply: optional bool, True to not wait for the reply (defaults to
+                   self.default_noreply).
 
         Returns:
           True if the expiration time was updated, False if the key wasn't
           found.
         """
+        if noreply is None:
+            noreply = self.default_noreply
         key = self.check_key(key)
         cmd = b'touch ' + key + b' ' + six.text_type(expire).encode('ascii')
         if noreply:
@@ -565,19 +598,21 @@ class Client(object):
 
         return result
 
-    def flush_all(self, delay=0, noreply=True):
+    def flush_all(self, delay=0, noreply=None):
         """
         The memcached "flush_all" command.
 
         Args:
           delay: optional int, the number of seconds to wait before flushing,
                  or zero to flush immediately (the default).
-          noreply: optional bool, True to not wait for the response
-                   (the default).
+          noreply: optional bool, True to not wait for the reply (defaults to
+                   self.default_noreply).
 
         Returns:
           True.
         """
+        if noreply is None:
+            noreply = self.default_noreply
         cmd = b'flush_all ' + six.text_type(delay).encode('ascii')
         if noreply:
             cmd += b' noreply'
