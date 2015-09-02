@@ -1,5 +1,10 @@
 Change Log
 ==========
+New in version 1.3.3
+--------------------
+* Adding caching to the Travis build.
+* A bug fix for pluggable hashing in HashClient.
+* Adding a default_noreply argument to the Client ctor.
 New in version 1.3.2
 --------------------
 * Making the location of Memcache Exceptions backwards compatible.
