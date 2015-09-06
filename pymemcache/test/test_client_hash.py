@@ -119,4 +119,62 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         client.set(b'key3', b'value2', noreply=False)
         result = client.get_many([b'key1', b'key3'])
         assert result == {}
+
+    def test_no_servers_left(self):
+        from pymemcache.client.hash import HashClient
+        client = HashClient(
+            [], use_pooling=True,
+            ignore_exc=True,
+            timeout=1, connect_timeout=1
+        )
+
+        hashed_client = client._get_client('foo')
+        assert hashed_client is None
+
+    def test_no_servers_left_raise_exception(self):
+        from pymemcache.client.hash import HashClient
+        client = HashClient(
+            [], use_pooling=True,
+            ignore_exc=False,
+            timeout=1, connect_timeout=1
+        )
+
+        with pytest.raises(Exception) as e:
+            client._get_client('foo')
+
+        assert str(e.value) == 'All servers seem to be down right now'
+
+    def test_no_servers_left_with_commands(self):
+        from pymemcache.client.hash import HashClient
+        client = HashClient(
+            [], use_pooling=True,
+            ignore_exc=True,
+            timeout=1, connect_timeout=1
+        )
+
+        result = client.get('foo')
+        assert result is False
+
+    def test_no_servers_left_with_set_many(self):
+        from pymemcache.client.hash import HashClient
+        client = HashClient(
+            [], use_pooling=True,
+            ignore_exc=True,
+            timeout=1, connect_timeout=1
+        )
+
+        result = client.set_many({'foo': 'bar'})
+        assert result is False
+
+    def test_no_servers_left_with_get_many(self):
+        from pymemcache.client.hash import HashClient
+        client = HashClient(
+            [], use_pooling=True,
+            ignore_exc=True,
+            timeout=1, connect_timeout=1
+        )
+
+        result = client.get_many(['foo', 'bar'])
+        assert result == {'foo': False, 'bar': False}
+
     # TODO: Test failover logic
