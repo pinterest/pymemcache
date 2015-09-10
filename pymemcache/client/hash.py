@@ -130,6 +130,12 @@ class HashClient(object):
                         self._last_dead_check_time = current_time
 
         server = self.hasher.get_node(key)
+        # We've ran out of servers to try
+        if server is None:
+            if self.ignore_exc is True:
+                return
+            raise Exception('All servers seem to be down right now')
+
         client = self.clients[server]
         return client
 
@@ -211,6 +217,10 @@ class HashClient(object):
 
     def _run_cmd(self, cmd, key, default_val, *args, **kwargs):
         client = self._get_client(key)
+
+        if client is None:
+            return False
+
         func = getattr(client, cmd)
         args = list(args)
         args.insert(0, key)
@@ -232,14 +242,19 @@ class HashClient(object):
 
     def set_many(self, values, *args, **kwargs):
         client_batches = {}
+        end = []
+
         for key, value in values.items():
             client = self._get_client(key)
+
+            if client is None:
+                end.append(False)
+                continue
+
             if client.server not in client_batches:
                 client_batches[client.server] = {}
 
             client_batches[client.server][key] = value
-
-        end = []
 
         for server, values in client_batches.items():
             client = self.clients['%s:%s' % server]
@@ -257,14 +272,19 @@ class HashClient(object):
 
     def get_many(self, keys, *args, **kwargs):
         client_batches = {}
+        end = {}
+
         for key in keys:
             client = self._get_client(key)
+
+            if client is None:
+                end[key] = False
+                continue
+
             if client.server not in client_batches:
                 client_batches[client.server] = []
 
             client_batches[client.server].append(key)
-
-        end = {}
 
         for server, keys in client_batches.items():
             client = self.clients['%s:%s' % server]
