@@ -108,3 +108,4 @@ Credits
 * `Joshua Harlow <http://github.com/harlowja>`_
 * `John Anderson <http://github.com/sontek>`_
 * `Adam Chainz <http://github.com/adamchainz>`_
+* `Ernest W. Durbin III <https://github.com/ewdurbin>`_
