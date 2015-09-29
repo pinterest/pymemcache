@@ -1,5 +1,9 @@
 Change Log
 ==========
+New in version 1.3.4
+--------------------
+* Bug fix for the HashClient that corrects behavior when there are no working
+  servers.
 New in version 1.3.3
 --------------------
 * Adding caching to the Travis build.
