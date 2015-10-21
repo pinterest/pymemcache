@@ -185,13 +185,13 @@ class HashClient(object):
             # dead immediately
             elif (
                 client.server not in self._failed_clients and
-                self.retry_attempts < 0
+                self.retry_attempts <= 0
             ):
                 self._failed_clients[client.server] = {
                     'failed_time': time.time(),
                     'attempts': 0,
                 }
-                logger.debug("marking server as dead %s" % client.server)
+                logger.debug("marking server as dead %s", client.server)
                 self.remove_server(*client.server)
             # This client has failed previously, we need to update the metadata
             # to reflect that we have attempted it again
