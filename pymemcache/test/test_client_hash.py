@@ -7,6 +7,7 @@ from .test_client import ClientTestMixin, MockSocket
 import unittest
 import pytest
 import mock
+import socket
 
 
 class TestHashClient(ClientTestMixin, unittest.TestCase):
@@ -143,6 +144,17 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
             client._get_client('foo')
 
         assert str(e.value) == 'All servers seem to be down right now'
+
+    def test_unavailable_servers_zero_retry_raise_exception(self):
+        from pymemcache.client.hash import HashClient
+        client = HashClient(
+            [('example.com', 11211)], use_pooling=True,
+            ignore_exc=False,
+            retry_attempts=0, timeout=1, connect_timeout=1
+        )
+
+        with pytest.raises(socket.error) as e:
+            client.get('foo')
 
     def test_no_servers_left_with_commands(self):
         from pymemcache.client.hash import HashClient
