@@ -598,6 +598,21 @@ class Client(object):
 
         return result
 
+    def version(self):
+        """
+        The memcached "version" command.
+
+        Returns:
+            A string of the memcached version.
+        """
+        cmd = b"version\r\n"
+        result = self._misc_cmd(cmd, b'version', False)
+
+        if not result.startswith(b'VERSION '):
+            raise MemcacheUnknownError("Received unexpected response: %s" % (result, ))
+
+        return result[8:]
+
     def flush_all(self, delay=0, noreply=None):
         """
         The memcached "flush_all" command.
@@ -948,6 +963,10 @@ class PooledClient(object):
                     return {}
                 else:
                     raise
+
+    def version(self):
+        with self.client_pool.get_and_release(destroy_on_fail=True) as client:
+            return client.version()
 
     def flush_all(self, delay=0, noreply=True):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
