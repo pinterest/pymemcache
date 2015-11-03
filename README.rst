@@ -109,3 +109,4 @@ Credits
 * `John Anderson <http://github.com/sontek>`_
 * `Adam Chainz <http://github.com/adamchainz>`_
 * `Ernest W. Durbin III <https://github.com/ewdurbin>`_
+* `Remco van Oosterhout` <https://github.com/Vhab>`_

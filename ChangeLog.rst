@@ -1,5 +1,9 @@
 Change Log
 ==========
+New in version 1.3.5
+--------------------
+* Bug fix for HashClient when retries is set to zero.
+* Adding the VERSION command to the clients.
 New in version 1.3.4
 --------------------
 * Bug fix for the HashClient that corrects behavior when there are no working servers.
