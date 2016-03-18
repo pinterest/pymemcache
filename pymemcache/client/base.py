@@ -699,8 +699,8 @@ class Client(object):
                     else:
                         result[key] = value
                 elif name == b'stats' and line.startswith(b'STAT'):
-                    _, key, value = line.split()
-                    result[key] = value
+                    key_value = line.split()
+                    result[key_value[1]] = key_value[2]
                 else:
                     raise MemcacheUnknownError(line[:32])
         except Exception:
