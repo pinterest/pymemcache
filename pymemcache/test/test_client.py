@@ -546,6 +546,7 @@ class TestClient(ClientTestMixin, unittest.TestCase):
             # Most stats are converted to int
             b'STAT cmd_get 2519\r\n',
             b'STAT cmd_set 3099\r\n',
+            b'STAT evictions 939\r\n',
 
             # Unless they can't be, they remain str
             b'STAT libevent 2.0.19-stable\r\n',
@@ -565,6 +566,7 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         expected = {
             b'cmd_get': 2519,
             b'cmd_set': 3099,
+            b'evictions': 939,
             b'libevent': b'2.0.19-stable',
             b'hash_is_expanding': False,
             b'rusage_user': 0.609165,
