@@ -53,7 +53,6 @@ STAT_TYPES = {
 
     # Settings stats
     b'inter': six.binary_type,
-    b'evictions': lambda value: value == b'on',
     b'growth_factor': float,
     b'stat_key_prefix': six.binary_type,
     b'umask': lambda value: int(value, 8),
