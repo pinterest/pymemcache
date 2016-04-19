@@ -818,7 +818,8 @@ class PooledClient(object):
                  socket_module=socket,
                  key_prefix=b'',
                  max_pool_size=None,
-                 lock_generator=None):
+                 lock_generator=None,
+                 default_noreply=True):
         self.server = server
         self.serializer = serializer
         self.deserializer = deserializer
@@ -827,6 +828,7 @@ class PooledClient(object):
         self.no_delay = no_delay
         self.ignore_exc = ignore_exc
         self.socket_module = socket_module
+        self.default_noreply = default_noreply
         if isinstance(key_prefix, six.text_type):
             key_prefix = key_prefix.encode('ascii')
         if not isinstance(key_prefix, bytes):
@@ -853,7 +855,8 @@ class PooledClient(object):
                         # can remove/destroy it from the pool...
                         ignore_exc=False,
                         socket_module=self.socket_module,
-                        key_prefix=self.key_prefix)
+                        key_prefix=self.key_prefix,
+                        default_noreply=self.default_noreply)
         return client
 
     def close(self):
