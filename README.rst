@@ -8,7 +8,7 @@ pymemcache
     :target: https://pypi.python.org/pypi/pymemcache
 
 .. image:: https://readthedocs.org/projects/pymemcache/badge/?version=master
-        :target: http://pymemcache.readthedocs.org/en/latest/
+        :target: https://pymemcache.readthedocs.io/en/latest/
         :alt: Master Documentation Status
 
 A comprehensive, fast, pure-Python memcached client.
@@ -41,7 +41,7 @@ For development, clone from github and run the tests with:
 Usage
 =====
 
-See the documentation here: http://pymemcache.readthedocs.org/en/latest/
+See the documentation here: https://pymemcache.readthedocs.io/en/latest/
 
 Comparison with Other Libraries
 ===============================
