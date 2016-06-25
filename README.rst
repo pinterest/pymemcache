@@ -51,9 +51,10 @@ pylibmc
 
 The pylibmc library is a wrapper around libmemcached, implemented in C. It is
 fast, implements consistent hashing, the full memcached protocol and timeouts.
-It does not provide access to the "noreply" flag, and it doesn't provide a
-built-in API for serialization and deserialization. It also isn't pure Python,
-so using it with libraries like gevent is out of the question.
+It does not provide access to the "noreply" flag. It also isn't pure Python,
+so using it with libraries like gevent is out of the question, and its
+dependency on libmemcached poses challenges (e.g., it must be built against
+the same version of libmemcached that it will use at runtime).
 
 Python-memcache
 ---------------
