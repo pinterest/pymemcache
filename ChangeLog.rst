@@ -1,5 +1,10 @@
 Change Log
 ==========
+New in version 1.3.6
+--------------------
+* Fix flake8 and cleanup tox building
+* Fix security vulnerability by sanitizing key input
+
 New in version 1.3.5
 --------------------
 * Bug fix for HashClient when retries is set to zero.
