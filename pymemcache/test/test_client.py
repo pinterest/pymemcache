@@ -655,14 +655,15 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         assert result is True
 
     def test_version_success(self):
-        client = self.make_client([b'VERSION 1.2.3\r\n'], default_noreply=False)
+        client = self.make_client([b'VERSION 1.2.3\r\n'],
+                                  default_noreply=False)
         result = client.version()
         assert result == b'1.2.3'
 
     def test_version_exception(self):
         client = self.make_client([b'INVALID DATA\r\n'], default_noreply=False)
         with pytest.raises(MemcacheUnknownError):
-            result = client.version()
+            client.version()
 
 
 @pytest.mark.unit()

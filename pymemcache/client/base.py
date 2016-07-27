@@ -11,9 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-__author__ = "Charles Gordon"
-
 import errno
 import socket
 import six
@@ -608,7 +605,8 @@ class Client(object):
         result = self._misc_cmd(cmd, b'version', False)
 
         if not result.startswith(b'VERSION '):
-            raise MemcacheUnknownError("Received unexpected response: %s" % (result, ))
+            raise MemcacheUnknownError(
+                    "Received unexpected response: %s" % (result, ))
 
         return result[8:]
 
@@ -730,10 +728,11 @@ class Client(object):
         if noreply:
             extra += b' noreply'
 
-        cmd = (name + b' ' + key + b' ' + six.text_type(flags).encode('ascii')
-               + b' ' + six.text_type(expire).encode('ascii')
-               + b' ' + six.text_type(len(data)).encode('ascii') + extra
-               + b'\r\n' + data + b'\r\n')
+        cmd = (name + b' ' + key + b' ' +
+               six.text_type(flags).encode('ascii') +
+               b' ' + six.text_type(expire).encode('ascii') +
+               b' ' + six.text_type(len(data)).encode('ascii') + extra +
+               b'\r\n' + data + b'\r\n')
 
         try:
             self.sock.sendall(cmd)

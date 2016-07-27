@@ -15,9 +15,11 @@ develop-eggs
 .installed.cfg
 build
 dist
+.cache
 
 # Installer logs
 pip-log.txt
+env/
 
 # Unit test / coverage reports
 .coverage
@@ -36,3 +38,4 @@ pip-log.txt
 coverage.xml
 \#*\#
 docs/_build
+docs/apidoc/pymemcache.test.rst
