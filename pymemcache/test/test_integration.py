@@ -220,6 +220,12 @@ def test_errors(client_class, host, port, socket_module):
     with pytest.raises(MemcacheIllegalInputError):
         _key_with_ws()
 
+    def _key_with_illegal_carriage_return():
+        client.set(b'\r\nflush_all', b'value', noreply=False)
+
+    with pytest.raises(MemcacheIllegalInputError):
+        _key_with_illegal_carriage_return()
+
     def _key_too_long():
         client.set(b'x' * 1024, b'value', noreply=False)
 
