@@ -38,3 +38,4 @@ env/
 coverage.xml
 \#*\#
 docs/_build
+docs/apidoc/pymemcache.test.rst
