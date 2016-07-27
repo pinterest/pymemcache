@@ -15,9 +15,11 @@ develop-eggs
 .installed.cfg
 build
 dist
+.cache
 
 # Installer logs
 pip-log.txt
+env/
 
 # Unit test / coverage reports
 .coverage
