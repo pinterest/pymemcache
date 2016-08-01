@@ -134,6 +134,11 @@ class ClientTestMixin(object):
         result = client.get(b'key')
         assert result is None
 
+    def test_get_not_found_default(self):
+        client = self.make_client([b'END\r\n'])
+        result = client.get(b'key', default='foobar')
+        assert result is 'foobar'
+
     def test_get_found(self):
         client = self.make_client([
             b'STORED\r\n',
@@ -401,6 +406,11 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         client = self.make_client([b'END\r\n'])
         result = client.gets(b'key')
         assert result == (None, None)
+
+    def test_gets_not_found_defaults(self):
+        client = self.make_client([b'END\r\n'])
+        result = client.gets(b'key', default='foo', cas_default='bar')
+        assert result == ('foo', 'bar')
 
     def test_gets_found(self):
         client = self.make_client([b'VALUE key 0 5 10\r\nvalue\r\nEND\r\n'])

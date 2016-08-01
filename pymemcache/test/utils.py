@@ -40,17 +40,17 @@ class MockMemcacheClient(object):
         self.no_delay = no_delay
         self.ignore_exc = ignore_exc
 
-    def get(self, key):
+    def get(self, key, default=None):
         if isinstance(key, six.text_type):
             raise MemcacheIllegalInputError(key)
 
         if key not in self._contents:
-            return None
+            return default
 
         expire, value, was_serialized = self._contents[key]
         if expire and expire < time.time():
             del self._contents[key]
-            return None
+            return default
 
         if self.deserializer:
             return self.deserializer(key, value, 2 if was_serialized else 1)
