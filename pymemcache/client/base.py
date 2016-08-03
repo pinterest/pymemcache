@@ -377,17 +377,18 @@ class Client(object):
         """
         return self._store_cmd(b'cas', key, expire, noreply, value, cas)
 
-    def get(self, key):
+    def get(self, key, default=None):
         """
         The memcached "get" command, but only for one key, as a convenience.
 
         Args:
           key: str, see class docs for details.
+          default: value that will be returned if the key was not found.
 
         Returns:
-          The value for the key, or None if the key wasn't found.
+          The value for the key, or default if the key wasn't found.
         """
-        return self._fetch_cmd(b'get', [key], False).get(key, None)
+        return self._fetch_cmd(b'get', [key], False).get(key, default)
 
     def get_many(self, keys):
         """
@@ -408,17 +409,21 @@ class Client(object):
 
     get_multi = get_many
 
-    def gets(self, key):
+    def gets(self, key, default=None, cas_default=None):
         """
         The memcached "gets" command for one key, as a convenience.
 
         Args:
           key: str, see class docs for details.
+          default: value that will be returned if the key was not found.
+          cas_default: same behaviour as default argument.
 
         Returns:
-          A tuple of (key, cas), or (None, None) if the key was not found.
+          A tuple of (key, cas)
+          or (default, cas_defaults) if the key was not found.
         """
-        return self._fetch_cmd(b'gets', [key], True).get(key, (None, None))
+        defaults = (default, cas_default)
+        return self._fetch_cmd(b'gets', [key], True).get(key, defaults)
 
     def gets_many(self, keys):
         """
@@ -887,10 +892,10 @@ class PooledClient(object):
             return client.cas(key, value, cas,
                               expire=expire, noreply=noreply)
 
-    def get(self, key):
+    def get(self, key, default=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             try:
-                return client.get(key)
+                return client.get(key, default)
             except Exception:
                 if self.ignore_exc:
                     return None
