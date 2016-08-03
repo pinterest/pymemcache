@@ -28,12 +28,16 @@ env/
 #Translations
 *.mo
 
+# Mac FS
+.DS_Store
+
 #Mr Developer
 .mr.developer.cfg
 
 # Swap files.
 *.swp
 
+.pip
 .pypirc
 coverage.xml
 \#*\#
