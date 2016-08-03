@@ -11,6 +11,9 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+    Getting Started </getting_started>
+    Source Code </apidoc/modules>
+
 
 
 Indices and tables
