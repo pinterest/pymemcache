@@ -14,11 +14,7 @@
 
 import logging
 import pickle
-
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+from six.moves import cStringIO as StringIO
 
 try:
     long_type = long  # noqa
