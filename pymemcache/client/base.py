@@ -70,12 +70,14 @@ def _check_key(key, key_prefix=b''):
         try:
             key = key.encode('ascii')
         except UnicodeEncodeError:
-            raise MemcacheIllegalInputError("No ascii key: %r" % (key,))
+            raise MemcacheIllegalInputError("Non-ASCII key: '%r'" % (key,))
     key = key_prefix + key
     if b' ' in key or b'\n' in key:
-        raise MemcacheIllegalInputError("Key contains spaces: %r" % (key,))
+        raise MemcacheIllegalInputError(
+          "Key contains space and/or newline: '%r'" % (key,)
+        )
     if len(key) > 250:
-        raise MemcacheIllegalInputError("Key is too long: %r" % (key,))
+        raise MemcacheIllegalInputError("Key is too long: '%r'" % (key,))
     return key
 
 
