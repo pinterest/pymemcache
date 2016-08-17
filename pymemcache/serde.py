@@ -14,7 +14,7 @@
 
 import logging
 import pickle
-from six.moves import cStringIO as StringIO
+from io import BytesIO
 
 try:
     long_type = long  # noqa
@@ -40,7 +40,7 @@ def python_memcache_serializer(key, value):
         value = "%d" % value
     else:
         flags |= FLAG_PICKLE
-        output = StringIO()
+        output = BytesIO()
         pickler = pickle.Pickler(output, 0)
         pickler.dump(value)
         value = output.getvalue()
@@ -60,7 +60,7 @@ def python_memcache_deserializer(key, value, flags):
 
     if flags & FLAG_PICKLE:
         try:
-            buf = StringIO(value)
+            buf = BytesIO(value)
             unpickler = pickle.Unpickler(buf)
             return unpickler.load()
         except Exception:
