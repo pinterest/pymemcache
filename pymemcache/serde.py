@@ -14,11 +14,12 @@
 
 import logging
 import pickle
+from io import BytesIO
 
 try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+    long_type = long  # noqa
+except NameError:
+    long_type = None
 
 
 FLAG_PICKLE = 1 << 0
@@ -34,12 +35,12 @@ def python_memcache_serializer(key, value):
     elif isinstance(value, int):
         flags |= FLAG_INTEGER
         value = "%d" % value
-    elif isinstance(value, long):
+    elif long_type is not None and isinstance(value, long_type):
         flags |= FLAG_LONG
         value = "%d" % value
     else:
         flags |= FLAG_PICKLE
-        output = StringIO()
+        output = BytesIO()
         pickler = pickle.Pickler(output, 0)
         pickler.dump(value)
         value = output.getvalue()
@@ -55,11 +56,11 @@ def python_memcache_deserializer(key, value, flags):
         return int(value)
 
     if flags & FLAG_LONG:
-        return long(value)
+        return long_type(value)
 
     if flags & FLAG_PICKLE:
         try:
-            buf = StringIO(value)
+            buf = BytesIO(value)
             unpickler = pickle.Unpickler(buf)
             return unpickler.load()
         except Exception:
