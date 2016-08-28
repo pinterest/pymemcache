@@ -567,6 +567,8 @@ class TestClient(ClientTestMixin, unittest.TestCase):
             b'STAT rusage_system 0.852791\r\n',
             b'STAT slab_reassign_running 1\r\n',
             b'STAT version 1.4.14\r\n',
+            b'STAT umask 777\r\n',
+            b'STAT auth_enabled_sasl yes\r\n',
             b'END\r\n',
         ])
         result = client.stats()
@@ -583,6 +585,8 @@ class TestClient(ClientTestMixin, unittest.TestCase):
             b'rusage_system': 0.852791,
             b'slab_reassign_running': True,
             b'version': b'1.4.14',
+            b'umask': 0o777,
+            b'auth_enabled_sasl': True,
         }
         assert result == expected
 

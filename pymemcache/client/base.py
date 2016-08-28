@@ -40,25 +40,41 @@ VALID_STORE_RESULTS = {
 
 # Some of the values returned by the "stats" command
 # need mapping into native Python types
+def _parse_bool_int(value):
+    return int(value) != 0
+
+
+def _parse_bool_string_is_yes(value):
+    return value == b'yes'
+
+
+def _parse_float(value):
+    return float(value.replace(b':', b'.'))
+
+
+def _parse_hex(value):
+    return int(value, 8)
+
+
 STAT_TYPES = {
     # General stats
     b'version': six.binary_type,
-    b'rusage_user': lambda value: float(value.replace(b':', b'.')),
-    b'rusage_system': lambda value: float(value.replace(b':', b'.')),
-    b'hash_is_expanding': lambda value: int(value) != 0,
-    b'slab_reassign_running': lambda value: int(value) != 0,
+    b'rusage_user': _parse_float,
+    b'rusage_system': _parse_float,
+    b'hash_is_expanding': _parse_bool_int,
+    b'slab_reassign_running': _parse_bool_int,
 
     # Settings stats
     b'inter': six.binary_type,
     b'growth_factor': float,
     b'stat_key_prefix': six.binary_type,
-    b'umask': lambda value: int(value, 8),
-    b'detail_enabled': lambda value: int(value) != 0,
-    b'cas_enabled': lambda value: int(value) != 0,
-    b'auth_enabled_sasl': lambda value: value == b'yes',
-    b'maxconns_fast': lambda value: int(value) != 0,
-    b'slab_reassign': lambda value: int(value) != 0,
-    b'slab_automove': lambda value: int(value) != 0,
+    b'umask': _parse_hex,
+    b'detail_enabled': _parse_bool_int,
+    b'cas_enabled': _parse_bool_int,
+    b'auth_enabled_sasl': _parse_bool_string_is_yes,
+    b'maxconns_fast': _parse_bool_int,
+    b'slab_reassign': _parse_bool_int,
+    b'slab_automove': _parse_bool_int,
 }
 
 # Common helper functions.
