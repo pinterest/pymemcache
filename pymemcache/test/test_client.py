@@ -752,7 +752,7 @@ class TestMockClient(ClientTestMixin, unittest.TestCase):
 
         result = client.set(b'key1', b'hello', noreply=False)
         result = client.get(b'key1')
-        assert result == 'hello'
+        assert result == b'hello'
 
         result = client.set(b'key2', dict(hello='world'), noreply=False)
         result = client.get(b'key2')
