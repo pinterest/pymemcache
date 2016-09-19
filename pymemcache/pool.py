@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import time
 import collections
 import contextlib
 import sys
@@ -25,7 +26,7 @@ class ObjectPool(object):
 
     def __init__(self, obj_creator,
                  after_remove=None, max_size=None,
-                 lock_generator=None):
+                 lock_generator=None, obj_idle_timeout=None):
         self._used_objs = collections.deque()
         self._free_objs = collections.deque()
         self._obj_creator = obj_creator
@@ -35,6 +36,7 @@ class ObjectPool(object):
             self._lock = lock_generator()
         self._after_remove = after_remove
         max_size = max_size or 2 ** 31
+        self.obj_idle_timeout = obj_idle_timeout or 60
         if not isinstance(max_size, six.integer_types) or max_size < 0:
             raise ValueError('"max_size" must be a positive integer')
         self.max_size = max_size
@@ -72,10 +74,18 @@ class ObjectPool(object):
                 obj = self._obj_creator()
                 self._used_objs.append(obj)
                 return obj
-            else:
-                obj = self._free_objs.pop()
-                self._used_objs.append(obj)
-                return obj
+            obj = None
+            while self._free_objs:
+                # FIFO try to remove timeout idle objects
+                idle_obj = self._free_objs.popleft()
+                if idle_obj._idle_at + self.obj_idle_timeout > time.time():
+                    obj = idle_obj
+                    break
+                self._after_remove(idle_obj)
+            if not obj:
+                obj = self._obj_creator()
+            self._used_objs.append(obj)
+            return obj
 
     def destroy(self, obj, silent=True):
         was_dropped = False
@@ -93,6 +103,7 @@ class ObjectPool(object):
         with self._lock:
             try:
                 self._used_objs.remove(obj)
+                setattr(obj, '_idle_at', time.time())
                 self._free_objs.append(obj)
             except ValueError:
                 if not silent:
