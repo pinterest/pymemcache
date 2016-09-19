@@ -735,12 +735,12 @@ class TestMockClient(ClientTestMixin, unittest.TestCase):
     def test_deserialization(self):
         def _serializer(key, value):
             if isinstance(value, dict):
-                return json.dumps(value.decode('UTF-8')), 1
+                return json.dumps(value).encode('UTF-8'), 1
             return value, 0
 
         def _deserializer(key, value, flags):
             if flags == 1:
-                return json.loads(value).encode('UTF-8')
+                return json.loads(value.decode('UTF-8'))
             return value
 
         client = self.make_client([
