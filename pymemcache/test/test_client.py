@@ -735,12 +735,12 @@ class TestMockClient(ClientTestMixin, unittest.TestCase):
     def test_deserialization(self):
         def _serializer(key, value):
             if isinstance(value, dict):
-                return json.dumps(value), 1
+                return json.dumps(value.decode('UTF-8')), 1
             return value, 0
 
         def _deserializer(key, value, flags):
             if flags == 1:
-                return json.loads(value)
+                return json.loads(value).encode('UTF-8')
             return value
 
         client = self.make_client([
@@ -750,7 +750,7 @@ class TestMockClient(ClientTestMixin, unittest.TestCase):
             b'VALUE key2 0 18\r\n{"hello": "world"}\r\nEND\r\n',
         ], serializer=_serializer, deserializer=_deserializer)
 
-        result = client.set(b'key1', 'hello', noreply=False)
+        result = client.set(b'key1', b'hello', noreply=False)
         result = client.get(b'key1')
         assert result == 'hello'
 
