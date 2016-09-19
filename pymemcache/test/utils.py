@@ -47,13 +47,13 @@ class MockMemcacheClient(object):
         if key not in self._contents:
             return default
 
-        expire, value, was_serialized = self._contents[key]
+        expire, value, flags = self._contents[key]
         if expire and expire < time.time():
             del self._contents[key]
             return default
 
         if self.deserializer:
-            return self.deserializer(key, value, 2 if was_serialized else 1)
+            return self.deserializer(key, value, flags)
         return value
 
     def get_many(self, keys):
@@ -72,14 +72,14 @@ class MockMemcacheClient(object):
         if isinstance(value, six.text_type):
             raise MemcacheIllegalInputError(value)
 
-        was_serialized = False
+        flags = 0
         if self.serializer:
-            value = self.serializer(key, value)
+            value, flags = self.serializer(key, value)
 
         if expire:
             expire += time.time()
 
-        self._contents[key] = expire, value, was_serialized
+        self._contents[key] = expire, value, flags
         return True
 
     def set_many(self, values, expire=None, noreply=True):
