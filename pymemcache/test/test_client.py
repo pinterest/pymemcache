@@ -723,6 +723,41 @@ class TestMockClient(ClientTestMixin, unittest.TestCase):
         client.sock = MockSocket(list(mock_socket_values))
         return client
 
+    def test_get_found(self):
+        client = self.make_client([
+            b'STORED\r\n',
+            b'VALUE key 0 5\r\nvalue\r\nEND\r\n',
+        ])
+        result = client.set(b'key', b'value', noreply=False)
+        result = client.get(b'key')
+        assert result == b'value'
+
+    def test_deserialization(self):
+        def _serializer(key, value):
+            if isinstance(value, dict):
+                return json.dumps(value).encode('UTF-8'), 1
+            return value, 0
+
+        def _deserializer(key, value, flags):
+            if flags == 1:
+                return json.loads(value.decode('UTF-8'))
+            return value
+
+        client = self.make_client([
+            b'STORED\r\n',
+            b'VALUE key1 0 5\r\nhello\r\nEND\r\n',
+            b'STORED\r\n',
+            b'VALUE key2 0 18\r\n{"hello": "world"}\r\nEND\r\n',
+        ], serializer=_serializer, deserializer=_deserializer)
+
+        result = client.set(b'key1', b'hello', noreply=False)
+        result = client.get(b'key1')
+        assert result == b'hello'
+
+        result = client.set(b'key2', dict(hello='world'), noreply=False)
+        result = client.get(b'key2')
+        assert result == dict(hello='world')
+
 
 class TestPrefixedClient(ClientTestMixin, unittest.TestCase):
     def make_client(self, mock_socket_values, **kwargs):
