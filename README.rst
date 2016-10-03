@@ -111,3 +111,4 @@ Credits
 * `Adam Chainz <http://github.com/adamchainz>`_
 * `Ernest W. Durbin III <https://github.com/ewdurbin>`_
 * `Remco van Oosterhout <https://github.com/Vhab>`_
+* `Nicholas Charriere <https://github.com/nichochar>`_
