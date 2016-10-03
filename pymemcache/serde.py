@@ -12,8 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+
 import logging
-import pickle
 from io import BytesIO
 
 try:
