@@ -12,13 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
-
 import logging
 from io import BytesIO
+import six
+
+if six.PY2:
+    try:
+        import cPickle as pickle
+    except ImportError:
+        import pickle
+else:
+    import pickle
 
 try:
     long_type = long  # noqa
