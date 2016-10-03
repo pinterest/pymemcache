@@ -40,6 +40,7 @@ env/
 .pip
 .pypirc
 coverage.xml
+.python-version
 \#*\#
 docs/_build
 docs/apidoc/pymemcache.test.rst

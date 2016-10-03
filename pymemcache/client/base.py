@@ -82,10 +82,11 @@ STAT_TYPES = {
 
 def _check_key(key, key_prefix=b''):
     """Checks key and add key_prefix."""
-    if isinstance(key, six.text_type):
+    allowed_str_types = (six.text_type, six.string_types)
+    if isinstance(key, allowed_str_types):
         try:
             key = key.encode('ascii')
-        except UnicodeEncodeError:
+        except (UnicodeEncodeError, UnicodeDecodeError):
             raise MemcacheIllegalInputError("Non-ASCII key: '%r'" % (key,))
     key = key_prefix + key
     if b' ' in key or b'\n' in key:
