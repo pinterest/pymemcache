@@ -92,6 +92,15 @@ class ClientTestMixin(object):
         with pytest.raises(MemcacheIllegalInputError):
             _set()
 
+    def test_set_unicode_char_in_middle_of_key(self):
+        client = self.make_client([b'STORED\r\n'])
+
+        def _set():
+            client.set('helloworld_\xb1901520_%c3', b'value', noreply=False)
+
+        with pytest.raises(MemcacheIllegalInputError):
+            _set()
+
     def test_set_unicode_value(self):
         client = self.make_client([b''])
 
