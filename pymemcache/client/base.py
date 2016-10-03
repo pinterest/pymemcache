@@ -82,7 +82,8 @@ STAT_TYPES = {
 
 def _check_key(key, key_prefix=b''):
     """Checks key and add key_prefix."""
-    if isinstance(key, six.text_type) or isinstance(key, six.string_types):
+    allowed_str_types = (six.text_type, six.string_types)
+    if isinstance(key, allowed_str_types):
         try:
             key = key.encode('ascii')
         except (UnicodeEncodeError, UnicodeDecodeError):
