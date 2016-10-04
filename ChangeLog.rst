@@ -1,5 +1,16 @@
 Change Log
 ==========
+New in version 1.3.7
+--------------------
+* default parameter on get(key, default=0)
+* fixed docs to autogenerate themselves with sphinx
+* fix linter to work with python3
+* improve error message on illegal Input for the key
+* refactor stat parsing
+* fix MockMemcacheClient
+* fix unicode char in middle of key bug
+* use cpickle instead of pickle when possible (python2)
+
 New in version 1.3.6
 --------------------
 * Fix flake8 and cleanup tox building

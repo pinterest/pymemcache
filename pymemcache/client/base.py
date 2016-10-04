@@ -36,6 +36,7 @@ VALID_STORE_RESULTS = {
     b'prepend': (b'STORED', b'NOT_STORED'),
     b'cas':     (b'STORED', b'EXISTS', b'NOT_FOUND'),
 }
+VALID_STRING_TYPES = (six.text_type, six.string_types)
 
 
 # Some of the values returned by the "stats" command
@@ -82,8 +83,7 @@ STAT_TYPES = {
 
 def _check_key(key, key_prefix=b''):
     """Checks key and add key_prefix."""
-    allowed_str_types = (six.text_type, six.string_types)
-    if isinstance(key, allowed_str_types):
+    if isinstance(key, VALID_STRING_TYPES):
         try:
             key = key.encode('ascii')
         except (UnicodeEncodeError, UnicodeDecodeError):
