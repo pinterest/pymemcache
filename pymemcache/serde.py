@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import logging
-import pickle
 from io import BytesIO
+from six.moves import cPickle as pickle
 
 try:
     long_type = long  # noqa
