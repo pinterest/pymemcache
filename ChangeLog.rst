@@ -9,6 +9,7 @@ New in version 1.3.7
 * refactor stat parsing
 * fix MockMemcacheClient
 * fix unicode char in middle of key bug
+* use cpickle instead of pickle when possible (python2)
 
 New in version 1.3.6
 --------------------
