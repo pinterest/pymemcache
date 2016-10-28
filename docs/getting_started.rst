@@ -57,6 +57,16 @@ Serialization
     result = client.get('key')
 
 
+Key Constraints
+---------------
+This client implements the ASCII protocol of memcached. This means keys should not
+contain any of the following illegal characters:
+> Keys cannot have spaces, new lines, carriage returns, or null characters.
+We suggest that if you have unicode characters, or long keys, you use an effective
+hashing mechanism before calling this client. At Pinterest, we have found that murmur3 hash is a
+great candidate for this.
+
+
 Best Practices
 ---------------
 
