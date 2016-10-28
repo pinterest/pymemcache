@@ -884,25 +884,25 @@ class PooledClient(object):
     def close(self):
         self.client_pool.clear()
 
-    def set(self, key, value, expire=0, noreply=True):
+    def set(self, key, value, expire=0, noreply=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             return client.set(key, value, expire=expire, noreply=noreply)
 
-    def set_many(self, values, expire=0, noreply=True):
+    def set_many(self, values, expire=0, noreply=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             return client.set_many(values, expire=expire, noreply=noreply)
 
     set_multi = set_many
 
-    def replace(self, key, value, expire=0, noreply=True):
+    def replace(self, key, value, expire=0, noreply=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             return client.replace(key, value, expire=expire, noreply=noreply)
 
-    def append(self, key, value, expire=0, noreply=True):
+    def append(self, key, value, expire=0, noreply=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             return client.append(key, value, expire=expire, noreply=noreply)
 
-    def prepend(self, key, value, expire=0, noreply=True):
+    def prepend(self, key, value, expire=0, noreply=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             return client.prepend(key, value, expire=expire, noreply=noreply)
 
@@ -953,17 +953,17 @@ class PooledClient(object):
                 else:
                     raise
 
-    def delete(self, key, noreply=True):
+    def delete(self, key, noreply=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             return client.delete(key, noreply=noreply)
 
-    def delete_many(self, keys, noreply=True):
+    def delete_many(self, keys, noreply=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             return client.delete_many(keys, noreply=noreply)
 
     delete_multi = delete_many
 
-    def add(self, key, value, expire=0, noreply=True):
+    def add(self, key, value, expire=0, noreply=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             return client.add(key, value, expire=expire, noreply=noreply)
 
@@ -975,7 +975,7 @@ class PooledClient(object):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             return client.decr(key, value, noreply=noreply)
 
-    def touch(self, key, expire=0, noreply=True):
+    def touch(self, key, expire=0, noreply=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             return client.touch(key, expire=expire, noreply=noreply)
 
@@ -993,7 +993,7 @@ class PooledClient(object):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             return client.version()
 
-    def flush_all(self, delay=0, noreply=True):
+    def flush_all(self, delay=0, noreply=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             return client.flush_all(delay=delay, noreply=noreply)
 
