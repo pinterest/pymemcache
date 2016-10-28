@@ -637,45 +637,61 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         with pytest.raises(MemcacheClientError):
             client.get(u'\u3053\u3093\u306b\u3061\u306f')
 
-    def test_default_noreply_set(self):
-        client = self.make_client([b'STORED\r\n'], default_noreply=False)
-        result = client.set(b'key', b'value')
+    def _default_noreply_false(self, cmd, args, response):
+        client = self.make_client(response, default_noreply=False)
+        result = getattr(client, cmd)(*args)
+        assert result is False
+
+    def _default_noreply_true(self, cmd, args, response):
+        client = self.make_client(response, default_noreply=True)
+        result = getattr(client, cmd)(*args)
         assert result is True
+
+    def test_default_noreply_set(self):
+        with pytest.raises(MemcacheUnknownError):
+            self._default_noreply_false(
+                'set', (b'key', b'value'), [b'NOT_STORED\r\n'])
+        self._default_noreply_true(
+            'set', (b'key', b'value'), [b'NOT_STORED\r\n'])
 
     def test_default_noreply_set_many(self):
-        client = self.make_client([b'STORED\r\n'], default_noreply=False)
-        result = client.set_many({b'key': b'value'})
-        assert result is True
+        with pytest.raises(MemcacheUnknownError):
+            self._default_noreply_false(
+                'set_many', ({b'key': b'value'},), [b'NOT_STORED\r\n'])
+        self._default_noreply_true(
+            'set_many', ({b'key': b'value'},), [b'NOT_STORED\r\n'])
 
     def test_default_noreply_add(self):
-        client = self.make_client([b'STORED\r', b'\n'], default_noreply=False)
-        result = client.add(b'key', b'value')
-        assert result is True
+        self._default_noreply_false(
+            'add', (b'key', b'value'), [b'NOT_STORED\r\n'])
+        self._default_noreply_true(
+            'add', (b'key', b'value'), [b'NOT_STORED\r\n'])
 
     def test_default_noreply_replace(self):
-        client = self.make_client([b'STORED\r\n'], default_noreply=False)
-        result = client.replace(b'key', b'value')
-        assert result is True
+        self._default_noreply_false(
+            'replace', (b'key', b'value'), [b'NOT_STORED\r\n'])
+        self._default_noreply_true(
+            'replace', (b'key', b'value'), [b'NOT_STORED\r\n'])
 
     def test_default_noreply_append(self):
-        client = self.make_client([b'STORED\r\n'], default_noreply=False)
-        result = client.append(b'key', b'value')
-        assert result is True
+        self._default_noreply_false(
+            'append', (b'key', b'value'), [b'NOT_STORED\r\n'])
+        self._default_noreply_true(
+            'append', (b'key', b'value'), [b'NOT_STORED\r\n'])
 
     def test_default_noreply_prepend(self):
-        client = self.make_client([b'STORED\r\n'], default_noreply=False)
-        result = client.prepend(b'key', b'value')
-        assert result is True
+        self._default_noreply_false(
+            'prepend', (b'key', b'value'), [b'NOT_STORED\r\n'])
+        self._default_noreply_true(
+            'prepend', (b'key', b'value'), [b'NOT_STORED\r\n'])
 
     def test_default_noreply_touch(self):
-        client = self.make_client([b'TOUCHED\r\n'], default_noreply=False)
-        result = client.touch(b'key')
-        assert result is True
+        self._default_noreply_false('touch', (b'key',), [b'NOT_FOUND\r\n'])
+        self._default_noreply_true('touch', (b'key',), [b'NOT_FOUND\r\n'])
 
     def test_default_noreply_flush_all(self):
-        client = self.make_client([b'OK\r\n'], default_noreply=False)
-        result = client.flush_all()
-        assert result is True
+        self._default_noreply_false('flush_all', (), [b'__FAKE_RESPONSE__\r\n'])
+        self._default_noreply_true('flush_all', (), [b'__FAKE_RESPONSE__\r\n'])
 
     def test_version_success(self):
         client = self.make_client([b'VERSION 1.2.3\r\n'],
@@ -724,6 +740,62 @@ class TestPooledClient(ClientTestMixin, unittest.TestCase):
         client = PooledClient(None, **kwargs)
         client.client_pool = pool.ObjectPool(lambda: mock_client)
         return client
+
+    def _default_noreply_false(self, cmd, args, response):
+        client = self.make_client(response, default_noreply=False)
+        result = getattr(client, cmd)(*args)
+        assert result is False
+
+    def _default_noreply_true(self, cmd, args, response):
+        client = self.make_client(response, default_noreply=True)
+        result = getattr(client, cmd)(*args)
+        assert result is True
+
+    def test_default_noreply_set(self):
+        with pytest.raises(MemcacheUnknownError):
+            self._default_noreply_false(
+                'set', (b'key', b'value'), [b'NOT_STORED\r\n'])
+        self._default_noreply_true(
+            'set', (b'key', b'value'), [b'NOT_STORED\r\n'])
+
+    def test_default_noreply_set_many(self):
+        with pytest.raises(MemcacheUnknownError):
+            self._default_noreply_false(
+                'set_many', ({b'key': b'value'},), [b'NOT_STORED\r\n'])
+        self._default_noreply_true(
+            'set_many', ({b'key': b'value'},), [b'NOT_STORED\r\n'])
+
+    def test_default_noreply_add(self):
+        self._default_noreply_false(
+            'add', (b'key', b'value'), [b'NOT_STORED\r\n'])
+        self._default_noreply_true(
+            'add', (b'key', b'value'), [b'NOT_STORED\r\n'])
+
+    def test_default_noreply_replace(self):
+        self._default_noreply_false(
+            'replace', (b'key', b'value'), [b'NOT_STORED\r\n'])
+        self._default_noreply_true(
+            'replace', (b'key', b'value'), [b'NOT_STORED\r\n'])
+
+    def test_default_noreply_append(self):
+        self._default_noreply_false(
+            'append', (b'key', b'value'), [b'NOT_STORED\r\n'])
+        self._default_noreply_true(
+            'append', (b'key', b'value'), [b'NOT_STORED\r\n'])
+
+    def test_default_noreply_prepend(self):
+        self._default_noreply_false(
+            'prepend', (b'key', b'value'), [b'NOT_STORED\r\n'])
+        self._default_noreply_true(
+            'prepend', (b'key', b'value'), [b'NOT_STORED\r\n'])
+
+    def test_default_noreply_touch(self):
+        self._default_noreply_false('touch', (b'key',), [b'NOT_FOUND\r\n'])
+        self._default_noreply_true('touch', (b'key',), [b'NOT_FOUND\r\n'])
+
+    def test_default_noreply_flush_all(self):
+        self._default_noreply_false('flush_all', (), [b'__FAKE_RESPONSE__\r\n'])
+        self._default_noreply_true('flush_all', (), [b'__FAKE_RESPONSE__\r\n'])
 
 
 class TestMockClient(ClientTestMixin, unittest.TestCase):
