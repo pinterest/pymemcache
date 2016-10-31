@@ -1,4 +1,5 @@
 # Copyright 2012 Pinterest.com
+# -*- coding: utf-8 -*-
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -92,11 +93,32 @@ class ClientTestMixin(object):
         with pytest.raises(MemcacheIllegalInputError):
             _set()
 
+    def test_set_unicode_key_ok(self):
+        client = self.make_client([b'STORED\r\n'], allow_unicode_keys=True)
+
+        result = client.set(u'\u0FFF', b'value', noreply=False)
+        assert result is True
+
+    def test_set_unicode_key_ok_snowman(self):
+        client = self.make_client([b'STORED\r\n'], allow_unicode_keys=True)
+
+        result = client.set('my☃', b'value', noreply=False)
+        assert result is True
+
     def test_set_unicode_char_in_middle_of_key(self):
         client = self.make_client([b'STORED\r\n'])
 
         def _set():
             client.set('helloworld_\xb1901520_%c3', b'value', noreply=False)
+
+        with pytest.raises(MemcacheIllegalInputError):
+            _set()
+
+    def test_set_unicode_char_in_middle_of_key_snowman(self):
+        client = self.make_client([b'STORED\r\n'])
+
+        def _set():
+            client.set('my☃', b'value', noreply=False)
 
         with pytest.raises(MemcacheIllegalInputError):
             _set()
@@ -109,6 +131,12 @@ class ClientTestMixin(object):
 
         with pytest.raises(MemcacheIllegalInputError):
             _set()
+
+    def test_set_unicode_char_in_middle_of_key_ok(self):
+        client = self.make_client([b'STORED\r\n'], allow_unicode_keys=True)
+
+        result = client.set('helloworld_\xb1901520_%c3', b'value', noreply=False)
+        assert result is True
 
     def test_set_noreply(self):
         client = self.make_client([])
@@ -625,6 +653,15 @@ class TestClient(ClientTestMixin, unittest.TestCase):
 
         with pytest.raises(MemcacheClientError):
             client.get(b'x' * 251)
+
+    def test_too_long_unicode_key(self):
+        client = self.make_client([b'STORED\r\n'], allow_unicode_keys=True)
+
+        with pytest.raises(MemcacheClientError):
+            client.get('my☃'*150)
+
+        with pytest.raises(MemcacheClientError):
+            client.get(u'\u0FFF'*150)
 
     def test_key_contains_spae(self):
         client = self.make_client([b'END\r\n'])

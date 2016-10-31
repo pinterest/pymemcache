@@ -81,9 +81,12 @@ STAT_TYPES = {
 # Common helper functions.
 
 
-def _check_key(key, key_prefix=b''):
+def _check_key(key, allow_unicode_keys, key_prefix=b''):
     """Checks key and add key_prefix."""
-    if isinstance(key, VALID_STRING_TYPES):
+    if allow_unicode_keys:
+        if isinstance(key, six.text_type):
+            key = key.encode('utf8')
+    elif isinstance(key, VALID_STRING_TYPES):
         try:
             key = key.encode('ascii')
         except (UnicodeEncodeError, UnicodeDecodeError):
@@ -177,7 +180,8 @@ class Client(object):
                  ignore_exc=False,
                  socket_module=socket,
                  key_prefix=b'',
-                 default_noreply=True):
+                 default_noreply=True,
+                 allow_unicode_keys=False):
         """
         Constructor.
 
@@ -203,6 +207,7 @@ class Client(object):
           default_noreply: bool, the default value for 'noreply' as passed to
             store commands (except from cas, incr, and decr, which default to
             False).
+          allow_unicode_keys: bool, support unicode (utf8) keys
 
         Notes:
           The constructor does not make a connection to memcached. The first
@@ -223,10 +228,11 @@ class Client(object):
             raise TypeError("key_prefix should be bytes.")
         self.key_prefix = key_prefix
         self.default_noreply = default_noreply
+        self.allow_unicode_keys = allow_unicode_keys
 
     def check_key(self, key):
         """Checks key and add key_prefix."""
-        return _check_key(key, key_prefix=self.key_prefix)
+        return _check_key(key, allow_unicode_keys=self.allow_unicode_keys, key_prefix=self.key_prefix)
 
     def _connect(self):
         sock = self.socket_module.socket(self.socket_module.AF_INET,
@@ -841,7 +847,8 @@ class PooledClient(object):
                  key_prefix=b'',
                  max_pool_size=None,
                  lock_generator=None,
-                 default_noreply=True):
+                 default_noreply=True,
+                 allow_unicode_keys=False):
         self.server = server
         self.serializer = serializer
         self.deserializer = deserializer
@@ -851,6 +858,7 @@ class PooledClient(object):
         self.ignore_exc = ignore_exc
         self.socket_module = socket_module
         self.default_noreply = default_noreply
+        self.allow_unicode_keys = allow_unicode_keys
         if isinstance(key_prefix, six.text_type):
             key_prefix = key_prefix.encode('ascii')
         if not isinstance(key_prefix, bytes):
@@ -864,7 +872,7 @@ class PooledClient(object):
 
     def check_key(self, key):
         """Checks key and add key_prefix."""
-        return _check_key(key, key_prefix=self.key_prefix)
+        return _check_key(key, allow_unicode_keys=self.allow_unicode_keys, key_prefix=self.key_prefix)
 
     def _create_client(self):
         client = Client(self.server,
@@ -878,7 +886,8 @@ class PooledClient(object):
                         ignore_exc=False,
                         socket_module=self.socket_module,
                         key_prefix=self.key_prefix,
-                        default_noreply=self.default_noreply)
+                        default_noreply=self.default_noreply,
+                        allow_unicode_keys=self.allow_unicode_keys)
         return client
 
     def close(self):

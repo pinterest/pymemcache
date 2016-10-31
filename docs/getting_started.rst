@@ -63,8 +63,11 @@ This client implements the ASCII protocol of memcached. This means keys should n
 contain any of the following illegal characters:
 > Keys cannot have spaces, new lines, carriage returns, or null characters.
 We suggest that if you have unicode characters, or long keys, you use an effective
-hashing mechanism before calling this client. At Pinterest, we have found that murmur3 hash is a
-great candidate for this.
+hashing mechanism before calling this client. At Pinterest, we have found that
+murmur3 hash is a great candidate for this. Alternatively you can
+set `allow_unicode_keys` to support unicode keys, but beware of
+what unicode encoding you use to make sure multiple clients can find the
+same key.
 
 
 Best Practices
