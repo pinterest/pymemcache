@@ -30,13 +30,24 @@ Install from pip:
 
   pip install pymemcache
 
-For development, clone from github and run the tests with:
+For development, clone from github and run the tests:
 
 .. code-block:: bash
 
     git clone https://github.com/pinterest/pymemcache.git
     cd pymemcache
+
+Run the tests manually:
+
+.. code-block:: bash
+
     python setup.py nosetests
+
+Or with `Tox <http://tox.readthedocs.io/>`_:
+
+.. code-block:: bash
+
+    tox
 
 Usage
 =====
