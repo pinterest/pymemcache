@@ -1,3 +1,4 @@
 mock
 pytest
 pytest-cov
+gevent; "PyPy" not in platform_python_implementation
