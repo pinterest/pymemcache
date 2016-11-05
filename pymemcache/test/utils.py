@@ -26,12 +26,14 @@ class MockMemcacheClient(object):
                  timeout=None,
                  no_delay=False,
                  ignore_exc=False,
-                 default_noreply=True):
+                 default_noreply=True,
+                 allow_unicode_keys=False):
 
         self._contents = {}
 
         self.serializer = serializer
         self.deserializer = deserializer
+        self.allow_unicode_keys = allow_unicode_keys
 
         # Unused, but present for interface compatibility
         self.server = server
@@ -41,13 +43,14 @@ class MockMemcacheClient(object):
         self.ignore_exc = ignore_exc
 
     def get(self, key, default=None):
-        if isinstance(key, six.text_type):
-            raise MemcacheIllegalInputError(key)
-        if isinstance(key, six.string_types):
-            try:
-                key = key.encode('ascii')
-            except (UnicodeEncodeError, UnicodeDecodeError):
-                raise MemcacheIllegalInputError
+        if not self.allow_unicode_keys:
+            if isinstance(key, six.text_type):
+                raise MemcacheIllegalInputError(key)
+            if isinstance(key, six.string_types):
+                try:
+                    key = key.encode('ascii')
+                except (UnicodeEncodeError, UnicodeDecodeError):
+                    raise MemcacheIllegalInputError
 
         if key not in self._contents:
             return default
@@ -72,15 +75,16 @@ class MockMemcacheClient(object):
     get_multi = get_many
 
     def set(self, key, value, expire=0, noreply=True):
-        if isinstance(key, six.text_type):
-            raise MemcacheIllegalInputError(key)
+        if not self.allow_unicode_keys:
+            if isinstance(key, six.text_type):
+                raise MemcacheIllegalInputError(key)
+            if isinstance(key, six.string_types):
+                try:
+                    key = key.encode('ascii')
+                except (UnicodeEncodeError, UnicodeDecodeError):
+                    raise MemcacheIllegalInputError
         if isinstance(value, six.text_type):
             raise MemcacheIllegalInputError(value)
-        if isinstance(key, six.string_types):
-            try:
-                key = key.encode('ascii')
-            except (UnicodeEncodeError, UnicodeDecodeError):
-                raise MemcacheIllegalInputError
         if isinstance(value, six.string_types):
             try:
                 value = value.encode('ascii')

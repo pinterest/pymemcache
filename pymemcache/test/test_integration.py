@@ -1,4 +1,5 @@
 # Copyright 2012 Pinterest.com
+# -*- coding: utf-8 -*-
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,27 +24,47 @@ from pymemcache.exceptions import (
 )
 
 
+def get_set_helper(client, key, value, key2, value2):
+    result = client.get(key)
+    assert result is None
+
+    client.set(key, value, noreply=False)
+    result = client.get(key)
+    assert result == value
+
+    client.set(key2, value2, noreply=True)
+    result = client.get(key2)
+    assert result == value2
+
+    result = client.get_many([key, key2])
+    assert result == {key: value, key2: value2}
+
+    result = client.get_many([])
+    assert result == {}
+
+
 @pytest.mark.integration()
 def test_get_set(client_class, host, port, socket_module):
     client = client_class((host, port), socket_module=socket_module)
     client.flush_all()
 
-    result = client.get('key')
-    assert result is None
+    key = b'key'
+    value = b'value'
+    key2 = b'key2'
+    value2 = b'value2'
+    get_set_helper(client, key, value, key2, value2)
 
-    client.set(b'key', b'value', noreply=False)
-    result = client.get(b'key')
-    assert result == b'value'
 
-    client.set(b'key2', b'value2', noreply=True)
-    result = client.get(b'key2')
-    assert result == b'value2'
+@pytest.mark.integration()
+def test_get_set_unicode_key(client_class, host, port, socket_module):
+    client = client_class((host, port), socket_module=socket_module, allow_unicode_keys=True)
+    client.flush_all()
 
-    result = client.get_many([b'key', b'key2'])
-    assert result == {b'key': b'value', b'key2': b'value2'}
-
-    result = client.get_many([])
-    assert result == {}
+    key = u"こんにちは"
+    value = b'hello'
+    key2 = 'my☃'
+    value2 = b'value2'
+    get_set_helper(client, key, value, key2, value2)
 
 
 @pytest.mark.integration()

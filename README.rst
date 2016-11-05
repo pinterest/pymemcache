@@ -123,3 +123,4 @@ Credits
 * `Ernest W. Durbin III <https://github.com/ewdurbin>`_
 * `Remco van Oosterhout <https://github.com/Vhab>`_
 * `Nicholas Charriere <https://github.com/nichochar>`_
+* `Joe Gordon <https://github.com/jogo>`_

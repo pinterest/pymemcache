@@ -30,6 +30,7 @@ class HashClient(object):
         dead_timeout=60,
         use_pooling=False,
         ignore_exc=False,
+        allow_unicode_keys=False
     ):
         """
         Constructor.
@@ -66,6 +67,7 @@ class HashClient(object):
         self.use_pooling = use_pooling
         self.key_prefix = key_prefix
         self.ignore_exc = ignore_exc
+        self.allow_unicode_keys = allow_unicode_keys
         self._failed_clients = {}
         self._dead_clients = {}
         self._last_dead_check_time = time.time()
@@ -80,6 +82,7 @@ class HashClient(object):
             'key_prefix': key_prefix,
             'serializer': serializer,
             'deserializer': deserializer,
+            'allow_unicode_keys': allow_unicode_keys,
         }
 
         if use_pooling is True:
@@ -113,7 +116,7 @@ class HashClient(object):
         self.hasher.remove_node(key)
 
     def _get_client(self, key):
-        _check_key(key, self.key_prefix)
+        _check_key(key, self.allow_unicode_keys, self.key_prefix)
         if len(self._dead_clients) > 0:
             current_time = time.time()
             ldc = self._last_dead_check_time

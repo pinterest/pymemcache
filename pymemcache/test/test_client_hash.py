@@ -12,8 +12,8 @@ import socket
 
 class TestHashClient(ClientTestMixin, unittest.TestCase):
 
-    def make_client_pool(self, hostname, mock_socket_values, serializer=None):
-        mock_client = Client(hostname, serializer=serializer)
+    def make_client_pool(self, hostname, mock_socket_values, serializer=None, **kwargs):
+        mock_client = Client(hostname, serializer=serializer, **kwargs)
         mock_client.sock = MockSocket(mock_socket_values)
         client = PooledClient(hostname, serializer=serializer)
         client.client_pool = pool.ObjectPool(lambda: mock_client)
@@ -28,7 +28,8 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
             s = '%s:%s' % (ip, current_port)
             c = self.make_client_pool(
                 (ip, current_port),
-                vals
+                vals,
+                **kwargs
             )
             client.clients[s] = c
             client.hasher.add_node(s)
