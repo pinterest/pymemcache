@@ -135,7 +135,8 @@ class ClientTestMixin(object):
     def test_set_unicode_char_in_middle_of_key_ok(self):
         client = self.make_client([b'STORED\r\n'], allow_unicode_keys=True)
 
-        result = client.set('helloworld_\xb1901520_%c3', b'value', noreply=False)
+        result = client.set('helloworld_\xb1901520_%c3', b'value',
+                            noreply=False)
         assert result is True
 
     def test_set_noreply(self):
@@ -727,7 +728,8 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         self._default_noreply_true('touch', (b'key',), [b'NOT_FOUND\r\n'])
 
     def test_default_noreply_flush_all(self):
-        self._default_noreply_false('flush_all', (), [b'__FAKE_RESPONSE__\r\n'])
+        self._default_noreply_false('flush_all', (),
+                                    [b'__FAKE_RESPONSE__\r\n'])
         self._default_noreply_true('flush_all', (), [b'__FAKE_RESPONSE__\r\n'])
 
     def test_version_success(self):
@@ -831,7 +833,8 @@ class TestPooledClient(ClientTestMixin, unittest.TestCase):
         self._default_noreply_true('touch', (b'key',), [b'NOT_FOUND\r\n'])
 
     def test_default_noreply_flush_all(self):
-        self._default_noreply_false('flush_all', (), [b'__FAKE_RESPONSE__\r\n'])
+        self._default_noreply_false('flush_all', (),
+                                    [b'__FAKE_RESPONSE__\r\n'])
         self._default_noreply_true('flush_all', (), [b'__FAKE_RESPONSE__\r\n'])
 
 

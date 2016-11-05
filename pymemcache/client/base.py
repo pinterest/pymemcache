@@ -232,7 +232,8 @@ class Client(object):
 
     def check_key(self, key):
         """Checks key and add key_prefix."""
-        return _check_key(key, allow_unicode_keys=self.allow_unicode_keys, key_prefix=self.key_prefix)
+        return _check_key(key, allow_unicode_keys=self.allow_unicode_keys,
+                          key_prefix=self.key_prefix)
 
     def _connect(self):
         sock = self.socket_module.socket(self.socket_module.AF_INET,
@@ -872,7 +873,8 @@ class PooledClient(object):
 
     def check_key(self, key):
         """Checks key and add key_prefix."""
-        return _check_key(key, allow_unicode_keys=self.allow_unicode_keys, key_prefix=self.key_prefix)
+        return _check_key(key, allow_unicode_keys=self.allow_unicode_keys,
+                          key_prefix=self.key_prefix)
 
     def _create_client(self):
         client = Client(self.server,

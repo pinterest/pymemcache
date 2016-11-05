@@ -12,7 +12,8 @@ import socket
 
 class TestHashClient(ClientTestMixin, unittest.TestCase):
 
-    def make_client_pool(self, hostname, mock_socket_values, serializer=None, **kwargs):
+    def make_client_pool(self, hostname, mock_socket_values,
+                         serializer=None, **kwargs):
         mock_client = Client(hostname, serializer=serializer, **kwargs)
         mock_client.sock = MockSocket(mock_socket_values)
         client = PooledClient(hostname, serializer=serializer)

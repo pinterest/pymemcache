@@ -57,7 +57,8 @@ def test_get_set(client_class, host, port, socket_module):
 
 @pytest.mark.integration()
 def test_get_set_unicode_key(client_class, host, port, socket_module):
-    client = client_class((host, port), socket_module=socket_module, allow_unicode_keys=True)
+    client = client_class((host, port), socket_module=socket_module,
+                          allow_unicode_keys=True)
     client.flush_all()
 
     key = u"こんにちは"
