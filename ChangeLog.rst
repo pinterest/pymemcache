@@ -2,7 +2,7 @@ Change Log
 ==========
 New in version 1.4.0
 --------------------
-* Unicode keys support. It is now possible to pass the flag `allow_unicode_keys` when creating the clients
+* Unicode keys support. It is now possible to pass the flag `allow_unicode_keys` when creating the clients, thanks @jogo!
 * Fixed a bug where PooledClient wasn't following `default_noreply` arg set on init, thanks @kols!
 * Improved documentation
 
