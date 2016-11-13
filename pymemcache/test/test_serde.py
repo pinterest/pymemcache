@@ -1,7 +1,8 @@
 from unittest import TestCase
 
 from pymemcache.serde import (python_memcache_serializer,
-                              python_memcache_deserializer)
+                              python_memcache_deserializer, FLAG_PICKLE,
+                              FLAG_INTEGER, FLAG_LONG, FLAG_TEXT)
 import pytest
 import six
 
@@ -9,8 +10,9 @@ import six
 @pytest.mark.unit()
 class TestSerde(TestCase):
 
-    def check(self, value):
+    def check(self, value, expected_flags=0):
         serialized, flags = python_memcache_serializer(b'key', value)
+        assert flags == expected_flags
 
         # pymemcache stores values as byte strings, so we immediately the value
         # if needed so deserialized works as it would with a real server
@@ -24,13 +26,19 @@ class TestSerde(TestCase):
         self.check(b'value')
 
     def test_unicode(self):
-        self.check(u'value')
+        self.check(u'value', FLAG_TEXT)
 
     def test_int(self):
-        self.check(1)
+        self.check(1, FLAG_INTEGER)
 
     def test_long(self):
-        self.check(123123123123123123123)
+        # long only exists with Python 2, so we're just testing for another
+        # integer with Python 3
+        if six.PY2:
+            expected_flags = FLAG_LONG
+        else:
+            expected_flags = FLAG_INTEGER
+        self.check(123123123123123123123, expected_flags)
 
     def test_pickleable(self):
-        self.check({'a': 'dict'})
+        self.check({'a': 'dict'}, FLAG_PICKLE)
