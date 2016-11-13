@@ -7,6 +7,16 @@ import pytest
 import six
 
 
+class CustomInt(int):
+    """
+    Custom integer type for testing.
+
+    Entirely useless, but used to show that built in types get serialized and
+    deserialized back as the same type of object.
+    """
+    pass
+
+
 @pytest.mark.unit()
 class TestSerde(TestCase):
 
@@ -42,3 +52,7 @@ class TestSerde(TestCase):
 
     def test_pickleable(self):
         self.check({'a': 'dict'}, FLAG_PICKLE)
+
+    def test_subtype(self):
+        # Subclass of a native type will be restored as the same type
+        self.check(CustomInt(123123), FLAG_PICKLE)
