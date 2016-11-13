@@ -22,6 +22,10 @@ from pymemcache.exceptions import (
     MemcacheIllegalInputError,
     MemcacheClientError
 )
+from pymemcache.serde import (
+    python_memcache_serializer,
+    python_memcache_deserializer
+)
 
 
 def get_set_helper(client, key, value, key2, value2):
@@ -229,6 +233,25 @@ def test_serialization_deserialization(host, port, socket_module):
     client.set(b'key', value)
     result = client.get(b'key')
     assert result == value
+
+
+@pytest.mark.integration()
+def test_serde_serialization(client_class, host, port, socket_module):
+    def check(value):
+        client.set(b'key', value, noreply=False)
+        result = client.get(b'key')
+        assert result == value
+
+    client = client_class((host, port), serializer=python_memcache_serializer,
+                          deserializer=python_memcache_deserializer,
+                          socket_module=socket_module)
+    client.flush_all()
+
+    check(b'byte string')
+    check(u'unicode string')
+    check(1)
+    check(123123123123123123123)
+    check({'a': 'pickle'})
 
 
 @pytest.mark.integration()
