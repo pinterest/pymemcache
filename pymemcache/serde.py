@@ -14,6 +14,7 @@
 
 import logging
 from io import BytesIO
+import six
 from six.moves import cPickle as pickle
 
 try:
@@ -25,19 +26,31 @@ except NameError:
 FLAG_PICKLE = 1 << 0
 FLAG_INTEGER = 1 << 1
 FLAG_LONG = 1 << 2
+FLAG_COMPRESSED = 1 << 3  # unused, to main compatability with python-memcached
+FLAG_TEXT = 1 << 4
 
 
 def python_memcache_serializer(key, value):
     flags = 0
+    value_type = type(value)
 
-    if isinstance(value, str):
+    # Check against exact types so that subclasses of native types will be
+    # restored as their native type
+    if value_type == six.binary_type:
         pass
-    elif isinstance(value, int):
+
+    elif value_type == six.text_type:
+        flags |= FLAG_TEXT
+        value = value.encode('utf8')
+
+    elif value_type == int:
         flags |= FLAG_INTEGER
         value = "%d" % value
-    elif long_type is not None and isinstance(value, long_type):
+
+    elif six.PY2 and value_type == long_type:
         flags |= FLAG_LONG
         value = "%d" % value
+
     else:
         flags |= FLAG_PICKLE
         output = BytesIO()
@@ -52,13 +65,19 @@ def python_memcache_deserializer(key, value, flags):
     if flags == 0:
         return value
 
-    if flags & FLAG_INTEGER:
+    elif flags & FLAG_TEXT:
+        return value.decode('utf8')
+
+    elif flags & FLAG_INTEGER:
         return int(value)
 
-    if flags & FLAG_LONG:
-        return long_type(value)
+    elif flags & FLAG_LONG:
+        if six.PY3:
+            return int(value)
+        else:
+            return long_type(value)
 
-    if flags & FLAG_PICKLE:
+    elif flags & FLAG_PICKLE:
         try:
             buf = BytesIO(value)
             unpickler = pickle.Unpickler(buf)
