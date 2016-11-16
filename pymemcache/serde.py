@@ -36,18 +36,18 @@ def python_memcache_serializer(key, value):
 
     # Check against exact types so that subclasses of native types will be
     # restored as their native type
-    if value_type == six.binary_type:
+    if value_type is six.binary_type:
         pass
 
-    elif value_type == six.text_type:
+    elif value_type is six.text_type:
         flags |= FLAG_TEXT
         value = value.encode('utf8')
 
-    elif value_type == int:
+    elif value_type is int:
         flags |= FLAG_INTEGER
         value = "%d" % value
 
-    elif six.PY2 and value_type == long_type:
+    elif six.PY2 and value_type is long_type:
         flags |= FLAG_LONG
         value = "%d" % value
 
