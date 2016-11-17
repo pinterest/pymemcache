@@ -36,7 +36,7 @@ def python_memcache_serializer(key, value):
 
     # Check against exact types so that subclasses of native types will be
     # restored as their native type
-    if value_type is six.binary_type:
+    if value_type is bytes:
         pass
 
     elif value_type is six.text_type:
