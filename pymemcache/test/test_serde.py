@@ -2,8 +2,8 @@
 from unittest import TestCase
 
 from pymemcache.serde import (python_memcache_serializer,
-                              python_memcache_deserializer, FLAG_PICKLE,
-                              FLAG_INTEGER, FLAG_LONG, FLAG_TEXT)
+                              python_memcache_deserializer, FLAG_BYTES,
+                              FLAG_PICKLE, FLAG_INTEGER, FLAG_LONG, FLAG_TEXT)
 import pytest
 import six
 
@@ -21,7 +21,7 @@ class CustomInt(int):
 @pytest.mark.unit()
 class TestSerde(TestCase):
 
-    def check(self, value, expected_flags=0):
+    def check(self, value, expected_flags):
         serialized, flags = python_memcache_serializer(b'key', value)
         assert flags == expected_flags
 
@@ -34,8 +34,8 @@ class TestSerde(TestCase):
         assert deserialized == value
 
     def test_bytes(self):
-        self.check(b'value')
-        self.check(b'\xc2\xa3 $ \xe2\x82\xac')  # £ $ €
+        self.check(b'value', FLAG_BYTES)
+        self.check(b'\xc2\xa3 $ \xe2\x82\xac', FLAG_BYTES)  # £ $ €
 
     def test_unicode(self):
         self.check(u'value', FLAG_TEXT)

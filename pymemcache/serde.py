@@ -23,6 +23,7 @@ except NameError:
     long_type = None
 
 
+FLAG_BYTES = 0
 FLAG_PICKLE = 1 << 0
 FLAG_INTEGER = 1 << 1
 FLAG_LONG = 1 << 2
