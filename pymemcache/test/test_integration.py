@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from collections import defaultdict
 import json
 import pytest
 import six
@@ -249,9 +250,16 @@ def test_serde_serialization(client_class, host, port, socket_module):
 
     check(b'byte string')
     check(u'unicode string')
+    check('olé')
+    check(u'olé')
     check(1)
     check(123123123123123123123)
     check({'a': 'pickle'})
+    check([u'one pickle', u'two pickle'])
+    testdict = defaultdict(int)
+    testdict[u'one pickle']
+    testdict[b'two pickle']
+    check(testdict)
 
 
 @pytest.mark.integration()
