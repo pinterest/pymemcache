@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from unittest import TestCase
 
 from pymemcache.serde import (python_memcache_serializer,
@@ -34,9 +35,11 @@ class TestSerde(TestCase):
 
     def test_bytes(self):
         self.check(b'value')
+        self.check(b'\xc2\xa3 $ \xe2\x82\xac')  # £ $ €
 
     def test_unicode(self):
         self.check(u'value', FLAG_TEXT)
+        self.check(u'£ $ €', FLAG_TEXT)
 
     def test_int(self):
         self.check(1, FLAG_INTEGER)
