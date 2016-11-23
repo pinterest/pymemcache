@@ -242,6 +242,7 @@ def test_serde_serialization(client_class, host, port, socket_module):
         client.set(b'key', value, noreply=False)
         result = client.get(b'key')
         assert result == value
+        assert type(result) is type(value)
 
     client = client_class((host, port), serializer=python_memcache_serializer,
                           deserializer=python_memcache_deserializer,
