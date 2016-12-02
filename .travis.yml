@@ -13,7 +13,9 @@ env:
   - TOXENV=py33
   - TOXENV=py34
   - TOXENV=pypy
-  - TOXENV=pypy3
+# - TOXENV=pypy3
+# Drop support until travis fixes python3 pypy interpreter path issue
+# https://github.com/travis-ci/travis-ci/issues/6304#ref-issue-177592739
 
 install:
   - travis_retry pip install tox
