@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from collections import defaultdict
 import json
 import pytest
 import six
@@ -21,6 +22,10 @@ from pymemcache.client.base import Client
 from pymemcache.exceptions import (
     MemcacheIllegalInputError,
     MemcacheClientError
+)
+from pymemcache.serde import (
+    python_memcache_serializer,
+    python_memcache_deserializer
 )
 
 
@@ -229,6 +234,33 @@ def test_serialization_deserialization(host, port, socket_module):
     client.set(b'key', value)
     result = client.get(b'key')
     assert result == value
+
+
+@pytest.mark.integration()
+def test_serde_serialization(client_class, host, port, socket_module):
+    def check(value):
+        client.set(b'key', value, noreply=False)
+        result = client.get(b'key')
+        assert result == value
+        assert type(result) is type(value)
+
+    client = client_class((host, port), serializer=python_memcache_serializer,
+                          deserializer=python_memcache_deserializer,
+                          socket_module=socket_module)
+    client.flush_all()
+
+    check(b'byte string')
+    check(u'unicode string')
+    check('olé')
+    check(u'olé')
+    check(1)
+    check(123123123123123123123)
+    check({'a': 'pickle'})
+    check([u'one pickle', u'two pickle'])
+    testdict = defaultdict(int)
+    testdict[u'one pickle']
+    testdict[b'two pickle']
+    check(testdict)
 
 
 @pytest.mark.integration()
