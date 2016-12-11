@@ -445,7 +445,7 @@ class Client(object):
           cas_default: same behaviour as default argument.
 
         Returns:
-          A tuple of (key, cas)
+          A tuple of (value, cas)
           or (default, cas_defaults) if the key was not found.
         """
         defaults = (default, cas_default)
