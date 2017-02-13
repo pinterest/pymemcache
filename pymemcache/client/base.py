@@ -96,6 +96,14 @@ def _check_key(key, allow_unicode_keys, key_prefix=b''):
         raise MemcacheIllegalInputError(
           "Key contains space and/or newline: '%r'" % (key,)
         )
+    if b'\00' in key:
+        raise MemcacheIllegalInputError(
+          "Key contains null byte: '%r'" % (key,)
+        )
+    if b'\r\n' in key:
+        raise MemcacheIllegalInputError(
+          "Key contains carriage return: '%r'" % (key,)
+        )
     if len(key) > 250:
         raise MemcacheIllegalInputError("Key is too long: '%r'" % (key,))
     return key
