@@ -132,33 +132,6 @@ class ClientTestMixin(object):
         with pytest.raises(MemcacheIllegalInputError):
             _set()
 
-    def test_set_key_with_space(self):
-        client = self.make_client([b''])
-
-        def _set():
-            client.set(b'key has space', b'value', noreply=False)
-
-        with pytest.raises(MemcacheIllegalInputError):
-            _set()
-
-    def test_set_key_with_newline(self):
-        client = self.make_client([b''])
-
-        def _set():
-            client.set(b'key\n', b'value', noreply=False)
-
-        with pytest.raises(MemcacheIllegalInputError):
-            _set()
-
-    def test_set_key_with_carriage_return(self):
-        client = self.make_client([b''])
-
-        def _set():
-            client.set(b'key\r\n', b'value', noreply=False)
-
-        with pytest.raises(MemcacheIllegalInputError):
-            _set()
-
     def test_set_unicode_char_in_middle_of_key_ok(self):
         client = self.make_client([b'STORED\r\n'], allow_unicode_keys=True)
 
@@ -579,6 +552,33 @@ class TestClient(ClientTestMixin, unittest.TestCase):
             client.set(b'key', b'value', noreply=False)
 
         with pytest.raises(MemcacheUnknownError):
+            _set()
+
+    def test_set_key_with_space(self):
+        client = self.make_client([b''])
+
+        def _set():
+            client.set(b'key has space', b'value', noreply=False)
+
+        with pytest.raises(MemcacheIllegalInputError):
+            _set()
+
+    def test_set_key_with_newline(self):
+        client = self.make_client([b''])
+
+        def _set():
+            client.set(b'key\n', b'value', noreply=False)
+
+        with pytest.raises(MemcacheIllegalInputError):
+            _set()
+
+    def test_set_key_with_carriage_return(self):
+        client = self.make_client([b''])
+
+        def _set():
+            client.set(b'key\r\n', b'value', noreply=False)
+
+        with pytest.raises(MemcacheIllegalInputError):
             _set()
 
     def test_set_many_socket_handling(self):
