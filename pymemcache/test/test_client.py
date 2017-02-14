@@ -576,7 +576,7 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         client = self.make_client([b''])
 
         def _set():
-            client.set(b'key\r\n', b'value', noreply=False)
+            client.set(b'key\r', b'value', noreply=False)
 
         with pytest.raises(MemcacheIllegalInputError):
             _set()
