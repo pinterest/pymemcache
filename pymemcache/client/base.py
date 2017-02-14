@@ -92,7 +92,7 @@ def _check_key(key, allow_unicode_keys, key_prefix=b''):
         except (UnicodeEncodeError, UnicodeDecodeError):
             raise MemcacheIllegalInputError("Non-ASCII key: '%r'" % (key,))
     key = key_prefix + key
-    
+
     if len(key) > 250:
         raise MemcacheIllegalInputError("Key is too long: '%r'" % (key,))
 
@@ -107,7 +107,7 @@ def _check_key(key, allow_unicode_keys, key_prefix=b''):
             )
         elif c == b'\00':
             raise MemcacheIllegalInputError(
-              "Key contains null byte: '%r'" % (key,)
+              "Key contains null character: '%r'" % (key,)
             )
         elif c == b'\r':
             raise MemcacheIllegalInputError(
