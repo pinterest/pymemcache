@@ -98,7 +98,7 @@ def _check_key(key, allow_unicode_keys, key_prefix=b''):
         )
     if b'\00' in key:
         raise MemcacheIllegalInputError(
-          "Key contains null byte: '%r'" % (key,)
+          "Key contains null character: '%r'" % (key,)
         )
     if b'\r\n' in key:
         raise MemcacheIllegalInputError(
