@@ -97,19 +97,21 @@ def _check_key(key, allow_unicode_keys, key_prefix=b''):
         raise MemcacheIllegalInputError("Key is too long: '%r'" % (key,))
 
     for c in key:
-        if c == b' ':
+        if isinstance(c, VALID_STRING_TYPES):
+            c = ord(c)
+        if c == ord(b' '):
             raise MemcacheIllegalInputError(
                 "Key contains space: '%r'" % (key,)
             )
-        elif c == b'\n':
+        elif c == ord(b'\n'):
             raise MemcacheIllegalInputError(
                 "Key contains newline: '%r'" % (key,)
             )
-        elif c == b'\00':
+        elif c == ord(b'\00'):
             raise MemcacheIllegalInputError(
               "Key contains null character: '%r'" % (key,)
             )
-        elif c == b'\r':
+        elif c == ord(b'\r'):
             raise MemcacheIllegalInputError(
               "Key contains carriage return: '%r'" % (key,)
             )
