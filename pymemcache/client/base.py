@@ -96,9 +96,7 @@ def _check_key(key, allow_unicode_keys, key_prefix=b''):
     if len(key) > 250:
         raise MemcacheIllegalInputError("Key is too long: '%r'" % (key,))
 
-    for c in key:
-        if isinstance(c, VALID_STRING_TYPES):
-            c = ord(c)
+    for c in bytearray(key):
         if c == ord(b' '):
             raise MemcacheIllegalInputError(
                 "Key contains space: '%r'" % (key,)
