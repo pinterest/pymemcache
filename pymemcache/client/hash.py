@@ -268,7 +268,7 @@ class HashClient(object):
 
     set_multi = set_many
 
-    def get_many(self, keys, *args, **kwargs):
+    def get_many(self, keys, gets=False, *args, **kwargs):
         client_batches = {}
         end = {}
 
@@ -288,9 +288,15 @@ class HashClient(object):
             client = self.clients['%s:%s' % server]
             new_args = list(args)
             new_args.insert(0, keys)
+
+            if gets:
+                get_func = client.gets_many
+            else:
+                get_func = client.get_many
+
             result = self._safely_run_func(
                 client,
-                client.get_many, {}, *new_args, **kwargs
+                get_func, {}, *new_args, **kwargs
             )
             end.update(result)
 
@@ -300,6 +306,11 @@ class HashClient(object):
 
     def gets(self, key, *args, **kwargs):
         return self._run_cmd('gets', key, None, *args, **kwargs)
+
+    def gets_many(self, keys, *args, **kwargs):
+        return self.get_many(keys, gets=True, *args, **kwargs)
+
+    gets_multi = gets_many
 
     def add(self, key, *args, **kwargs):
         return self._run_cmd('add', key, False, *args, **kwargs)
