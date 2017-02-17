@@ -1,4 +1,4 @@
 mock
 pytest
 pytest-cov
-gevent; "PyPy" not in platform_python_implementation
+gevent==1.1; "PyPy" not in platform_python_implementation
