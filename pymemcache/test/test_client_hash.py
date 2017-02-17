@@ -123,6 +123,25 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         result = client.get_many([b'key1', b'key3'])
         assert result == {}
 
+    def test_gets_many(self):
+        client = self.make_client(*[
+            [b'STORED\r\n', b'VALUE key3 0 6 1\r\nvalue2\r\nEND\r\n', ],
+            [b'STORED\r\n', b'VALUE key1 0 6 1\r\nvalue1\r\nEND\r\n', ],
+        ])
+
+        def get_clients(key):
+            if key == b'key3':
+                return client.clients['127.0.0.1:11012']
+            else:
+                return client.clients['127.0.0.1:11013']
+
+        client._get_client = get_clients
+
+        result = client.set(b'key1', b'value1', noreply=False)
+        result = client.set(b'key3', b'value2', noreply=False)
+        result = client.gets_many([b'key1', b'key3'])
+        assert result == {b'key1': (b'value1', b'1'), b'key3': (b'value2', b'1')}
+
     def test_no_servers_left(self):
         from pymemcache.client.hash import HashClient
         client = HashClient(
