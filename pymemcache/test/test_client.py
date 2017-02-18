@@ -554,6 +554,42 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         with pytest.raises(MemcacheUnknownError):
             _set()
 
+    def test_set_key_with_space(self):
+        client = self.make_client([b''])
+
+        def _set():
+            client.set(b'key has space', b'value', noreply=False)
+
+        with pytest.raises(MemcacheIllegalInputError):
+            _set()
+
+    def test_set_key_with_newline(self):
+        client = self.make_client([b''])
+
+        def _set():
+            client.set(b'key\n', b'value', noreply=False)
+
+        with pytest.raises(MemcacheIllegalInputError):
+            _set()
+
+    def test_set_key_with_carriage_return(self):
+        client = self.make_client([b''])
+
+        def _set():
+            client.set(b'key\r', b'value', noreply=False)
+
+        with pytest.raises(MemcacheIllegalInputError):
+            _set()
+
+    def test_set_key_with_null_character(self):
+        client = self.make_client([b''])
+
+        def _set():
+            client.set(b'key\00', b'value', noreply=False)
+
+        with pytest.raises(MemcacheIllegalInputError):
+            _set()
+
     def test_set_many_socket_handling(self):
         client = self.make_client([b'STORED\r\n'])
         result = client.set_many({b'key': b'value'}, noreply=False)
@@ -664,7 +700,7 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         with pytest.raises(MemcacheClientError):
             client.get(u'\u0FFF'*150)
 
-    def test_key_contains_spae(self):
+    def test_key_contains_space(self):
         client = self.make_client([b'END\r\n'])
         with pytest.raises(MemcacheClientError):
             client.get(b'abc xyz')
