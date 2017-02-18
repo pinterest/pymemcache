@@ -1,5 +1,13 @@
 Change Log
 ==========
+New in version 1.4.1
+--------------------
+* Python 3 serializations [fixes](https://github.com/pinterest/pymemcache/pull/131)
+* Drop support for pypy3
+* Comment cleanup
+* Add gets_many to hash_client
+* Better checking for illegal chars in key
+
 New in version 1.4.0
 --------------------
 * Unicode keys support. It is now possible to pass the flag `allow_unicode_keys` when creating the clients, thanks @jogo!
