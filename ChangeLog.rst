@@ -1,5 +1,9 @@
 Change Log
 ==========
+New in version 1.4.2
+--------------------
+* Drop support for python 2.6, see [ticket](https://github.com/pinterest/pymemcache/issues/139)
+
 New in version 1.4.1
 --------------------
 * Python 3 serializations [fixes](https://github.com/pinterest/pymemcache/pull/131)
