@@ -177,7 +177,7 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         with pytest.raises(socket.error):
             client.get('foo')
 
-    def test_no_servers_left_with_commands(self):
+    def test_no_servers_left_with_commands_return_default_value(self):
         from pymemcache.client.hash import HashClient
         client = HashClient(
             [], use_pooling=True,
@@ -186,6 +186,8 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         )
 
         result = client.get('foo')
+        assert result is None
+        result = client.set('foo', 'bar')
         assert result is False
 
     def test_no_servers_left_with_set_many(self):
