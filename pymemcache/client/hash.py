@@ -217,7 +217,7 @@ class HashClient(object):
         client = self._get_client(key)
 
         if client is None:
-            return False
+            return default_val
 
         func = getattr(client, cmd)
         args = list(args)
