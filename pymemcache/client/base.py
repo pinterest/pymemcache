@@ -705,8 +705,14 @@ class Client(object):
             raise MemcacheServerError(error)
 
     def _fetch_cmd(self, name, keys, expect_cas):
-        checked_keys = dict((self.check_key(k), k) for k in keys)
-        cmd = name + b' ' + b' '.join(checked_keys) + b'\r\n'
+        if name == b'stats':
+            # stats commands can have multiple arguments
+            #   `stats cachedump 1 1`
+            checked_keys = [self.check_key(k) for k in keys]
+            cmd = name + b' ' + b' '.join(checked_keys) + b'\r\n'
+        else:
+            checked_keys = dict((self.check_key(k), k) for k in keys)
+            cmd = name + b' ' + b' '.join(checked_keys) + b'\r\n'
 
         try:
             if not self.sock:
@@ -744,6 +750,10 @@ class Client(object):
                 elif name == b'stats' and line.startswith(b'STAT'):
                     key_value = line.split()
                     result[key_value[1]] = key_value[2]
+                elif name == b'stats' and line.startswith(b'ITEM'):
+                    # For 'stats cachedump' commands
+                    key_value = line.split()
+                    result[key_value[1]] = b' '.join(key_value[2:])
                 else:
                     raise MemcacheUnknownError(line[:32])
         except Exception:

@@ -664,6 +664,14 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         }
         assert result == expected
 
+    def test_stats_cachedump(self):
+        client = self.make_client([b'ITEM bob [7 b; 0 s]\r\n', b'END\r\n'])
+        result = client.stats('cachedump', '1', '1')
+        assert client.sock.send_bufs == [
+            b'stats cachedump 1 1\r\n'
+        ]
+        assert result == {b'bob': b'[7 b; 0 s]'}
+
     def test_python_dict_set_is_supported(self):
         client = self.make_client([b'STORED\r\n'])
         client[b'key'] = b'value'
