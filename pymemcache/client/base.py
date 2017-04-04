@@ -850,7 +850,7 @@ class PooledClient(object):
     """A thread-safe pool of clients (with the same client api).
 
     Args:
-      max_pool_size: maximum pool size to use (going about this amount
+      max_pool_size: maximum pool size to use (going above this amount
                      triggers a runtime error), by default this is 2147483648L
                      when not provided (or none).
       lock_generator: a callback/type that takes no arguments that will
