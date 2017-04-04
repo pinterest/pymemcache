@@ -1,5 +1,11 @@
 Change Log
 ==========
+New in version 1.4.3
+--------------------
+* Documentation improvements
+* Fixed cachedump stats command, see [ticket](https://github.com/pinterest/pymemcache/issues/103)
+* Honor default_value in HashClient
+
 New in version 1.4.2
 --------------------
 * Drop support for python 2.6, see [ticket](https://github.com/pinterest/pymemcache/issues/139)
