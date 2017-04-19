@@ -786,7 +786,8 @@ class Client(object):
         if noreply:
             extra += b' noreply'
 
-        cmd_buffer = StringIO(name)
+        cmd_buffer = StringIO()
+        cmd_buffer.write(name)
         cmd_buffer.write(b' ')
         cmd_buffer.write(key)
         cmd_buffer.write(b' ')
