@@ -18,7 +18,7 @@ pymemcache supports the following features:
 * Complete implementation of the memcached text protocol.
 * Configurable timeouts for socket connect and send/recv calls.
 * Access to the "noreply" flag, which can significantly increase the speed of writes.
-* Flexible, simple approach to serialization and deserialization.
+* Flexible, modular and simple approach to serialization and deserialization.
 * The (optional) ability to treat network and memcached errors as cache misses.
 
 Installing pymemcache
@@ -37,13 +37,7 @@ For development, clone from github and run the tests:
     git clone https://github.com/pinterest/pymemcache.git
     cd pymemcache
 
-Run the tests manually:
-
-.. code-block:: bash
-
-    python setup.py nosetests
-
-Or with `Tox <http://tox.readthedocs.io/>`_:
+Run the tests (make sure you have a local memcached server running):
 
 .. code-block:: bash
 
