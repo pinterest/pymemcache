@@ -73,8 +73,11 @@ same key.
 Best Practices
 ---------------
 
- - Always set the connect_timeout and timeout arguments in the constructor to
-   avoid blocking your process when memcached is slow.
+ - Always set the `connect_timeout` and `timeout` arguments in the
+   :py:class:`pymemcache.client.base.Client` constructor to avoid blocking
+   your process when memcached is slow. You might also want to enable the
+   `no_delay` option, which sets the TCP_NODELAY flag on the connection's
+   socket.
  - Use the "noreply" flag for a significant performance boost. The "noreply"
    flag is enabled by default for "set", "add", "replace", "append", "prepend",
    and "delete". It is disabled by default for "cas", "incr" and "decr". It
