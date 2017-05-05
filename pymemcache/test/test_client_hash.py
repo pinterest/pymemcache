@@ -137,10 +137,11 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
 
         client._get_client = get_clients
 
-        result = client.set(b'key1', b'value1', noreply=False)
-        result = client.set(b'key3', b'value2', noreply=False)
+        assert client.set(b'key1', b'value1', noreply=False) is True
+        assert client.set(b'key3', b'value2', noreply=False) is True
         result = client.gets_many([b'key1', b'key3'])
-        assert result == {b'key1': (b'value1', b'1'), b'key3': (b'value2', b'1')}
+        assert (result ==
+                {b'key1': (b'value1', b'1'), b'key3': (b'value2', b'1')})
 
     def test_no_servers_left(self):
         from pymemcache.client.hash import HashClient
