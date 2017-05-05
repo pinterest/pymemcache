@@ -8,9 +8,9 @@ from pymemcache import __version__
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
+
 readme = read('README.rst')
 changelog = read('ChangeLog.rst')
-
 
 setup(
     name='pymemcache',
