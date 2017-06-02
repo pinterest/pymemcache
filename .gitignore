@@ -42,5 +42,7 @@ env/
 coverage.xml
 .python-version
 \#*\#
+
+#Docs
 docs/_build
-docs/apidoc/pymemcache.test.rst
+docs/apidoc/
