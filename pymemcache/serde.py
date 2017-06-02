@@ -30,6 +30,14 @@ FLAG_LONG = 1 << 2
 FLAG_COMPRESSED = 1 << 3  # unused, to main compatability with python-memcached
 FLAG_TEXT = 1 << 4
 
+# Pickle protocol version (-1 for highest available to runtime)
+# Warning with `0`: If somewhere in your value lies a slotted object,
+# ie defines `__slots__`, even if you do not include it in your pickleable
+# state via `__getstate__`, python will complain with something like:
+#   TypeError: a class that defines __slots__ without defining __getstate__
+#   cannot be pickled
+PICKLE_VERSION = -1
+
 
 def python_memcache_serializer(key, value):
     flags = 0
@@ -55,7 +63,7 @@ def python_memcache_serializer(key, value):
     else:
         flags |= FLAG_PICKLE
         output = BytesIO()
-        pickler = pickle.Pickler(output, 0)
+        pickler = pickle.Pickler(output, PICKLE_VERSION)
         pickler.dump(value)
         value = output.getvalue()
 
