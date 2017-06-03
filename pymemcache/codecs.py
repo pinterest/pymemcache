@@ -18,7 +18,6 @@ import importlib
 import logging
 from io import BytesIO
 import six
-
 log = logging.getLogger(__name__)
 
 try:
@@ -268,6 +267,8 @@ class Serde(IDumpsyLoadsyCodec):
                     'Could not depickle key=%s len(value)=%d: %s',
                     key, len(value), exc,
                 )
-                value = None
+                return
 
-        return value
+        raise ValueError(
+            "Encountered unknown flags=%s on key=%s" % (flags, key),
+        )
