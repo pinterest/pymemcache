@@ -129,9 +129,10 @@ class Serde(object):
                 unpickler = pickle.Unpickler(buf)
                 return unpickler.load()
             except Exception as exc:
-                # This includes exc as a string for troubleshooting as well as providing
-                # a trace.
-                log.exception('Could not depickle value: %s', exc)
+                # This includes exc as a string for troubleshooting as well as
+                # providing a trace.
+                log.exception('Could not depickle value (len=%d): %s',
+                              len(value), exc)
                 return None
 
         return value
