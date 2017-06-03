@@ -39,7 +39,7 @@ class ICodec(object):
 
         :param str|unicode key: Key
         :param str|unicode value: Value
-        :return tuple[str, str]: tuple(value, flags)
+        :return tuple[str, int]: tuple(value, flags)
         """
         raise NotImplementedError()
 
@@ -98,7 +98,7 @@ class Serde(ICodec):
 
         :param str|unicode key: Key
         :param str|unicode value: Value
-        :return tuple[str, str]: tuple(value, flags)
+        :return tuple[str, int]: tuple(value, flags)
         """
         flags = 0
         value_type = type(value)
