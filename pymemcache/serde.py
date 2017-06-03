@@ -131,7 +131,7 @@ class Serde(object):
             except Exception as exc:
                 # This includes exc as a string for troubleshooting as well as providing
                 # a trace.
-                log.exception('Could not depickle value: %s')
+                log.exception('Could not depickle value: %s', exc)
                 return None
 
         return value
