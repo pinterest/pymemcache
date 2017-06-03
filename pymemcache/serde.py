@@ -45,16 +45,17 @@ class Serde(object):
         """
         Init
 
-        :param int pickle_version: Pickle version to use (from python). Use `-1` to use the highest
-            supported at runtime. Deserialization is not affected by this parameter.
+        :param int pickle_version: Pickle version to use (from python).
+          Use `-1` to use the highest supported at runtime.
+          Deserialization is not affected by this parameter.
 
-            A forewarning with `0` (the default): If somewhere in your value lies a slotted object,
-            ie defines `__slots__`, even if you do not include it in your pickleable state via
-            `__getstate__`, python will raise:
-                ```
-                TypeError: a class that defines __slots__ without defining __getstate__ cannot be
-                pickled
-                ```
+          A forewarning with `0` (the default): If somewhere in your value lies
+          a slotted object, ie defines `__slots__`, even if you do not include
+          it in your pickleable state via `__getstate__`, python will raise:
+            ```
+            TypeError: a class that defines __slots__ without defining
+            __getstate__ cannot be pickled
+            ```
         """
         if pickle_version is not None:
             self.pickle_version = pickle_version
@@ -103,7 +104,8 @@ class Serde(object):
 
         :param str|unicode key: Key
         :param str|unicode value: Value
-        :param int flags: Bitflag containing flags used to specify how to deserialize this object.
+        :param int flags: Bitflag containing flags used to specify how to
+        deserialize this object.
         :return object: Deserialized python object.
         """
         if flags == 0:
@@ -127,7 +129,8 @@ class Serde(object):
                 unpickler = pickle.Unpickler(buf)
                 return unpickler.load()
             except Exception as exc:
-                # This includes exc as a string for troubleshooting as well as providing a trace.
+                # This includes exc as a string for troubleshooting as well as providing
+                # a trace.
                 log.exception('Could not depickle value: %s')
                 return None
 
