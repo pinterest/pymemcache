@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import abc
 import logging
 from io import BytesIO
 import six
@@ -24,20 +25,51 @@ try:
 except NameError:
     long_type = None
 
-FLAG_BYTES = 0
-FLAG_PICKLE = 1 << 0
-FLAG_INTEGER = 1 << 1
-FLAG_LONG = 1 << 2
-FLAG_COMPRESSED = 1 << 3  # unused, to main compatability with python-memcached
-FLAG_TEXT = 1 << 4
+
+@six.add_metaclass(abc.ABCMeta)
+class Serializer(object):
+    """
+    Interface for serializers.
+    """
+
+    @abc.abstractmethod
+    def from_python(self, key, value):
+        """
+        Serialize a python object.
+
+        :param str|unicode key: Key
+        :param str|unicode value: Value
+        :return tuple[str, str]: tuple(value, flags)
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def to_python(self, key, value, flags):
+        """
+        Deserialize a value into a python object.
+
+        :param str|unicode key: Key
+        :param str|unicode value: Value
+        :param int flags: Bitflag containing flags used to specify how to
+        deserialize this object.
+        :return object: Deserialized python object.
+        """
+        raise NotImplementedError()
 
 
-class Serde(object):
+class Serde(Serializer):
     """
     Serialization handler.
 
     Meant to be compatible with `python-memcached`.
     """
+
+    FLAG_BYTES = 0
+    FLAG_PICKLE = 1 << 0
+    FLAG_INTEGER = 1 << 1
+    FLAG_LONG = 1 << 2
+    FLAG_COMPRESSED = 1 << 3  # unused, to main compatability with python-memcached
+    FLAG_TEXT = 1 << 4
 
     pickle_version = 0
 
@@ -77,19 +109,19 @@ class Serde(object):
             pass
 
         elif value_type is six.text_type:
-            flags |= FLAG_TEXT
+            flags |= self.FLAG_TEXT
             value = value.encode('utf8')
 
         elif value_type is int:
-            flags |= FLAG_INTEGER
+            flags |= self.FLAG_INTEGER
             value = "%d" % value
 
         elif six.PY2 and value_type is long_type:
-            flags |= FLAG_LONG
+            flags |= self.FLAG_LONG
             value = "%d" % value
 
         else:
-            flags |= FLAG_PICKLE
+            flags |= self.FLAG_PICKLE
 
             output = BytesIO()
             pickler = pickle.Pickler(output, self.pickle_version)
@@ -111,19 +143,19 @@ class Serde(object):
         if flags == 0:
             return value
 
-        elif flags & FLAG_TEXT:
+        elif flags & self.FLAG_TEXT:
             return value.decode('utf8')
 
-        elif flags & FLAG_INTEGER:
+        elif flags & self.FLAG_INTEGER:
             return int(value)
 
-        elif flags & FLAG_LONG:
+        elif flags & self.FLAG_LONG:
             if six.PY3:
                 return int(value)
             else:
                 return long_type(value)
 
-        elif flags & FLAG_PICKLE:
+        elif flags & self.FLAG_PICKLE:
             try:
                 buf = BytesIO(value)
                 unpickler = pickle.Unpickler(buf)
