@@ -5,6 +5,11 @@ from pymemcache import serde
 import pytest
 import six
 
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+
 
 class CustomInt(int):
     """
@@ -59,3 +64,11 @@ class TestSerde(TestCase):
     def test_subtype(self):
         # Subclass of a native type will be restored as the same type
         self.check(CustomInt(123123), serde.FLAG_PICKLE)
+
+    def test_pickle_version(self):
+        for pickle_version in range(-1, pickle.HIGHEST_PROTOCOL):
+            self.check(
+                dict(whoa='nelly', humans=u'horrid', answer=42),
+                serde.FLAG_PICKLE,
+                pickle_version=pickle_version,
+            )
