@@ -17,11 +17,12 @@ from io import BytesIO
 import six
 from six.moves import cPickle as pickle
 
+log = logging.getLogger(__name__)
+
 try:
     long_type = long  # noqa
 except NameError:
     long_type = None
-
 
 FLAG_BYTES = 0
 FLAG_PICKLE = 1 << 0
@@ -30,69 +31,111 @@ FLAG_LONG = 1 << 2
 FLAG_COMPRESSED = 1 << 3  # unused, to main compatability with python-memcached
 FLAG_TEXT = 1 << 4
 
-# Pickle protocol version (-1 for highest available to runtime)
-# Warning with `0`: If somewhere in your value lies a slotted object,
-# ie defines `__slots__`, even if you do not include it in your pickleable
-# state via `__getstate__`, python will complain with something like:
-#   TypeError: a class that defines __slots__ without defining __getstate__
-#   cannot be pickled
-PICKLE_VERSION = -1
 
+class Serde(object):
+    """
+    Serialization handler.
 
-def python_memcache_serializer(key, value):
-    flags = 0
-    value_type = type(value)
+    Meant to be compatible with `python-memcached`.
+    """
 
-    # Check against exact types so that subclasses of native types will be
-    # restored as their native type
-    if value_type is bytes:
-        pass
+    pickle_version = 0
 
-    elif value_type is six.text_type:
-        flags |= FLAG_TEXT
-        value = value.encode('utf8')
+    def __init__(self, pickle_version=0):
+        """
+        Init
 
-    elif value_type is int:
-        flags |= FLAG_INTEGER
-        value = "%d" % value
+        :param int pickle_version: Pickle version to use (from python). Use `-1` to use the highest
+            supported at runtime. Deserialization is not affected by this parameter.
 
-    elif six.PY2 and value_type is long_type:
-        flags |= FLAG_LONG
-        value = "%d" % value
+            A forewarning with `0` (the default): If somewhere in your value lies a slotted object,
+            ie defines `__slots__`, even if you do not include it in your pickleable state via
+            `__getstate__`, python will raise:
+                ```
+                TypeError: a class that defines __slots__ without defining __getstate__ cannot be
+                pickled
+                ```
+        """
+        if pickle_version is not None:
+            self.pickle_version = pickle_version
 
-    else:
-        flags |= FLAG_PICKLE
-        output = BytesIO()
-        pickler = pickle.Pickler(output, PICKLE_VERSION)
-        pickler.dump(value)
-        value = output.getvalue()
+    def from_python(self, key, value):
+        """
+        Serialize a python object.
 
-    return value, flags
+        :param str|unicode key: Key
+        :param str|unicode value: Value
+        :return tuple[str, str]: tuple(value, flags)
+        """
+        flags = 0
+        value_type = type(value)
 
+        # Check against exact types so that subclasses of native types will be
+        # restored as their native type
+        if value_type is bytes:
+            pass
 
-def python_memcache_deserializer(key, value, flags):
-    if flags == 0:
+        elif value_type is six.text_type:
+            flags |= FLAG_TEXT
+            value = value.encode('utf8')
+
+        elif value_type is int:
+            flags |= FLAG_INTEGER
+            value = "%d" % value
+
+        elif six.PY2 and value_type is long_type:
+            flags |= FLAG_LONG
+            value = "%d" % value
+
+        else:
+            flags |= FLAG_PICKLE
+
+            output = BytesIO()
+            pickler = pickle.Pickler(output, self.pickle_version)
+            pickler.dump(value)
+            value = output.getvalue()
+
+        return value, flags
+
+    def to_python(self, key, value, flags):
+        """
+        Deserialize a value into a python object.
+
+        :param str|unicode key: Key
+        :param str|unicode value: Value
+        :param int flags: Bitflag containing flags used to specify how to deserialize this object.
+        :return object: Deserialized python object.
+        """
+        if flags == 0:
+            return value
+
+        elif flags & FLAG_TEXT:
+            return value.decode('utf8')
+
+        elif flags & FLAG_INTEGER:
+            return int(value)
+
+        elif flags & FLAG_LONG:
+            if six.PY3:
+                return int(value)
+            else:
+                return long_type(value)
+
+        elif flags & FLAG_PICKLE:
+            try:
+                buf = BytesIO(value)
+                unpickler = pickle.Unpickler(buf)
+                return unpickler.load()
+            except Exception as exc:
+                # This includes exc as a string for troubleshooting as well as providing a trace.
+                log.exception('Could not depickle value: %s')
+                return None
+
         return value
 
-    elif flags & FLAG_TEXT:
-        return value.decode('utf8')
 
-    elif flags & FLAG_INTEGER:
-        return int(value)
+# Backwards compatibility
+_serde = Serde()
+python_memcache_serializer = _serde.from_python
+python_memcache_deserializer = _serde.to_python
 
-    elif flags & FLAG_LONG:
-        if six.PY3:
-            return int(value)
-        else:
-            return long_type(value)
-
-    elif flags & FLAG_PICKLE:
-        try:
-            buf = BytesIO(value)
-            unpickler = pickle.Unpickler(buf)
-            return unpickler.load()
-        except Exception:
-            logging.info('Pickle error', exc_info=True)
-            return None
-
-    return value
