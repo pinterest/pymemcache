@@ -27,7 +27,7 @@ except NameError:
 
 
 @six.add_metaclass(abc.ABCMeta)
-class Serializer(object):
+class Codec(object):
     """
     Interface for serializers.
     """
@@ -57,7 +57,7 @@ class Serializer(object):
         raise NotImplementedError()
 
 
-class Serde(Serializer):
+class Serde(Codec):
     """
     Serialization handler.
 
