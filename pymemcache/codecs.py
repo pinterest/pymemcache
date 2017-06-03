@@ -13,10 +13,11 @@
 # limitations under the License.
 
 import abc
+import functools
+import importlib
 import logging
 from io import BytesIO
 import six
-from six.moves import cPickle as pickle
 
 log = logging.getLogger(__name__)
 
@@ -29,7 +30,7 @@ except NameError:
 @six.add_metaclass(abc.ABCMeta)
 class ICodec(object):
     """
-    Interface for serializers.
+    Interface for serialization codecs.
     """
 
     @abc.abstractmethod
@@ -57,7 +58,99 @@ class ICodec(object):
         raise NotImplementedError()
 
 
-class Serde(ICodec):
+class FakeCodec(ICodec):
+
+    def from_python(self, key, value):
+        """
+        Serialize a python object.
+
+        :param str|unicode key: Key
+        :param str|unicode value: Value
+        :return tuple[str, int]: tuple(value, flags)
+        """
+        return value, 0
+
+    def to_python(self, key, value, flags):
+        """
+        Deserialize a value into a python object.
+
+        :param str|unicode key: Key
+        :param str|unicode value: Value
+        :param int flags: Bitflag containing flags used to specify how to
+        deserialize this object.
+        :return object: Deserialized python object.
+        """
+        return value
+
+
+@six.add_metaclass(abc.ABCMeta)
+class ILibraryLoaderCodec(ICodec):
+
+    @abc.abstractproperty
+    def lib_name(self):
+        raise NotImplementedError()
+
+    def __init__(self):
+        self.lib = importlib.import_module(self.lib_name)
+
+
+@six.add_metaclass(abc.ABCMeta)
+class IDumpsyLoadsyCodec(ILibraryLoaderCodec):
+
+    @property
+    def _dumps(self):
+        return self.lib.dumps
+
+    @property
+    def _loads(self):
+        return self.lib.loads
+
+    def from_python(self, key, value):
+        """
+        Serialize a python object.
+
+        :param str|unicode key: Key
+        :param str|unicode value: Value
+        :return tuple[str, int]: tuple(value, flags)
+        """
+        try:
+            return self._dumps(value)
+        except Exception as exc:
+            log.exception("Got exception %s serializing key=%s", exc, key)
+
+    def to_python(self, key, value, flags):
+        """
+        Deserialize a value into a python object.
+
+        :param str|unicode key: Key
+        :param str|unicode value: Value
+        :param int flags: Bitflag containing flags used to specify how to
+        deserialize this object.
+        :return object: Deserialized python object.
+        """
+        return self._loads(value)
+
+
+class JsonCodec(IDumpsyLoadsyCodec):
+    lib_name = 'json'
+
+    def __init__(self):
+        super(JsonCodec, self).__init__()
+
+        self._dumps = functools.partial(self._dumps, default=self.default_encoder)
+
+    def default_encoder(self, obj):
+        """
+        Helper method for json deserialization when encountering strange
+        objects.
+        """
+        if six.PY3 and isinstance(obj, bytes):
+            obj = obj.decode()
+            return obj
+        return repr(obj)
+
+
+class Serde(IDumpsyLoadsyCodec):
     """
     Serialization handler.
 
@@ -71,6 +164,7 @@ class Serde(ICodec):
     FLAG_COMPRESSED = 1 << 3  # unused, to main compatability with python-memcached
     FLAG_TEXT = 1 << 4
 
+    lib_name = 'six.moves.cPickle'
     pickle_version = 0
 
     def __init__(self, pickle_version=0):
@@ -91,6 +185,19 @@ class Serde(ICodec):
         """
         if pickle_version is not None:
             self.pickle_version = pickle_version
+
+        super(Serde, self).__init__()
+
+    def _dumps(self, value):
+        output = BytesIO()
+        pickler = self.lib.Pickler(output, self.pickle_version)
+        pickler.dump(value)
+        return output.getvalue()
+
+    def _loads(self, value):
+        buf = BytesIO(value)
+        unpickler = self.lib.Unpickler(buf)
+        return unpickler.load()
 
     def from_python(self, key, value):
         """
@@ -122,11 +229,7 @@ class Serde(ICodec):
 
         else:
             flags |= self.FLAG_PICKLE
-
-            output = BytesIO()
-            pickler = pickle.Pickler(output, self.pickle_version)
-            pickler.dump(value)
-            value = output.getvalue()
+            value = self._dumps(value)
 
         return value, flags
 
@@ -157,14 +260,14 @@ class Serde(ICodec):
 
         elif flags & self.FLAG_PICKLE:
             try:
-                buf = BytesIO(value)
-                unpickler = pickle.Unpickler(buf)
-                return unpickler.load()
+                return self._loads(value)
             except Exception as exc:
                 # This includes exc as a string for troubleshooting as well as
                 # providing a trace.
-                log.exception('Could not depickle value (len=%d): %s',
-                              len(value), exc)
-                return None
+                log.exception(
+                    'Could not depickle key=%s len(value)=%d: %s',
+                    key, len(value), exc,
+                )
+                value = None
 
         return value
