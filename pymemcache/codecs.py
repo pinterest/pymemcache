@@ -168,10 +168,3 @@ class Serde(ICodec):
                 return None
 
         return value
-
-
-# Backwards compatibility
-_serde = Serde()
-python_memcache_serializer = _serde.from_python
-python_memcache_deserializer = _serde.to_python
-

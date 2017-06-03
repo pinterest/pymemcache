@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from unittest import TestCase
 
-from pymemcache import serde
+from pymemcache import codecs
 import pytest
 import six
 
@@ -23,7 +23,7 @@ class CustomInt(int):
 
 @pytest.mark.unit()
 class TestSerde(TestCase):
-    Serde = serde.Serde
+    Serde = codecs.Serde
 
     def check(self, value, expected_flags, pickle_version=None):
         s = self.Serde(pickle_version=pickle_version)
