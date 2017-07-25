@@ -251,7 +251,10 @@ class Client(object):
                           key_prefix=self.key_prefix)
 
     def _connect(self):
-        sock = self.socket_module.socket(self.socket_module.AF_INET,
+        sock_type = self.socket_module.AF_UNIX
+        if isinstance(self.server, (tuple, list)):
+            sock_type = self.socket_module.AF_INET
+        sock = self.socket_module.socket(sock_type,
                                          self.socket_module.SOCK_STREAM)
         sock.settimeout(self.connect_timeout)
         sock.connect(self.server)
