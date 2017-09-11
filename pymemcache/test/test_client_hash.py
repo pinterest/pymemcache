@@ -1,6 +1,6 @@
 from pymemcache.client.hash import HashClient
 from pymemcache.client.base import Client, PooledClient
-from pymemcache.exceptions import MemcacheUnknownError
+from pymemcache.exceptions import MemcacheError, MemcacheUnknownError
 from pymemcache import pool
 
 from .test_client import ClientTestMixin, MockSocket
@@ -162,7 +162,7 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
             timeout=1, connect_timeout=1
         )
 
-        with pytest.raises(Exception) as e:
+        with pytest.raises(MemcacheError) as e:
             client._get_client('foo')
 
         assert str(e.value) == 'All servers seem to be down right now'
