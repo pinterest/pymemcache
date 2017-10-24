@@ -337,7 +337,7 @@ class Client(object):
 
         Returns:
           If noreply is True, the return value is always True. Otherwise the
-          return value is True if the value was stgored, and False if it was
+          return value is True if the value was stored, and False if it was
           not (because the key already existed).
         """
         if noreply is None:
