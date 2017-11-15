@@ -85,7 +85,7 @@ class MockMemcacheClient(object):
                     raise MemcacheIllegalInputError
         if isinstance(value, six.text_type):
             raise MemcacheIllegalInputError(value)
-        if isinstance(value, six.string_types):
+        if isinstance(value, six.string_types) and not isinstance(value, six.binary_type):
             try:
                 value = value.encode('ascii')
             except (UnicodeEncodeError, UnicodeDecodeError):
