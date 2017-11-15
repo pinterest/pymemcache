@@ -30,7 +30,6 @@ on if a server goes down.
     client.set('some_key', 'some value')
     result = client.get('some_key')
 
-
 Serialization
 --------------
 
@@ -56,6 +55,17 @@ Serialization
     client.set('key', {'a':'b', 'c':'d'})
     result = client.get('key')
 
+Deserialization with python3
+----------------------------
+
+.. code-block:: python
+
+    def json_deserializer(key, value, flags):
+        if flags == 1:
+            return value.decode('utf-8')
+        if flags == 2:
+            return json.loads(value.decode('utf-8'))
+        raise Exception("Unknown serialization format")
 
 Key Constraints
 ---------------
@@ -68,7 +78,6 @@ murmur3 hash is a great candidate for this. Alternatively you can
 set `allow_unicode_keys` to support unicode keys, but beware of
 what unicode encoding you use to make sure multiple clients can find the
 same key.
-
 
 Best Practices
 ---------------
