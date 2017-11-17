@@ -19,7 +19,7 @@ def test_get_set_non_ascii_value():
     assert client.get(b"hello") is None
 
     # This is the value of msgpack.packb('non_ascii')
-    non_ascii_str = '\xa9non_ascii'
+    non_ascii_str = b'\xa9non_ascii'
     client.set(b"hello", non_ascii_str)
     assert client.get(b"hello") == non_ascii_str
 
@@ -44,9 +44,9 @@ def test_get_many_set_many_non_ascii_values():
     client = MockMemcacheClient()
 
     # These are the values of calling msgpack.packb() on '1', '2', and '3'
-    non_ascii_1 = '\xa11'
-    non_ascii_2 = '\xa12'
-    non_ascii_3 = '\xa13'
+    non_ascii_1 = b'\xa11'
+    non_ascii_2 = b'\xa12'
+    non_ascii_3 = b'\xa13'
     client.set(b"h", non_ascii_1)
 
     result = client.get_many([b"h", b"e", b"l", b"o"])
