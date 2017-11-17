@@ -54,7 +54,9 @@ def test_get_many_set_many_non_ascii_values():
 
     # Convert keys into bytes
     d = dict((k.encode('ascii'), v)
-             for k, v in six.iteritems(dict(h=non_ascii_1, e=non_ascii_2, l=non_ascii_3)))
+             for k, v in six.iteritems(
+                dict(h=non_ascii_1, e=non_ascii_2, l=non_ascii_3)
+             ))
     client.set_many(d)
     assert client.get_many([b"h", b"e", b"l", b"o"]) == d
 
