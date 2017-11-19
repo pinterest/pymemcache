@@ -14,6 +14,17 @@ def test_get_set():
 
 
 @pytest.mark.unit()
+def test_get_set_non_ascii_value():
+    client = MockMemcacheClient()
+    assert client.get(b"hello") is None
+
+    # This is the value of msgpack.packb('non_ascii')
+    non_ascii_str = b'\xa9non_ascii'
+    client.set(b"hello", non_ascii_str)
+    assert client.get(b"hello") == non_ascii_str
+
+
+@pytest.mark.unit()
 def test_get_many_set_many():
     client = MockMemcacheClient()
     client.set(b"h", 1)
@@ -24,6 +35,28 @@ def test_get_many_set_many():
     # Convert keys into bytes
     d = dict((k.encode('ascii'), v)
              for k, v in six.iteritems(dict(h=1, e=2, l=3)))
+    client.set_many(d)
+    assert client.get_many([b"h", b"e", b"l", b"o"]) == d
+
+
+@pytest.mark.unit()
+def test_get_many_set_many_non_ascii_values():
+    client = MockMemcacheClient()
+
+    # These are the values of calling msgpack.packb() on '1', '2', and '3'
+    non_ascii_1 = b'\xa11'
+    non_ascii_2 = b'\xa12'
+    non_ascii_3 = b'\xa13'
+    client.set(b"h", non_ascii_1)
+
+    result = client.get_many([b"h", b"e", b"l", b"o"])
+    assert result == {b"h": non_ascii_1}
+
+    # Convert keys into bytes
+    d = dict((k.encode('ascii'), v)
+             for k, v in six.iteritems(
+                dict(h=non_ascii_1, e=non_ascii_2, l=non_ascii_3)
+             ))
     client.set_many(d)
     assert client.get_many([b"h", b"e", b"l", b"o"]) == d
 
