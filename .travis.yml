@@ -19,8 +19,8 @@ matrix:
       env: TOXENV=py36,py36-flake8
     - python: pypy
       env: TOXENV=pypy
-# Drop pypy3 support until travis fixes python3 pypy interpreter path issue
-# https://github.com/travis-ci/travis-ci/issues/6304#ref-issue-177592739
+    - python: pypy3
+      env: TOXENV=pypy3
 
 services:
   - memcached
