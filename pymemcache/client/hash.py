@@ -206,7 +206,7 @@ class HashClient(object):
                 raise
 
             return default_val
-        except:
+        except Exception:
             # any exceptions that aren't socket.error we need to handle
             # gracefully as well
             if not self.ignore_exc:
