@@ -34,9 +34,9 @@ def test_get_many_set_many():
 
     # Convert keys into bytes
     d = dict((k.encode('ascii'), v)
-             for k, v in six.iteritems(dict(h=1, e=2, l=3)))
+             for k, v in six.iteritems(dict(h=1, e=2, z=3)))
     client.set_many(d)
-    assert client.get_many([b"h", b"e", b"l", b"o"]) == d
+    assert client.get_many([b"h", b"e", b"z", b"o"]) == d
 
 
 @pytest.mark.unit()
@@ -55,10 +55,10 @@ def test_get_many_set_many_non_ascii_values():
     # Convert keys into bytes
     d = dict((k.encode('ascii'), v)
              for k, v in six.iteritems(
-                dict(h=non_ascii_1, e=non_ascii_2, l=non_ascii_3)
+                dict(h=non_ascii_1, e=non_ascii_2, z=non_ascii_3)
              ))
     client.set_many(d)
-    assert client.get_many([b"h", b"e", b"l", b"o"]) == d
+    assert client.get_many([b"h", b"e", b"z", b"o"]) == d
 
 
 @pytest.mark.unit()
