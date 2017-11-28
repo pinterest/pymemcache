@@ -660,6 +660,38 @@ class Client(object):
 
         return result
 
+    def slabs(self, *args):
+        """
+        The memcached "slabs" command.
+
+        The returned keys depend on what the "slabs" command returns.
+        A best effort is made to convert values to appropriate Python
+        types, defaulting to strings when a conversion cannot be made.
+
+        Args:
+          *arg: extra string arguments to the "stats" command. See the
+                memcached protocol documentation for more information.
+
+        Returns:
+          If no exception is raised, always returns True.
+          """
+        self._fetch_cmd(b'slabs', args, False)
+        return True
+
+    def cache_memlimit(self, memlimit):
+        """
+        The memcached "cache_memlimit" command.
+
+        Args:
+            A number of megabytes to set as the new memlimit
+
+        Returns:
+          If no exception is raised, always returns True.
+        """
+
+        self._fetch_cmd(b'cache_memlimit', [str(int(memlimit))], False)
+        return True
+
     def version(self):
         """
         The memcached "version" command.
@@ -742,7 +774,7 @@ class Client(object):
             while True:
                 buf, line = _readline(self.sock, buf)
                 self._raise_errors(line, name)
-                if line == b'END':
+                if line == b'END' or line == b'OK':
                     return result
                 elif line.startswith(b'VALUE'):
                     if expect_cas:
