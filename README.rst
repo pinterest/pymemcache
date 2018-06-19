@@ -118,3 +118,8 @@ Credits
 * `Remco van Oosterhout <https://github.com/Vhab>`_
 * `Nicholas Charriere <https://github.com/nichochar>`_
 * `Joe Gordon <https://github.com/jogo>`_
+
+We're Hiring!
+=============
+Are you really excited about open-source? Or great software engineering?
+Pinterest is [hiring](https://careers.pinterest.com/)!

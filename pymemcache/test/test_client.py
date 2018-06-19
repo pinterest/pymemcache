@@ -34,11 +34,12 @@ from pymemcache.test.utils import MockMemcacheClient
 
 
 class MockSocket(object):
-    def __init__(self, recv_bufs):
+    def __init__(self, recv_bufs, connect_failure=None):
         self.recv_bufs = collections.deque(recv_bufs)
         self.send_bufs = []
         self.closed = False
         self.timeouts = []
+        self.connect_failure = connect_failure
         self.connections = []
         self.socket_options = []
 
@@ -58,6 +59,8 @@ class MockSocket(object):
         self.timeouts.append(timeout)
 
     def connect(self, server):
+        if isinstance(self.connect_failure, Exception):
+            raise self.connect_failure
         self.connections.append(server)
 
     def setsockopt(self, level, option, value):
@@ -65,8 +68,14 @@ class MockSocket(object):
 
 
 class MockSocketModule(object):
+    def __init__(self, connect_failure=None):
+        self.connect_failure = connect_failure
+        self.sockets = []
+
     def socket(self, family, type):
-        return MockSocket([])
+        socket = MockSocket([], connect_failure=self.connect_failure)
+        self.sockets.append(socket)
+        return socket
 
     def __getattr__(self, name):
         return getattr(socket, name)
@@ -814,6 +823,17 @@ class TestClientSocketConnect(unittest.TestCase):
         client._connect()
         assert client.sock.socket_options == [(socket.IPPROTO_TCP,
                                                socket.TCP_NODELAY, 1)]
+
+    def test_socket_connect_closes_on_failure(self):
+        server = ("example.com", 11211)
+
+        socket_module = MockSocketModule(connect_failure=OSError())
+        client = Client(server, socket_module=socket_module)
+        with pytest.raises(OSError):
+            client._connect()
+        assert len(socket_module.sockets) == 1
+        assert socket_module.sockets[0].connections == []
+        assert socket_module.sockets[0].closed
 
 
 class TestPooledClient(ClientTestMixin, unittest.TestCase):

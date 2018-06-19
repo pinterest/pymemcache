@@ -1,5 +1,12 @@
 Change Log
 ==========
+New in version 1.4.4
+--------------------
+* pypy3 to travis test matrix
+* full benchmarks in test
+* fix flake8 issues
+* Have mockmemcacheclient support non-ascii strings
+
 New in version 1.4.3
 --------------------
 * Documentation improvements

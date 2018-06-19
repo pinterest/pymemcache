@@ -4,6 +4,7 @@ import logging
 
 from pymemcache.client.base import Client, PooledClient, _check_key
 from pymemcache.client.rendezvous import RendezvousHash
+from pymemcache.exceptions import MemcacheError
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +133,7 @@ class HashClient(object):
         if server is None:
             if self.ignore_exc is True:
                 return
-            raise Exception('All servers seem to be down right now')
+            raise MemcacheError('All servers seem to be down right now')
 
         client = self.clients[server]
         return client
@@ -205,7 +206,7 @@ class HashClient(object):
                 raise
 
             return default_val
-        except:
+        except Exception:
             # any exceptions that aren't socket.error we need to handle
             # gracefully as well
             if not self.ignore_exc:
