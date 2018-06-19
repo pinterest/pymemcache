@@ -68,7 +68,8 @@ class Serde(ICodec):
     FLAG_PICKLE = 1 << 0
     FLAG_INTEGER = 1 << 1
     FLAG_LONG = 1 << 2
-    FLAG_COMPRESSED = 1 << 3  # unused, to main compatibility with python-memcached
+    # unused, to main compatibility with python-memcached
+    FLAG_COMPRESSED = 1 << 3
     FLAG_TEXT = 1 << 4
 
     pickle_version = 0
