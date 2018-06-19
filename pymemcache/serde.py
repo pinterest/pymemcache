@@ -2,7 +2,7 @@
 Backwards compatibility with the older serialization api previously
 provided by this module.
 """
-from . import codecs
+from pymemache import codecs
 
 _SERDE = codecs.Serde()
 
