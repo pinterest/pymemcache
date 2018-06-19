@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
 from unittest import TestCase
 
-from pymemcache import codecs
 import pytest
 import six
+from six.moves import cPickle as pickle
 
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+from pymemcache import codecs
 
 
 class CustomInt(int):
