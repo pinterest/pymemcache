@@ -78,7 +78,7 @@ class Serde(ICodec):
         """
         Init
 
-        :param int pickle_version: Pickle version to use (from python).
+        :param int pickle_version: Pickle protocol version.
           Use `-1` to use the highest supported at runtime.
           Deserialization is not affected by this parameter.
 
