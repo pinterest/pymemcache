@@ -69,7 +69,7 @@ class TestSerde(TestCase):
     def test_pickle_version(self):
         for pickle_version in range(-1, pickle.HIGHEST_PROTOCOL):
             self.check(
-                dict(whoa='nelly', humans=u'horrid', answer=42),
+                dict(whoa='nelly', humans=u'amazing', answer=42),
                 self.Serde.FLAG_PICKLE,
                 pickle_version=pickle_version,
             )
