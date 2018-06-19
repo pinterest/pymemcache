@@ -28,7 +28,7 @@ class TestSerde(TestCase):
     def check(self, value, expected_flags, pickle_version=None):
         s = self.Serde(pickle_version=pickle_version)
 
-        serialized, flags = s.from_python(b'key', value)
+        serialized, flags = s.serialize(b'key', value)
         assert flags == expected_flags
 
         # pymemcache stores values as byte strings, so we immediately the value
@@ -36,7 +36,7 @@ class TestSerde(TestCase):
         if not isinstance(serialized, six.binary_type):
             serialized = six.text_type(serialized).encode('ascii')
 
-        deserialized = s.to_python(b'key', serialized, flags)
+        deserialized = s.deserialize(b'key', serialized, flags)
         assert deserialized == value
 
     def test_bytes(self):

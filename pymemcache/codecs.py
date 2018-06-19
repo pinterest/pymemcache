@@ -33,7 +33,7 @@ class ICodec(object):
     """
 
     @abc.abstractmethod
-    def from_python(self, key, value):
+    def serialize(self, key, value):
         """
         Serialize a python object.
 
@@ -44,7 +44,7 @@ class ICodec(object):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def to_python(self, key, value, flags):
+    def deserialize(self, key, value, flags):
         """
         Deserialize a value into a python object.
 
@@ -92,7 +92,7 @@ class Serde(ICodec):
         if pickle_version is not None:
             self.pickle_version = pickle_version
 
-    def from_python(self, key, value):
+    def serialize(self, key, value):
         """
         Serialize a python object.
 
@@ -130,7 +130,7 @@ class Serde(ICodec):
 
         return value, flags
 
-    def to_python(self, key, value, flags):
+    def deserialize(self, key, value, flags):
         """
         Deserialize a value into a python object.
 
