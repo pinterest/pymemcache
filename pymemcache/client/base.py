@@ -14,6 +14,10 @@
 import errno
 import socket
 import six
+try:
+    from cStringIO import StringIO
+except ImportError:
+    import StringIO
 
 from pymemcache import pool
 
@@ -782,17 +786,29 @@ class Client(object):
             except UnicodeEncodeError as e:
                 raise MemcacheIllegalInputError(str(e))
 
-        extra = b''
-        if cas is not None:
-            extra += b' ' + cas
+        extra = b'' if cas is None else (b' ' + cas)
         if noreply:
             extra += b' noreply'
 
-        cmd = (name + b' ' + key + b' ' +
-               six.text_type(flags).encode('ascii') +
-               b' ' + six.text_type(expire).encode('ascii') +
-               b' ' + six.text_type(len(data)).encode('ascii') + extra +
-               b'\r\n' + data + b'\r\n')
+        cmd_buffer = StringIO()
+        cmd_buffer.write(name)
+        cmd_buffer.write(b' ')
+        cmd_buffer.write(key)
+        cmd_buffer.write(b' ')
+        cmd_buffer.write(six.text_type(flags).encode('ascii'))
+        cmd_buffer.write(b' ')
+        cmd_buffer.write(six.text_type(expire).encode('ascii'))
+        cmd_buffer.write(b' ')
+        cmd_buffer.write(six.text_type(len(data)).encode('ascii'))
+        cmd_buffer.write(extra)
+        cmd_buffer.write(b'\r\n')
+        cmd_buffer.write(data)
+        cmd_buffer.write(b'\r\n')
+
+        cmd = cmd_buffer.getvalue()
+        cmd_buffer.close()
+
+        return cmd
 
         try:
             self.sock.sendall(cmd)
