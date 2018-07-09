@@ -105,7 +105,7 @@ class MockMemcacheClient(object):
     def set_many(self, values, expire=None, noreply=True):
         for key, value in six.iteritems(values):
             self.set(key, value, expire, noreply)
-        return True
+        return []
 
     set_multi = set_many
 

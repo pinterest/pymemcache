@@ -200,7 +200,7 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         )
 
         result = client.set_many({'foo': 'bar'})
-        assert result is False
+        assert result == ['foo']
 
     def test_no_servers_left_with_get_many(self):
         from pymemcache.client.hash import HashClient
