@@ -309,17 +309,14 @@ class Client(object):
                    self.default_noreply).
 
         Returns:
-          If no exception is raised, always returns True. Otherwise all, some
-          or none of the keys have been successfully set. If noreply is True
-          then a successful return does not guarantee that any keys were
-          successfully set (just that the keys were successfully sent).
+            Empty list
         """
 
         # TODO: make this more performant by sending all the values first, then
         # waiting for all the responses.
         for key, value in six.iteritems(values):
             self.set(key, value, expire, noreply)
-        return True
+        return []
 
     set_multi = set_many
 
@@ -930,7 +927,8 @@ class PooledClient(object):
 
     def set_many(self, values, expire=0, noreply=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
-            return client.set_many(values, expire=expire, noreply=noreply)
+            client.set_many(values, expire=expire, noreply=noreply)
+            return []
 
     set_multi = set_many
 

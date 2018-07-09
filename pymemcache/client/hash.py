@@ -241,13 +241,13 @@ class HashClient(object):
 
     def set_many(self, values, *args, **kwargs):
         client_batches = {}
-        end = []
+        failed = []
 
         for key, value in values.items():
             client = self._get_client(key)
 
             if client is None:
-                end.append(False)
+                failed.append(key)
                 continue
 
             if client.server not in client_batches:
@@ -261,11 +261,11 @@ class HashClient(object):
             new_args.insert(0, values)
             result = self._safely_run_func(
                 client,
-                client.set_many, False, *new_args, **kwargs
+                client.set_many, values.keys(), *new_args, **kwargs
             )
-            end.append(result)
+            failed.extend(result)
 
-        return all(end)
+        return failed
 
     set_multi = set_many
 
