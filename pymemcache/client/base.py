@@ -309,7 +309,7 @@ class Client(object):
                    self.default_noreply).
 
         Returns:
-            Empty list
+          Empty list
         """
 
         # TODO: make this more performant by sending all the values first, then
