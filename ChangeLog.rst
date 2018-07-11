@@ -1,5 +1,9 @@
 Change Log
 ==========
+New in draft
+--------------------
+* Change set_many and set_multi api return value. see [pr](https://github.com/pinterest/pymemcache/pull/179)
+
 New in version 1.4.4
 --------------------
 * pypy3 to travis test matrix
