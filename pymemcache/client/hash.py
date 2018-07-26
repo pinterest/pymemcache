@@ -258,9 +258,10 @@ class HashClient(object):
         for server, values in client_batches.items():
             client = self.clients['%s:%s' % server]
 
-            for value in values:
+            for key, value in values.items():
                 new_args = list(args)
                 new_args.insert(0, value)
+                new_args.insert(0, key)
                 result = self._safely_run_func(
                     client,
                     client.set, False, *new_args, **kwargs
