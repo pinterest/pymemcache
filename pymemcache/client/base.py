@@ -311,12 +311,17 @@ class Client(object):
         Returns:
           Empty list
         """
-
         # TODO: make this more performant by sending all the values first, then
         # waiting for all the responses.
+        if noreply is None:
+            noreply = self.default_noreply
+
+        failed = []
         for key, value in six.iteritems(values):
-            self.set(key, value, expire, noreply)
-        return []
+            result = self._store_cmd(b'set', key, expire, noreply, value, None, (b'STORED', b'NOT_STORED'))
+            if not result:
+                failed.append(key)
+        return failed
 
     set_multi = set_many
 
@@ -763,7 +768,15 @@ class Client(object):
                 return {}
             raise
 
-    def _store_cmd(self, name, key, expire, noreply, data, cas=None):
+    def _store_cmd(
+            self,
+            name,
+            key,
+            expire,
+            noreply,
+            data,
+            cas=None,
+            validate_store_results=None):
         key = self.check_key(key)
         if not self.sock:
             self._connect()
@@ -801,7 +814,10 @@ class Client(object):
             buf, line = _readline(self.sock, buf)
             self._raise_errors(line, name)
 
-            if line in VALID_STORE_RESULTS[name]:
+            if validate_store_results is None:
+                validate_store_results = VALID_STORE_RESULTS[name]
+
+            if line in validate_store_results:
                 if line == b'STORED':
                     return True
                 if line == b'NOT_STORED':
@@ -927,8 +943,8 @@ class PooledClient(object):
 
     def set_many(self, values, expire=0, noreply=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
-            client.set_many(values, expire=expire, noreply=noreply)
-            return []
+            failed = client.set_many(values, expire=expire, noreply=noreply)
+            return failed
 
     set_multi = set_many
 
