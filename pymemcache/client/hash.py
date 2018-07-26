@@ -267,7 +267,7 @@ class HashClient(object):
                     client.set, False, *new_args, **kwargs
                 )
                 if not result:
-                    failed.extend(result)
+                    failed.extend(key)
 
         return failed
 
