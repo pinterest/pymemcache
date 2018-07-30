@@ -318,14 +318,7 @@ class Client(object):
 
         failed = []
         for key, value in six.iteritems(values):
-            result = self._store_cmd(
-                b'set',
-                key,
-                expire,
-                noreply,
-                value,
-                None,
-            )
+            result = self.set(key, value, expire, noreply)
             if not result:
                 failed.append(key)
         return failed
