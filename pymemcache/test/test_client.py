@@ -752,8 +752,9 @@ class TestClient(ClientTestMixin, unittest.TestCase):
 
     def test_default_noreply_set_many(self):
         with pytest.raises(MemcacheUnknownError):
-            self._default_noreply_false(
-                'set_many', ({b'key': b'value'},), [b'NOT_STORED\r\n'])
+            client = self.make_client([b'UNKNOWN\r\n'], default_noreply=False)
+            result = client.set_many({b'key': b'value'})
+            assert result == [b'key']
         self._default_noreply_true_and_empty_list(
             'set_many', ({b'key': b'value'},), [b'NOT_STORED\r\n'])
 
@@ -873,8 +874,9 @@ class TestPooledClient(ClientTestMixin, unittest.TestCase):
 
     def test_default_noreply_set_many(self):
         with pytest.raises(MemcacheUnknownError):
-            self._default_noreply_false(
-                'set_many', ({b'key': b'value'},), [b'NOT_STORED\r\n'])
+            client = self.make_client([b'UNKNOWN\r\n'], default_noreply=False)
+            result = client.set_many({b'key': b'value'})
+            assert result == [b'key']
         self._default_noreply_true_and_empty_list(
             'set_many', ({b'key': b'value'},), [b'NOT_STORED\r\n'])
 
@@ -1018,5 +1020,5 @@ class TestRetryOnEINTR(unittest.TestCase):
             b'key1 0 6\r\nval',
             socket.error(errno.EINTR, "Interrupted system call"),
             b'ue1\r\nEND\r\n',
-            ])
+        ])
         assert client[b'key1'] == b'value1'
