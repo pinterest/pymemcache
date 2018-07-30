@@ -746,7 +746,9 @@ class TestClient(ClientTestMixin, unittest.TestCase):
     def test_default_noreply_set(self):
         with pytest.raises(MemcacheUnknownError):
             self._default_noreply_false(
-                'set', (b'key', b'value'), [b'NOT_STORED\r\n'])
+                'set', (b'key', b'value'), [b'UNKNOWN\r\n'])
+        self._default_noreply_false(
+            'set', (b'key', b'value'), [b'NOT_STORED\r\n'])
         self._default_noreply_true(
             'set', (b'key', b'value'), [b'NOT_STORED\r\n'])
 
@@ -868,15 +870,16 @@ class TestPooledClient(ClientTestMixin, unittest.TestCase):
     def test_default_noreply_set(self):
         with pytest.raises(MemcacheUnknownError):
             self._default_noreply_false(
-                'set', (b'key', b'value'), [b'NOT_STORED\r\n'])
+                'set', (b'key', b'value'), [b'UNKNOWN\r\n'])
+        self._default_noreply_false(
+            'set', (b'key', b'value'), [b'NOT_STORED\r\n'])
         self._default_noreply_true(
             'set', (b'key', b'value'), [b'NOT_STORED\r\n'])
 
     def test_default_noreply_set_many(self):
         with pytest.raises(MemcacheUnknownError):
             client = self.make_client([b'UNKNOWN\r\n'], default_noreply=False)
-            result = client.set_many({b'key': b'value'})
-            assert result == [b'key']
+            client.set_many({b'key': b'value'})
         self._default_noreply_true_and_empty_list(
             'set_many', ({b'key': b'value'},), [b'NOT_STORED\r\n'])
 

@@ -1,6 +1,7 @@
 import socket
 import time
 import logging
+import six
 
 from pymemcache.client.base import Client, PooledClient, _check_key
 from pymemcache.client.rendezvous import RendezvousHash
@@ -139,21 +140,6 @@ class HashClient(object):
         client = self.clients[server]
         return client
 
-    def _set_many(self, client, values, *args, **kwargs):
-        failed = []
-        succeeded = []
-        try:
-            for key, value in values.items():
-                result = client.set(key, value, *args, **kwargs)
-                if result:
-                    succeeded.append(key)
-                else:
-                    failed.append(key)
-        except Exception as e:
-            return succeeded, failed, e
-
-        return succeeded, failed, None
-
     def _safely_run_func(self, client, func, default_val, *args, **kwargs):
         try:
             if client.server in self._failed_clients:
@@ -253,14 +239,14 @@ class HashClient(object):
             if not self.ignore_exc:
                 raise
 
-            return values.keys() - succeeded
+            return list(set(values.keys()) - set(succeeded))
         except Exception:
             # any exceptions that aren't socket.error we need to handle
             # gracefully as well
             if not self.ignore_exc:
                 raise
 
-            return values.keys() - succeeded
+            return list(set(values.keys()) - set(succeeded))
 
     def _mark_failed_server(self, server):
         # This client has never failed, lets mark it for failure
@@ -305,6 +291,22 @@ class HashClient(object):
             client, func, default_val, *args, **kwargs
         )
 
+    def _set_many(self, client, values, *args, **kwargs):
+        failed = []
+        succeeded = []
+
+        try:
+            for key, value in six.iteritems(values):
+                result = client.set(key, value, *args, **kwargs)
+                if result:
+                    succeeded.append(key)
+                else:
+                    failed.append(key)
+        except Exception as e:
+            return succeeded, failed, e
+
+        return succeeded, failed, None
+
     def set(self, key, *args, **kwargs):
         return self._run_cmd('set', key, False, *args, **kwargs)
 
@@ -321,7 +323,7 @@ class HashClient(object):
         client_batches = {}
         failed = []
 
-        for key, value in values.items():
+        for key, value in six.iteritems(values):
             client = self._get_client(key)
 
             if client is None:
@@ -336,10 +338,9 @@ class HashClient(object):
         for server, values in client_batches.items():
             client = self.clients['%s:%s' % server]
 
-            for key, value in values.items():
-                failed = self._safely_run_set_many(
-                    client, values, *args, **kwargs
-                )
+            failed = self._safely_run_set_many(
+                client, values, *args, **kwargs
+            )
 
         return failed
 

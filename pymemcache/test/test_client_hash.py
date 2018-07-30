@@ -213,4 +213,40 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         result = client.get_many(['foo', 'bar'])
         assert result == {'foo': False, 'bar': False}
 
+    def test_ignore_exec_set_many(self):
+        values = {
+            'key1': 'value1',
+            'key2': 'value2',
+            'key3': 'value3'
+        }
+
+        with pytest.raises(MemcacheUnknownError):
+            client = self.make_client(*[
+                [b'STORED\r\n', b'UNKNOWN\r\n', b'STORED\r\n'],
+                [b'STORED\r\n', b'UNKNOWN\r\n', b'STORED\r\n'],
+            ])
+            client.set_many(values, noreply=False)
+
+        client = self.make_client(*[
+            [b'STORED\r\n', b'UNKNOWN\r\n', b'STORED\r\n'],
+        ], ignore_exc=True)
+        result = client.set_many(values, noreply=False)
+
+        assert len(result) == 2
+
+    def test_noreply_set_many(self):
+        client = self.make_client(*[
+            [b'STORED\r\n', b'NOT_STORED\r\n', b'STORED\r\n'],
+        ])
+        result = client.set_many(
+            {'key1': 'value1', 'key2': 'value2', 'key3': 'value3'}, noreply=False)
+        assert len(result) == 1
+
+        client = self.make_client(*[
+            [b'STORED\r\n', b'NOT_STORED\r\n', b'STORED\r\n'],
+        ])
+        result = client.set_many(
+            {'key1': 'value1', 'key2': 'value2', 'key3': 'value3'}, noreply=True)
+        assert result == []
+
     # TODO: Test failover logic

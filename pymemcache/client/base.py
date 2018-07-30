@@ -29,7 +29,7 @@ from pymemcache.exceptions import (
 
 RECV_SIZE = 4096
 VALID_STORE_RESULTS = {
-    b'set':     (b'STORED',),
+    b'set':     (b'STORED', b'NOT_STORED'),
     b'add':     (b'STORED', b'NOT_STORED'),
     b'replace': (b'STORED', b'NOT_STORED'),
     b'append':  (b'STORED', b'NOT_STORED'),
@@ -107,11 +107,11 @@ def _check_key(key, allow_unicode_keys, key_prefix=b''):
             )
         elif c == ord(b'\00'):
             raise MemcacheIllegalInputError(
-              "Key contains null character: '%r'" % (key,)
+                "Key contains null character: '%r'" % (key,)
             )
         elif c == ord(b'\r'):
             raise MemcacheIllegalInputError(
-              "Key contains carriage return: '%r'" % (key,)
+                "Key contains carriage return: '%r'" % (key,)
             )
     return key
 
@@ -325,7 +325,6 @@ class Client(object):
                 noreply,
                 value,
                 None,
-                (b'STORED', b'NOT_STORED')
             )
             if not result:
                 failed.append(key)
@@ -666,7 +665,7 @@ class Client(object):
 
         if not result.startswith(b'VERSION '):
             raise MemcacheUnknownError(
-                    "Received unexpected response: %s" % (result, ))
+                "Received unexpected response: %s" % (result, ))
 
         return result[8:]
 
@@ -776,15 +775,7 @@ class Client(object):
                 return {}
             raise
 
-    def _store_cmd(
-            self,
-            name,
-            key,
-            expire,
-            noreply,
-            data,
-            cas=None,
-            validate_store_results=None):
+    def _store_cmd(self, name, key, expire, noreply, data, cas=None):
         key = self.check_key(key)
         if not self.sock:
             self._connect()
@@ -822,10 +813,7 @@ class Client(object):
             buf, line = _readline(self.sock, buf)
             self._raise_errors(line, name)
 
-            if validate_store_results is None:
-                validate_store_results = VALID_STORE_RESULTS[name]
-
-            if line in validate_store_results:
+            if line in VALID_STORE_RESULTS[name]:
                 if line == b'STORED':
                     return True
                 if line == b'NOT_STORED':
