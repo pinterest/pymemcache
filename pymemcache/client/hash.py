@@ -338,7 +338,7 @@ class HashClient(object):
         for server, values in client_batches.items():
             client = self.clients['%s:%s' % server]
 
-            failed = self._safely_run_set_many(
+            failed += self._safely_run_set_many(
                 client, values, *args, **kwargs
             )
 
