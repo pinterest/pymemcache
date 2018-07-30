@@ -235,18 +235,22 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         assert len(result) == 2
 
     def test_noreply_set_many(self):
+        values = {
+            'key1': 'value1',
+            'key2': 'value2',
+            'key3': 'value3'
+        }
+
         client = self.make_client(*[
             [b'STORED\r\n', b'NOT_STORED\r\n', b'STORED\r\n'],
         ])
-        result = client.set_many(
-            {'key1': 'value1', 'key2': 'value2', 'key3': 'value3'}, noreply=False)
+        result = client.set_many(values, noreply=False)
         assert len(result) == 1
 
         client = self.make_client(*[
             [b'STORED\r\n', b'NOT_STORED\r\n', b'STORED\r\n'],
         ])
-        result = client.set_many(
-            {'key1': 'value1', 'key2': 'value2', 'key3': 'value3'}, noreply=True)
+        result = client.set_many(values, noreply=True)
         assert result == []
 
     # TODO: Test failover logic
