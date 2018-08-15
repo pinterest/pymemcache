@@ -156,13 +156,13 @@ class ClientTestMixin(object):
     def test_set_many_success(self):
         client = self.make_client([b'STORED\r\n'])
         result = client.set_many({b'key': b'value'}, noreply=False)
-        assert result is True
+        assert result == []
 
     def test_set_multi_success(self):
         # Should just map to set_many
         client = self.make_client([b'STORED\r\n'])
         result = client.set_multi({b'key': b'value'}, noreply=False)
-        assert result is True
+        assert result == []
 
     def test_add_stored(self):
         client = self.make_client([b'STORED\r', b'\n'])
@@ -602,7 +602,7 @@ class TestClient(ClientTestMixin, unittest.TestCase):
     def test_set_many_socket_handling(self):
         client = self.make_client([b'STORED\r\n'])
         result = client.set_many({b'key': b'value'}, noreply=False)
-        assert result is True
+        assert result == []
         assert client.sock.closed is False
         assert len(client.sock.send_bufs) == 1
 
@@ -738,18 +738,26 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         result = getattr(client, cmd)(*args)
         assert result is True
 
+    def _default_noreply_true_and_empty_list(self, cmd, args, response):
+        client = self.make_client(response, default_noreply=True)
+        result = getattr(client, cmd)(*args)
+        assert result == []
+
     def test_default_noreply_set(self):
         with pytest.raises(MemcacheUnknownError):
             self._default_noreply_false(
-                'set', (b'key', b'value'), [b'NOT_STORED\r\n'])
+                'set', (b'key', b'value'), [b'UNKNOWN\r\n'])
+        self._default_noreply_false(
+            'set', (b'key', b'value'), [b'NOT_STORED\r\n'])
         self._default_noreply_true(
             'set', (b'key', b'value'), [b'NOT_STORED\r\n'])
 
     def test_default_noreply_set_many(self):
         with pytest.raises(MemcacheUnknownError):
-            self._default_noreply_false(
-                'set_many', ({b'key': b'value'},), [b'NOT_STORED\r\n'])
-        self._default_noreply_true(
+            client = self.make_client([b'UNKNOWN\r\n'], default_noreply=False)
+            result = client.set_many({b'key': b'value'})
+            assert result == [b'key']
+        self._default_noreply_true_and_empty_list(
             'set_many', ({b'key': b'value'},), [b'NOT_STORED\r\n'])
 
     def test_default_noreply_add(self):
@@ -854,18 +862,25 @@ class TestPooledClient(ClientTestMixin, unittest.TestCase):
         result = getattr(client, cmd)(*args)
         assert result is True
 
+    def _default_noreply_true_and_empty_list(self, cmd, args, response):
+        client = self.make_client(response, default_noreply=True)
+        result = getattr(client, cmd)(*args)
+        assert result == []
+
     def test_default_noreply_set(self):
         with pytest.raises(MemcacheUnknownError):
             self._default_noreply_false(
-                'set', (b'key', b'value'), [b'NOT_STORED\r\n'])
+                'set', (b'key', b'value'), [b'UNKNOWN\r\n'])
+        self._default_noreply_false(
+            'set', (b'key', b'value'), [b'NOT_STORED\r\n'])
         self._default_noreply_true(
             'set', (b'key', b'value'), [b'NOT_STORED\r\n'])
 
     def test_default_noreply_set_many(self):
         with pytest.raises(MemcacheUnknownError):
-            self._default_noreply_false(
-                'set_many', ({b'key': b'value'},), [b'NOT_STORED\r\n'])
-        self._default_noreply_true(
+            client = self.make_client([b'UNKNOWN\r\n'], default_noreply=False)
+            client.set_many({b'key': b'value'})
+        self._default_noreply_true_and_empty_list(
             'set_many', ({b'key': b'value'},), [b'NOT_STORED\r\n'])
 
     def test_default_noreply_add(self):
@@ -1008,5 +1023,5 @@ class TestRetryOnEINTR(unittest.TestCase):
             b'key1 0 6\r\nval',
             socket.error(errno.EINTR, "Interrupted system call"),
             b'ue1\r\nEND\r\n',
-            ])
+        ])
         assert client[b'key1'] == b'value1'

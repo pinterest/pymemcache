@@ -1,6 +1,7 @@
 import socket
 import time
 import logging
+import six
 
 from pymemcache.client.base import Client, PooledClient, _check_key
 from pymemcache.client.rendezvous import RendezvousHash
@@ -13,6 +14,7 @@ class HashClient(object):
     """
     A client for communicating with a cluster of memcached servers
     """
+
     def __init__(
         self,
         servers,
@@ -171,34 +173,7 @@ class HashClient(object):
         # Connecting to the server fail, we should enter
         # retry mode
         except socket.error:
-            # This client has never failed, lets mark it for failure
-            if (
-                    client.server not in self._failed_clients and
-                    self.retry_attempts > 0
-            ):
-                self._failed_clients[client.server] = {
-                    'failed_time': time.time(),
-                    'attempts': 0,
-                }
-            # We aren't allowing any retries, we should mark the server as
-            # dead immediately
-            elif (
-                client.server not in self._failed_clients and
-                self.retry_attempts <= 0
-            ):
-                self._failed_clients[client.server] = {
-                    'failed_time': time.time(),
-                    'attempts': 0,
-                }
-                logger.debug("marking server as dead %s", client.server)
-                self.remove_server(*client.server)
-            # This client has failed previously, we need to update the metadata
-            # to reflect that we have attempted it again
-            else:
-                failed_metadata = self._failed_clients[client.server]
-                failed_metadata['attempts'] += 1
-                failed_metadata['failed_time'] = time.time()
-                self._failed_clients[client.server] = failed_metadata
+            self._mark_failed_server(client.server)
 
             # if we haven't enabled ignore_exc, don't move on gracefully, just
             # raise the exception
@@ -214,6 +189,95 @@ class HashClient(object):
 
             return default_val
 
+    def _safely_run_set_many(self, client, values, *args, **kwargs):
+        failed = []
+        succeeded = []
+        try:
+            if client.server in self._failed_clients:
+                # This server is currently failing, lets check if it is in
+                # retry or marked as dead
+                failed_metadata = self._failed_clients[client.server]
+
+                # we haven't tried our max amount yet, if it has been enough
+                # time lets just retry using it
+                if failed_metadata['attempts'] < self.retry_attempts:
+                    failed_time = failed_metadata['failed_time']
+                    if time.time() - failed_time > self.retry_timeout:
+                        logger.debug(
+                            'retrying failed server: %s', client.server
+                        )
+                        succeeded, failed, err = self._set_many(
+                            client, values, *args, **kwargs)
+                        if err is not None:
+                            raise err
+                        # we were successful, lets remove it from the failed
+                        # clients
+                        self._failed_clients.pop(client.server)
+                        return failed
+                    return values.keys()
+                else:
+                    # We've reached our max retry attempts, we need to mark
+                    # the sever as dead
+                    logger.debug('marking server as dead: %s', client.server)
+                    self.remove_server(*client.server)
+
+            succeeded, failed, err = self._set_many(
+                client, values, *args, **kwargs
+            )
+            if err is not None:
+                raise err
+
+            return failed
+
+        # Connecting to the server fail, we should enter
+        # retry mode
+        except socket.error:
+            self._mark_failed_server(client.server)
+
+            # if we haven't enabled ignore_exc, don't move on gracefully, just
+            # raise the exception
+            if not self.ignore_exc:
+                raise
+
+            return list(set(values.keys()) - set(succeeded))
+        except Exception:
+            # any exceptions that aren't socket.error we need to handle
+            # gracefully as well
+            if not self.ignore_exc:
+                raise
+
+            return list(set(values.keys()) - set(succeeded))
+
+    def _mark_failed_server(self, server):
+        # This client has never failed, lets mark it for failure
+        if (
+                server not in self._failed_clients and
+                self.retry_attempts > 0
+        ):
+            self._failed_clients[server] = {
+                'failed_time': time.time(),
+                'attempts': 0,
+            }
+        # We aren't allowing any retries, we should mark the server as
+        # dead immediately
+        elif (
+            server not in self._failed_clients and
+            self.retry_attempts <= 0
+        ):
+            self._failed_clients[server] = {
+                'failed_time': time.time(),
+                'attempts': 0,
+            }
+            logger.debug("marking server as dead %s", server)
+            self.remove_server(*server)
+        # This client has failed previously, we need to update the metadata
+        # to reflect that we have attempted it again
+        else:
+            failed_metadata = self._failed_clients[server]
+            failed_metadata['attempts'] += 1
+            failed_metadata['failed_time'] = time.time()
+            self._failed_clients[server] = failed_metadata
+
     def _run_cmd(self, cmd, key, default_val, *args, **kwargs):
         client = self._get_client(key)
 
@@ -226,6 +290,22 @@ class HashClient(object):
         return self._safely_run_func(
             client, func, default_val, *args, **kwargs
         )
+
+    def _set_many(self, client, values, *args, **kwargs):
+        failed = []
+        succeeded = []
+
+        try:
+            for key, value in six.iteritems(values):
+                result = client.set(key, value, *args, **kwargs)
+                if result:
+                    succeeded.append(key)
+                else:
+                    failed.append(key)
+        except Exception as e:
+            return succeeded, failed, e
+
+        return succeeded, failed, None
 
     def set(self, key, *args, **kwargs):
         return self._run_cmd('set', key, False, *args, **kwargs)
@@ -241,13 +321,13 @@ class HashClient(object):
 
     def set_many(self, values, *args, **kwargs):
         client_batches = {}
-        end = []
+        failed = []
 
-        for key, value in values.items():
+        for key, value in six.iteritems(values):
             client = self._get_client(key)
 
             if client is None:
-                end.append(False)
+                failed.append(key)
                 continue
 
             if client.server not in client_batches:
@@ -257,15 +337,12 @@ class HashClient(object):
 
         for server, values in client_batches.items():
             client = self.clients['%s:%s' % server]
-            new_args = list(args)
-            new_args.insert(0, values)
-            result = self._safely_run_func(
-                client,
-                client.set_many, False, *new_args, **kwargs
-            )
-            end.append(result)
 
-        return all(end)
+            failed += self._safely_run_set_many(
+                client, values, *args, **kwargs
+            )
+
+        return failed
 
     set_multi = set_many
 
