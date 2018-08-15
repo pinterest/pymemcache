@@ -309,7 +309,7 @@ class Client(object):
                    self.default_noreply).
 
         Returns:
-          Empty list
+          Returns a list of keys that failed to be inserted.
         """
         # TODO: make this more performant by sending all the values first, then
         # waiting for all the responses.
