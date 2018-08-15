@@ -310,6 +310,7 @@ class Client(object):
 
         Returns:
           Returns a list of keys that failed to be inserted.
+          If noreply is True, alwais returns empty list.
         """
         # TODO: make this more performant by sending all the values first, then
         # waiting for all the responses.
