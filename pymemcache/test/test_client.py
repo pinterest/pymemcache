@@ -15,7 +15,9 @@
 
 import collections
 import errno
+import functools
 import json
+import mock
 import socket
 import unittest
 import pytest
@@ -85,7 +87,12 @@ class MockSocketModule(object):
 class ClientTestMixin(object):
     def make_client(self, mock_socket_values, **kwargs):
         client = Client(None, **kwargs)
-        client.sock = MockSocket(list(mock_socket_values))
+        # mock out client._connect() rather than hard-settting client.sock to
+        # ensure methods are checking whether self.sock is None before
+        # attempting to use it
+        sock = MockSocket(list(mock_socket_values))
+        client._connect = mock.Mock(side_effect=functools.partial(
+            setattr, client, "sock", sock))
         return client
 
     def test_set_success(self):
