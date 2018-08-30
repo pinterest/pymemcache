@@ -755,6 +755,14 @@ class Client(object):
     def _store_cmd(self, name, values, expire, noreply, cas=None):
         cmds = []
         keys = []
+
+        extra = b''
+        if cas is not None:
+            extra += b' ' + cas
+        if noreply:
+            extra += b' noreply'
+        expire = six.text_type(expire).encode('ascii')
+
         for key, data in six.iteritems(values):
             # must be able to reliably map responses back to the original order
             keys.append(key)
@@ -771,15 +779,9 @@ class Client(object):
                 except UnicodeEncodeError as e:
                     raise MemcacheIllegalInputError(str(e))
 
-            extra = b''
-            if cas is not None:
-                extra += b' ' + cas
-            if noreply:
-                extra += b' noreply'
-
             cmds.append(name + b' ' + key + b' ' +
                         six.text_type(flags).encode('ascii') +
-                        b' ' + six.text_type(expire).encode('ascii') +
+                        b' ' + expire +
                         b' ' + six.text_type(len(data)).encode('ascii') +
                         extra + b'\r\n' + data + b'\r\n')
 
