@@ -3,21 +3,20 @@ import socket
 
 
 def pytest_addoption(parser):
-    parser.addoption('--server', action='store',
-                     default='localhost',
+    parser.addoption('--server', action='store', default='localhost',
                      help='memcached server')
 
-    parser.addoption('--port', action='store',
-                     default='11211',
+    parser.addoption('--port', action='store', default='11211',
                      help='memcached server port')
 
-    parser.addoption('--size', action='store',
-                     default=1024,
+    parser.addoption('--size', action='store', default=1024,
                      help='size of data in benchmarks')
 
-    parser.addoption('--count', action='store',
-                     default=10000,
-                     help='amount of values to use in  benchmarks')
+    parser.addoption('--count', action='store', default=10000,
+                     help='number of iterations to run each benchmark')
+
+    parser.addoption('--keys', action='store', default=20,
+                     help='number of keys to use for multi benchmarks')
 
 
 @pytest.fixture(scope='session')
@@ -38,6 +37,16 @@ def size(request):
 @pytest.fixture(scope='session')
 def count(request):
     return int(request.config.option.count)
+
+
+@pytest.fixture(scope='session')
+def keys(request):
+    return int(request.config.option.keys)
+
+
+@pytest.fixture(scope='session')
+def pairs(size, keys):
+    return {'pymemcache_test:%d' % i: 'X' * size for i in range(keys)}
 
 
 def pytest_generate_tests(metafunc):

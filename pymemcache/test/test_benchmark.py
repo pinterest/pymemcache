@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import six
 import time
 import pytest
 
@@ -35,43 +36,66 @@ except Exception:
     HAS_PYMEMCACHE = False
 
 
-def run_client_test(name, client, size, count):
+@pytest.fixture(params=[
+    "pylibmc",
+    "memcache",
+    "pymemcache",
+])
+def client(request, host, port):
+    if request.param == "pylibmc":
+        if not HAS_PYLIBMC:
+            pytest.skip("requires pylibmc")
+        client = pylibmc.Client(['{0}:{1}'.format(host, port)])
+        client.behaviors = {"tcp_nodelay": True}
+
+    elif request.param == "memcache":
+        if not HAS_MEMCACHE:
+            pytest.skip("requires python-memcached")
+        client = memcache.Client(['{0}:{1}'.format(host, port)])
+
+    elif request.param == "pymemcache":
+        if not HAS_PYMEMCACHE:
+            pytest.skip("requires pymemcache")
+        client = pymemcache.client.Client((host, port))
+
+    else:
+        pytest.skip("unknown library {0}".format(request.param))
+
     client.flush_all()
+    return client
 
-    value = 'X' * size
 
+def benchmark(count, func, *args, **kwargs):
     start = time.time()
 
-    for i in range(count):
-        client.set(str(i), value)
-
-    for i in range(count):
-        client.get(str(i))
+    for _ in range(count):
+        result = func(*args, **kwargs)
 
     duration = time.time() - start
-    print("{0}: {1}".format(name, duration))
+    print(str(duration))
+
+    return result
 
 
 @pytest.mark.benchmark()
-@pytest.mark.skipif(not HAS_PYLIBMC,
-                    reason="requires pylibmc")
-def test_pylibmc(host, port, size, count):
-    client = pylibmc.Client(['{0}:{1}'.format(host, port)])
-    client.behaviors = {"tcp_nodelay": True}
-    run_client_test('pylibmc', client, size, count)
+def test_bench_get(request, client, pairs, count):
+    key, value = six.next(six.iteritems(pairs))
+    client.set(key, value)
+    benchmark(count, client.get, key)
 
 
 @pytest.mark.benchmark()
-@pytest.mark.skipif(not HAS_MEMCACHE,
-                    reason="requires python-memcached")
-def test_memcache(host, port, size, count):
-    client = memcache.Client(['{0}:{1}'.format(host, port)])
-    run_client_test('memcache', client, size, count)
+def test_bench_set(request, client, pairs, count):
+    key, value = six.next(six.iteritems(pairs))
+    benchmark(count, client.set, key, value)
 
 
 @pytest.mark.benchmark()
-@pytest.mark.skipif(not HAS_PYMEMCACHE,
-                    reason="requires pymemcache")
-def test_pymemcache(host, port, size, count):
-    client = pymemcache.client.Client((host, port))
-    run_client_test('pymemcache', client, size, count)
+def test_bench_get_multi(request, client, pairs, count):
+    client.set_multi(pairs)
+    benchmark(count, client.get_multi, list(pairs))
+
+
+@pytest.mark.benchmark()
+def test_bench_set_multi(request, client, pairs, count):
+    benchmark(count, client.set_multi, pairs)
