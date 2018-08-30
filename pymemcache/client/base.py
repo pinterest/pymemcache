@@ -788,12 +788,11 @@ class Client(object):
                 extra += b' noreply'
 
             cmds.append(name + b' ' + key + b' ' +
-                   six.text_type(flags).encode('ascii') +
-                   b' ' + six.text_type(expire).encode('ascii') +
-                   b' ' + six.text_type(len(data)).encode('ascii') + extra +
-                   b'\r\n' + data + b'\r\n')
+                        six.text_type(flags).encode('ascii') +
+                        b' ' + six.text_type(expire).encode('ascii') +
+                        b' ' + six.text_type(len(data)).encode('ascii') +
+                        extra + b'\r\n' + data + b'\r\n')
 
-        # TODO: behavior appears untested
         if not self.sock:
             self._connect()
 
