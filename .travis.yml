@@ -1,7 +1,5 @@
 sudo: false
-cache:
-  directories:
-    - $HOME/.cache/pip
+cache: pip
 language: python
 matrix:
   include:
