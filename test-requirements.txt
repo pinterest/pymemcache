@@ -1,6 +1,6 @@
 mock
 pytest
 pytest-cov
-gevent==1.1; "PyPy" not in platform_python_implementation
+gevent==1.3.6; "PyPy" not in platform_python_implementation
 pylibmc
 python-memcached
