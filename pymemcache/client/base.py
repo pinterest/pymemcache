@@ -492,10 +492,10 @@ class Client(object):
         if noreply:
             cmd += b' noreply'
         cmd += b'\r\n'
-        result = self._misc_cmd(cmd, b'delete', noreply)
+        results = self._misc_cmd([cmd], b'delete', noreply)
         if noreply:
             return True
-        return result == b'DELETED'
+        return results[0] == b'DELETED'
 
     def delete_many(self, keys, noreply=None):
         """
@@ -518,11 +518,13 @@ class Client(object):
         if noreply is None:
             noreply = self.default_noreply
 
-        # TODO: make this more performant by sending all keys first, then
-        # waiting for all values.
+        cmds = []
         for key in keys:
-            self.delete(key, noreply)
-
+            cmds.append(
+                b'delete ' + self.check_key(key) +
+                (b' noreply' if noreply else b'') +
+                b'\r\n')
+        self._misc_cmd(cmds, b'delete', noreply)
         return True
 
     delete_multi = delete_many
@@ -545,12 +547,12 @@ class Client(object):
         if noreply:
             cmd += b' noreply'
         cmd += b'\r\n'
-        result = self._misc_cmd(cmd, b'incr', noreply)
+        results = self._misc_cmd([cmd], b'incr', noreply)
         if noreply:
             return None
-        if result == b'NOT_FOUND':
+        if results[0] == b'NOT_FOUND':
             return None
-        return int(result)
+        return int(results[0])
 
     def decr(self, key, value, noreply=False):
         """
@@ -570,12 +572,12 @@ class Client(object):
         if noreply:
             cmd += b' noreply'
         cmd += b'\r\n'
-        result = self._misc_cmd(cmd, b'decr', noreply)
+        results = self._misc_cmd([cmd], b'decr', noreply)
         if noreply:
             return None
-        if result == b'NOT_FOUND':
+        if results[0] == b'NOT_FOUND':
             return None
-        return int(result)
+        return int(results[0])
 
     def touch(self, key, expire=0, noreply=None):
         """
@@ -599,10 +601,10 @@ class Client(object):
         if noreply:
             cmd += b' noreply'
         cmd += b'\r\n'
-        result = self._misc_cmd(cmd, b'touch', noreply)
+        results = self._misc_cmd([cmd], b'touch', noreply)
         if noreply:
             return True
-        return result == b'TOUCHED'
+        return results[0] == b'TOUCHED'
 
     def stats(self, *args):
         """
@@ -638,13 +640,13 @@ class Client(object):
             A string of the memcached version.
         """
         cmd = b"version\r\n"
-        result = self._misc_cmd(cmd, b'version', False)
+        results = self._misc_cmd([cmd], b'version', False)
+        before, _, after = results[0].partition(b' ')
 
-        if not result.startswith(b'VERSION '):
+        if before != b'VERSION':
             raise MemcacheUnknownError(
-                "Received unexpected response: %s" % (result, ))
-
-        return result[8:]
+                "Received unexpected response: %s" % results[0])
+        return after
 
     def flush_all(self, delay=0, noreply=None):
         """
@@ -665,10 +667,10 @@ class Client(object):
         if noreply:
             cmd += b' noreply'
         cmd += b'\r\n'
-        result = self._misc_cmd(cmd, b'flush_all', noreply)
+        results = self._misc_cmd([cmd], b'flush_all', noreply)
         if noreply:
             return True
-        return result == b'OK'
+        return results[0] == b'OK'
 
     def quit(self):
         """
@@ -679,7 +681,7 @@ class Client(object):
         be re-used after quit.
         """
         cmd = b"quit\r\n"
-        self._misc_cmd(cmd, b'quit', True)
+        self._misc_cmd([cmd], b'quit', True)
         self.close()
 
     def _raise_errors(self, line, name):
@@ -815,20 +817,24 @@ class Client(object):
             self.close()
             raise
 
-    def _misc_cmd(self, cmd, cmd_name, noreply):
+    def _misc_cmd(self, cmds, cmd_name, noreply):
         if not self.sock:
             self._connect()
 
         try:
-            self.sock.sendall(cmd)
+            self.sock.sendall(b''.join(cmds))
 
             if noreply:
-                return
+                return []
 
-            _, line = _readline(self.sock, b'')
-            self._raise_errors(line, cmd_name)
+            results = []
+            buf = b''
+            for cmd in cmds:
+                buf, line = _readline(self.sock, buf)
+                self._raise_errors(line, cmd_name)
+                results.append(line)
+            return results
 
-            return line
         except Exception:
             self.close()
             raise

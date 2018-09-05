@@ -99,3 +99,14 @@ def test_bench_get_multi(request, client, pairs, count):
 @pytest.mark.benchmark()
 def test_bench_set_multi(request, client, pairs, count):
     benchmark(count, client.set_multi, pairs)
+
+
+@pytest.mark.benchmark()
+def test_bench_delete(request, client, pairs, count):
+    benchmark(count, client.delete, six.next(six.iterkeys(pairs)))
+
+
+@pytest.mark.benchmark()
+def test_bench_delete_multi(request, client, pairs, count):
+    # deleting missing key takes the same work client-side as real keys
+    benchmark(count, client.delete_multi, list(pairs))
