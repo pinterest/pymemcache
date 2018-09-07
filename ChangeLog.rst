@@ -8,6 +8,7 @@ New in version 2.0.0
 * Properly batch Client.set_many() call. `PR#182 <https://github.com/pinterest/pymemcache/pull/182>`_
 * Improve _check_key() and _store_cmd() performance.  `PR#183 <https://github.com/pinterest/pymemcache/pull/183>`_
 * Properly batch Client.delete_many() call. `PR#184 <https://github.com/pinterest/pymemcache/pull/184>`_
+* Add option to explicitly set pickle version used by serde. `PR#190 <https://github.com/pinterest/pymemcache/pull/190>`_
 
 New in version 1.4.4
 --------------------
