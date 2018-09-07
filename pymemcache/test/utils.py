@@ -48,7 +48,10 @@ class MockMemcacheClient(object):
                 raise MemcacheIllegalInputError(key)
             if isinstance(key, six.string_types):
                 try:
-                    key = key.encode('ascii')
+                    if isinstance(key, bytes):
+                        key = key.decode().encode('ascii')
+                    else:
+                        key = key.encode('ascii')
                 except (UnicodeEncodeError, UnicodeDecodeError):
                     raise MemcacheIllegalInputError
 
@@ -80,7 +83,10 @@ class MockMemcacheClient(object):
                 raise MemcacheIllegalInputError(key)
             if isinstance(key, six.string_types):
                 try:
-                    key = key.encode('ascii')
+                    if isinstance(key, bytes):
+                        key = key.decode().encode('ascii')
+                    else:
+                        key = key.encode('ascii')
                 except (UnicodeEncodeError, UnicodeDecodeError):
                     raise MemcacheIllegalInputError
         if isinstance(value, six.text_type):
