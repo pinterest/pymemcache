@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from builtins import bytes as newbytes
+
 from collections import defaultdict
 import json
 import pytest
@@ -57,6 +59,18 @@ def test_get_set(client_class, host, port, socket_module):
     value = b'value'
     key2 = b'key2'
     value2 = b'value2'
+    get_set_helper(client, key, value, key2, value2)
+
+
+@pytest.mark.integration()
+def test_get_set_newbytes(client_class, host, port, socket_module):
+    client = client_class((host, port), socket_module=socket_module)
+    client.flush_all()
+
+    key = newbytes(b'key3')
+    value = b'value3'
+    key2 = newbytes(b'key4')
+    value2 = b'value4'
     get_set_helper(client, key, value, key2, value2)
 
 
