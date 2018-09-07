@@ -2,10 +2,12 @@
 from unittest import TestCase
 
 from pymemcache.serde import (python_memcache_serializer,
+                              get_python_memcache_serializer,
                               python_memcache_deserializer, FLAG_BYTES,
                               FLAG_PICKLE, FLAG_INTEGER, FLAG_LONG, FLAG_TEXT)
 import pytest
 import six
+from six.moves import cPickle as pickle
 
 
 class CustomInt(int):
@@ -20,9 +22,10 @@ class CustomInt(int):
 
 @pytest.mark.unit()
 class TestSerde(TestCase):
+    serializer = python_memcache_serializer
 
     def check(self, value, expected_flags):
-        serialized, flags = python_memcache_serializer(b'key', value)
+        serialized, flags = self.serializer(b'key', value)
         assert flags == expected_flags
 
         # pymemcache stores values as byte strings, so we immediately the value
@@ -59,3 +62,24 @@ class TestSerde(TestCase):
     def test_subtype(self):
         # Subclass of a native type will be restored as the same type
         self.check(CustomInt(123123), FLAG_PICKLE)
+
+
+@pytest.mark.unit()
+class TestSerdePickleVersion0(TestCase):
+    serializer = get_python_memcache_serializer(pickle_version=0)
+
+
+@pytest.mark.unit()
+class TestSerdePickleVersion1(TestCase):
+    serializer = get_python_memcache_serializer(pickle_version=1)
+
+
+@pytest.mark.unit()
+class TestSerdePickleVersion2(TestCase):
+    serializer = get_python_memcache_serializer(pickle_version=2)
+
+
+@pytest.mark.unit()
+class TestSerdePickleVersionHighest(TestCase):
+    serializer = get_python_memcache_serializer(
+        pickle_version=pickle.HIGHEST_PROTOCOL)
