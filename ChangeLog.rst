@@ -1,8 +1,13 @@
 Change Log
 ==========
-New in draft
+New in version 2.0.0
 --------------------
-* Change set_many and set_multi api return value. see [pr](https://github.com/pinterest/pymemcache/pull/179)
+* Change set_many and set_multi api return value. `PR#179 <https://github.com/pinterest/pymemcache/pull/179>`_
+* Fix support for newbytes from python-future. `PR#187 <https://github.com/pinterest/pymemcache/pull/187>`_
+* Add support for Python 3.7, and drop support for Python 3.3
+* Properly batch Client.set_many() call. `PR#182 <https://github.com/pinterest/pymemcache/pull/182>`_
+* Improve _check_key() and _store_cmd() performance.  `PR#183 <https://github.com/pinterest/pymemcache/pull/183>`_
+* Properly batch Client.delete_many() call. `PR#184 <https://github.com/pinterest/pymemcache/pull/184>`_
 
 New in version 1.4.4
 --------------------
@@ -10,20 +15,24 @@ New in version 1.4.4
 * full benchmarks in test
 * fix flake8 issues
 * Have mockmemcacheclient support non-ascii strings
+* Switch from using pickle format 0 to the highest available version. See `PR#156 <https://github.com/pinterest/pymemcache/pull/156>`_
+
+  *Warning*: different versions of python have different highest pickle versions: https://docs.python.org/3/library/pickle.html
+
 
 New in version 1.4.3
 --------------------
 * Documentation improvements
-* Fixed cachedump stats command, see [ticket](https://github.com/pinterest/pymemcache/issues/103)
+* Fixed cachedump stats command, see `ticket <https://github.com/pinterest/pymemcache/issues/103>`_
 * Honor default_value in HashClient
 
 New in version 1.4.2
 --------------------
-* Drop support for python 2.6, see [ticket](https://github.com/pinterest/pymemcache/issues/139)
+* Drop support for python 2.6, see `ticket <https://github.com/pinterest/pymemcache/issues/139>`_
 
 New in version 1.4.1
 --------------------
-* Python 3 serializations [fixes](https://github.com/pinterest/pymemcache/pull/131)
+* Python 3 serializations `fixes <https://github.com/pinterest/pymemcache/pull/131>`_
 * Drop support for pypy3
 * Comment cleanup
 * Add gets_many to hash_client
@@ -82,4 +91,3 @@ New in version 1.3.0
 New in version 1.2.9
 --------------------
 * Introduced PooledClient a thread-safe pool of clients
-
