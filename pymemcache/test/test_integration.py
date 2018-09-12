@@ -26,6 +26,7 @@ from pymemcache.exceptions import (
     MemcacheClientError
 )
 from pymemcache.serde import (
+    get_python_memcache_serializer,
     python_memcache_serializer,
     python_memcache_deserializer
 )
@@ -250,15 +251,15 @@ def test_serialization_deserialization(host, port, socket_module):
     assert result == value
 
 
-@pytest.mark.integration()
-def test_serde_serialization(client_class, host, port, socket_module):
+def serde_serialization_helper(client_class, host, port,
+                               socket_module, serializer):
     def check(value):
         client.set(b'key', value, noreply=False)
         result = client.get(b'key')
         assert result == value
         assert type(result) is type(value)
 
-    client = client_class((host, port), serializer=python_memcache_serializer,
+    client = client_class((host, port), serializer=serializer,
                           deserializer=python_memcache_deserializer,
                           socket_module=socket_module)
     client.flush_all()
@@ -275,6 +276,28 @@ def test_serde_serialization(client_class, host, port, socket_module):
     testdict[u'one pickle']
     testdict[b'two pickle']
     check(testdict)
+
+
+@pytest.mark.integration()
+def test_serde_serialization(client_class, host, port, socket_module):
+    serde_serialization_helper(client_class, host, port,
+                               socket_module, python_memcache_serializer)
+
+
+@pytest.mark.integration()
+def test_serde_serialization0(client_class, host, port, socket_module):
+    serde_serialization_helper(
+        client_class, host, port,
+        socket_module,
+        get_python_memcache_serializer(pickle_version=0))
+
+
+@pytest.mark.integration()
+def test_serde_serialization2(client_class, host, port, socket_module):
+    serde_serialization_helper(
+        client_class, host, port,
+        socket_module,
+        get_python_memcache_serializer(pickle_version=2))
 
 
 @pytest.mark.integration()

@@ -43,17 +43,45 @@ Serialization
              return value, 1
          return json.dumps(value), 2
 
-    def json_deserializer(key, value, flags):
+     def json_deserializer(key, value, flags):
         if flags == 1:
             return value
         if flags == 2:
             return json.loads(value)
         raise Exception("Unknown serialization format")
 
-    client = Client(('localhost', 11211), serializer=json_serializer,
-                    deserializer=json_deserializer)
-    client.set('key', {'a':'b', 'c':'d'})
-    result = client.get('key')
+     client = Client(('localhost', 11211), serializer=json_serializer,
+                     deserializer=json_deserializer)
+     client.set('key', {'a':'b', 'c':'d'})
+     result = client.get('key')
+
+pymemcache provides a default
+`pickle <https://docs.python.org/3/library/pickle.html>`_-based serializer:
+
+.. code-block:: python
+
+    from pymemcache.client.base import Client
+    from pymemcache import serde
+
+    class Foo(object):
+      pass
+
+    client = Client(('localhost', 11211),
+        serializer=serde.python_memcache_serializer,
+        deserializer=serde.python_memcache_deserializer)
+    client.set('key', Foo())
+    result client.get('key')
+
+The serializer uses the highest pickle protocol available. In order to make
+sure multiple versions of Python can read the protocol version, you can specify
+the version with :code:`get_python_memcache_serializer`
+
+.. code-block:: python
+
+    client = Client(('localhost', 11211),
+        serializer=serde.get_python_memcache_serializer(pickle_version=2),
+        deserializer=serde.python_memcache_deserializer)
+
 
 Deserialization with python3
 ----------------------------
