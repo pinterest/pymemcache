@@ -56,7 +56,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'pymemcache'
-copyright = u'2016, Pinterest'
+copyright = u'2018, Pinterest'
 author = u'Charles Gordon, Nicholas Charriere'
 
 # The version info for the project you're documenting, acts as replacement for
