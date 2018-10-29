@@ -194,7 +194,7 @@ class Client(object):
         Constructor.
 
         Args:
-          server: tuple(hostname, port)
+          server: tuple(hostname, port) or string corresponding to a UNIX socket path.
           serializer: optional function, see notes in the class docs.
           deserializer: optional function, see notes in the class docs.
           connect_timeout: optional float, seconds to wait for a connection to
@@ -237,6 +237,7 @@ class Client(object):
         self.key_prefix = key_prefix
         self.default_noreply = default_noreply
         self.allow_unicode_keys = allow_unicode_keys
+        self._use_unix_socket = isinstance(server, str)
 
     def check_key(self, key):
         """Checks key and add key_prefix."""
@@ -244,8 +245,11 @@ class Client(object):
                           key_prefix=self.key_prefix)
 
     def _connect(self):
-        sock = self.socket_module.socket(self.socket_module.AF_INET,
-                                         self.socket_module.SOCK_STREAM)
+        if self._use_unix_socket:
+            protocol = self.socket_module.AF_UNIX
+        else:
+            protocol = self.socket_module.AF_INET
+        sock = self.socket_module.socket(protocol, self.socket_module.SOCK_STREAM)
         try:
             sock.settimeout(self.connect_timeout)
             sock.connect(self.server)
