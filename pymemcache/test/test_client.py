@@ -75,7 +75,8 @@ class MockSocket(object):
 class MockUnixSocket(object):
 
     def __init__(self, socket_path):
-        os.remove(socket_path)  # Make sure no stalling connection exists
+        if os.path.exists(socket_path):
+            os.remove(socket_path)  # Make sure no stalling connection exists
         self.socket_path = socket_path
         self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 
