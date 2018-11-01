@@ -23,6 +23,8 @@ matrix:
 services:
   - memcached
 
+before install:
+  - pip install dix
 install:
   - travis_retry pip install tox
 
