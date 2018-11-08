@@ -303,7 +303,7 @@ class Client(object):
 
         Returns:
           Returns a list of keys that failed to be inserted.
-          If noreply is True, alwais returns empty list.
+          If noreply is True, always returns empty list.
         """
         if noreply is None:
             noreply = self.default_noreply
