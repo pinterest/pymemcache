@@ -122,4 +122,4 @@ Credits
 We're Hiring!
 =============
 Are you really excited about open-source? Or great software engineering?
-Pinterest is [hiring](https://careers.pinterest.com/)!
+Pinterest is `hiring <https://careers.pinterest.com/>`_!
