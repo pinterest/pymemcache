@@ -118,6 +118,7 @@ Credits
 * `Remco van Oosterhout <https://github.com/Vhab>`_
 * `Nicholas Charriere <https://github.com/nichochar>`_
 * `Joe Gordon <https://github.com/jogo>`_
+* `Jon Parise <https://github.com/jparise>`_
 
 We're Hiring!
 =============

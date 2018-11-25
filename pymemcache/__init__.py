@@ -1,5 +1,4 @@
-__version__ = '2.0.0'
-__author__ = "Charles Gordon"
+__version__ = '2.1.0'
 
 from pymemcache.client.base import Client  # noqa
 from pymemcache.client.base import PooledClient  # noqa

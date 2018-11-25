@@ -1,5 +1,12 @@
 Change Log
 ==========
+
+New in version 2.1.0
+--------------------
+* Public classes and exceptions can now be imported from the top-level
+  ``pymemcache`` package (e.g. ``pymemcache.Client``).
+  `#197 <https://github.com/pinterest/pymemcache/pull/197>`_
+  
 New in version 2.0.0
 --------------------
 * Change set_many and set_multi api return value. `#179 <https://github.com/pinterest/pymemcache/pull/179>`_
