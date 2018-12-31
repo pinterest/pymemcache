@@ -6,6 +6,8 @@ New in version 2.1.0
 * Public classes and exceptions can now be imported from the top-level
   ``pymemcache`` package (e.g. ``pymemcache.Client``).
   `#197 <https://github.com/pinterest/pymemcache/pull/197>`_
+* Add UNIX domain socket support and document server connection options.
+  `#206 <https://github.com/pinterest/pymemcache/pull/206>`_
   
 New in version 2.0.0
 --------------------

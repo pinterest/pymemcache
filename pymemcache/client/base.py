@@ -113,6 +113,23 @@ class Client(object):
     """
     A client for a single memcached server.
 
+    *Server Connection*
+
+     The ``server`` parameter controls how the client connects to the memcached
+     server. You can either use a (host, port) tuple for a TCP connection or a
+     string containing the path to a UNIX domain socket.
+
+     The ``connect_timeout`` and ``timeout`` parameters can be used to set
+     socket timeout values. By default, timeouts are disabled.
+
+     When the ``no_delay`` flag is set, the ``TCP_NODELAY`` socket option will
+     also be set. This only applies to TCP-based connections.
+
+     Lastly, the ``socket_module`` allows you to specify an alternate socket
+     implementation (such as `gevent.socket`_).
+
+     .. _gevent.socket: http://www.gevent.org/api/gevent.socket.html
+
     *Keys and Values*
 
      Keys must have a __str__() method which should return a str with no more
@@ -194,7 +211,7 @@ class Client(object):
         Constructor.
 
         Args:
-          server: tuple(hostname, port)
+          server: tuple(hostname, port) or string containing a UNIX socket path.
           serializer: optional function, see notes in the class docs.
           deserializer: optional function, see notes in the class docs.
           connect_timeout: optional float, seconds to wait for a connection to
@@ -244,13 +261,17 @@ class Client(object):
                           key_prefix=self.key_prefix)
 
     def _connect(self):
-        sock = self.socket_module.socket(self.socket_module.AF_INET,
-                                         self.socket_module.SOCK_STREAM)
+        if isinstance(self.server, (list, tuple)):
+            sock = self.socket_module.socket(self.socket_module.AF_INET,
+                                             self.socket_module.SOCK_STREAM)
+        else:
+            sock = self.socket_module.socket(self.socket_module.AF_UNIX,
+                                             self.socket_module.SOCK_STREAM)
         try:
             sock.settimeout(self.connect_timeout)
             sock.connect(self.server)
             sock.settimeout(self.timeout)
-            if self.no_delay:
+            if self.no_delay and sock.family == self.socket_module.AF_INET:
                 sock.setsockopt(self.socket_module.IPPROTO_TCP,
                                 self.socket_module.TCP_NODELAY, 1)
         except Exception:
