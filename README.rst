@@ -1,7 +1,7 @@
 pymemcache
 ==========
 
-.. image:: https://travis-ci.org/pinterest/pymemcache.png
+.. image:: https://travis-ci.org/pinterest/pymemcache.svg
     :target: https://travis-ci.org/pinterest/pymemcache
 
 .. image:: https://img.shields.io/pypi/v/pymemcache.svg
