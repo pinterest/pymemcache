@@ -19,6 +19,7 @@ import collections
 import errno
 import functools
 import json
+import os
 import mock
 import socket
 import unittest
@@ -47,6 +48,10 @@ class MockSocket(object):
         self.connections = []
         self.socket_options = []
 
+    @property
+    def family(self):
+        return socket.AF_INET
+
     def sendall(self, value):
         self.send_bufs.append(value)
 
@@ -69,6 +74,23 @@ class MockSocket(object):
 
     def setsockopt(self, level, option, value):
         self.socket_options.append((level, option, value))
+
+
+class MockUnixSocketServer(object):
+    def __init__(self, socket_path):
+        if os.path.exists(socket_path):
+            os.remove(socket_path)
+        self.socket_path = socket_path
+        self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+
+    def __enter__(self):
+        self.socket.bind(self.socket_path)
+        self.socket.listen(1)
+        return self.socket
+
+    def __exit__(self, *args):
+        self.socket.close()
+        os.remove(self.socket_path)
 
 
 class MockSocketModule(object):
@@ -845,6 +867,14 @@ class TestClientSocketConnect(unittest.TestCase):
         client._connect()
         assert client.sock.socket_options == [(socket.IPPROTO_TCP,
                                                socket.TCP_NODELAY, 1)]
+
+    def test_socket_connect_unix(self):
+        server = '/tmp/pymemcache.{pid}'.format(pid=os.getpid())
+
+        with MockUnixSocketServer(server):
+            client = Client(server)
+            client._connect()
+            assert client.sock.family == socket.AF_UNIX
 
     def test_socket_connect_closes_on_failure(self):
         server = ("example.com", 11211)

@@ -13,6 +13,17 @@ Basic Usage
     client.set('some_key', 'some_value')
     result = client.get('some_key')
 
+Using UNIX domain sockets
+-------------------------
+You can also connect to a local memcached server over a UNIX domain socket by
+passing the socket's path to the client's ``server`` parameter:
+
+.. code-block:: python
+
+    from pymemcache.client.base import Client
+
+    client = Client('/var/run/memcached/memcached.sock')
+
 Using a memcached cluster
 -------------------------
 This will use a consistent hashing algorithm to choose which server to
