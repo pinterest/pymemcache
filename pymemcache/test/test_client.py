@@ -39,12 +39,13 @@ from pymemcache.test.utils import MockMemcacheClient
 
 
 class MockSocket(object):
-    def __init__(self, recv_bufs, connect_failure=None):
+    def __init__(self, recv_bufs, connect_failure=None, close_failure=None):
         self.recv_bufs = collections.deque(recv_bufs)
         self.send_bufs = []
         self.closed = False
         self.timeouts = []
         self.connect_failure = connect_failure
+        self.close_failure = close_failure
         self.connections = []
         self.socket_options = []
 
@@ -56,6 +57,8 @@ class MockSocket(object):
         self.send_bufs.append(value)
 
     def close(self):
+        if isinstance(self.close_failure, Exception):
+            raise self.close_failure
         self.closed = True
 
     def recv(self, size):
@@ -94,12 +97,16 @@ class MockUnixSocketServer(object):
 
 
 class MockSocketModule(object):
-    def __init__(self, connect_failure=None):
+    def __init__(self, connect_failure=None, close_failure=None):
         self.connect_failure = connect_failure
+        self.close_failure = close_failure
         self.sockets = []
 
     def socket(self, family, type):
-        socket = MockSocket([], connect_failure=self.connect_failure)
+        socket = MockSocket(
+            [],
+            connect_failure=self.connect_failure,
+            close_failure=self.close_failure)
         self.sockets.append(socket)
         return socket
 
@@ -886,6 +893,27 @@ class TestClientSocketConnect(unittest.TestCase):
         assert len(socket_module.sockets) == 1
         assert socket_module.sockets[0].connections == []
         assert socket_module.sockets[0].closed
+
+    def test_socket_close(self):
+        server = ("example.com", 11211)
+
+        client = Client(server, socket_module=MockSocketModule())
+        client._connect()
+        assert client.sock is not None
+
+        client.close()
+        assert client.sock is None
+
+    def test_socket_close_exception(self):
+        server = ("example.com", 11211)
+
+        socket_module = MockSocketModule(close_failure=OSError())
+        client = Client(server, socket_module=socket_module)
+        client._connect()
+        assert client.sock is not None
+
+        client.close()
+        assert client.sock is None
 
 
 class TestPooledClient(ClientTestMixin, unittest.TestCase):
