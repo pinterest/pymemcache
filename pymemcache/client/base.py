@@ -261,6 +261,8 @@ class Client(object):
                           key_prefix=self.key_prefix)
 
     def _connect(self):
+        self.close()
+
         if isinstance(self.server, (list, tuple)):
             sock = self.socket_module.socket(self.socket_module.AF_INET,
                                              self.socket_module.SOCK_STREAM)
@@ -277,6 +279,7 @@ class Client(object):
         except Exception:
             sock.close()
             raise
+
         self.sock = sock
 
     def close(self):
@@ -287,7 +290,8 @@ class Client(object):
                 self.sock.close()
             except Exception:
                 pass
-        self.sock = None
+            finally:
+                self.sock = None
 
     def set(self, key, value, expire=0, noreply=None):
         """
@@ -731,7 +735,7 @@ class Client(object):
             cmd = name + b' ' + b' '.join(checked_keys) + b'\r\n'
 
         try:
-            if not self.sock:
+            if self.sock is None:
                 self._connect()
 
             self.sock.sendall(cmd)
@@ -811,7 +815,7 @@ class Client(object):
                         b' ' + six.text_type(len(data)).encode('ascii') +
                         extra + b'\r\n' + data + b'\r\n')
 
-        if not self.sock:
+        if self.sock is None:
             self._connect()
 
         try:
@@ -842,7 +846,7 @@ class Client(object):
             raise
 
     def _misc_cmd(self, cmds, cmd_name, noreply):
-        if not self.sock:
+        if self.sock is None:
             self._connect()
 
         try:
