@@ -725,14 +725,11 @@ class Client(object):
             raise MemcacheServerError(error)
 
     def _fetch_cmd(self, name, keys, expect_cas):
-        if name == b'stats':
-            # stats commands can have multiple arguments
-            #   `stats cachedump 1 1`
-            checked_keys = [self.check_key(k) for k in keys]
-            cmd = name + b' ' + b' '.join(checked_keys) + b'\r\n'
-        else:
-            checked_keys = dict((self.check_key(k), k) for k in keys)
-            cmd = name + b' ' + b' '.join(checked_keys) + b'\r\n'
+        prefixed_keys = [self.check_key(k) for k in keys]
+        remapped_keys = dict(zip(prefixed_keys, keys))
+
+        # It is important for all keys to be listed in their original order.
+        cmd = name + b' ' + b' '.join(prefixed_keys) + b'\r\n'
 
         try:
             if self.sock is None:
@@ -758,7 +755,7 @@ class Client(object):
                                              % (line, str(e)))
 
                     buf, value = _readvalue(self.sock, buf, int(size))
-                    key = checked_keys[key]
+                    key = remapped_keys[key]
 
                     if self.deserializer:
                         value = self.deserializer(key, value, int(flags))
