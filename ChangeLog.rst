@@ -8,6 +8,10 @@ New in version 2.1.0
   `#197 <https://github.com/pinterest/pymemcache/pull/197>`_
 * Add UNIX domain socket support and document server connection options.
   `#206 <https://github.com/pinterest/pymemcache/pull/206>`_
+* Add support for the ``cache_memlimit`` command.
+  `#211 <https://github.com/pinterest/pymemcache/pull/211>`_
+* Commands key are now always sent in their original order.
+  `#209 <https://github.com/pinterest/pymemcache/pull/209>`_
   
 New in version 2.0.0
 --------------------
