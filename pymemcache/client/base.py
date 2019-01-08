@@ -665,7 +665,8 @@ class Client(object):
         The memcached "cache_memlimit" command.
 
         Args:
-            A number of megabytes to set as the new memlimit
+          memlimit: int, the number of megabytes to set as the new cache memory
+                    limit.
 
         Returns:
           If no exception is raised, always returns True.
