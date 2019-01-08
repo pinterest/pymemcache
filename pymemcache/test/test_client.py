@@ -724,6 +724,14 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         ]
         assert result == {b'bob': b'[7 b; 0 s]'}
 
+    def test_cache_memlimit(self):
+        client = self.make_client([b'OK\r\n'])
+        result = client.cache_memlimit(8)
+        assert client.sock.send_bufs == [
+            b'cache_memlimit 8\r\n'
+        ]
+        assert result is True
+
     def test_python_dict_set_is_supported(self):
         client = self.make_client([b'STORED\r\n'])
         client[b'key'] = b'value'

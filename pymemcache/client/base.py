@@ -660,6 +660,21 @@ class Client(object):
 
         return result
 
+    def cache_memlimit(self, memlimit):
+        """
+        The memcached "cache_memlimit" command.
+
+        Args:
+          memlimit: int, the number of megabytes to set as the new cache memory
+                    limit.
+
+        Returns:
+          If no exception is raised, always returns True.
+        """
+
+        self._fetch_cmd(b'cache_memlimit', [str(int(memlimit))], False)
+        return True
+
     def version(self):
         """
         The memcached "version" command.
@@ -742,7 +757,7 @@ class Client(object):
             while True:
                 buf, line = _readline(self.sock, buf)
                 self._raise_errors(line, name)
-                if line == b'END':
+                if line == b'END' or line == b'OK':
                     return result
                 elif line.startswith(b'VALUE'):
                     if expect_cas:
