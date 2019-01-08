@@ -85,7 +85,7 @@ pymemcache provides a default
 
 The serializer uses the highest pickle protocol available. In order to make
 sure multiple versions of Python can read the protocol version, you can specify
-the version with :code:`get_python_memcache_serializer`
+the version with :func:`pymemcache.serde.get_python_memcache_serializer`.
 
 .. code-block:: python
 
@@ -94,8 +94,8 @@ the version with :code:`get_python_memcache_serializer`
         deserializer=serde.python_memcache_deserializer)
 
 
-Deserialization with python3
-----------------------------
+Deserialization with Python 3
+-----------------------------
 
 .. code-block:: python
 
@@ -110,29 +110,32 @@ Key Constraints
 ---------------
 This client implements the ASCII protocol of memcached. This means keys should not
 contain any of the following illegal characters:
-> Keys cannot have spaces, new lines, carriage returns, or null characters.
-We suggest that if you have unicode characters, or long keys, you use an effective
-hashing mechanism before calling this client. At Pinterest, we have found that
-murmur3 hash is a great candidate for this. Alternatively you can
-set `allow_unicode_keys` to support unicode keys, but beware of
-what unicode encoding you use to make sure multiple clients can find the
-same key.
+
+   Keys cannot have spaces, new lines, carriage returns, or null characters.
+   We suggest that if you have unicode characters, or long keys, you use an
+   effective hashing mechanism before calling this client.
+
+At Pinterest, we have found that murmur3 hash is a great candidate for this.
+Alternatively you can set `allow_unicode_keys` to support unicode keys, but
+beware of what unicode encoding you use to make sure multiple clients can find
+the same key.
 
 Best Practices
 ---------------
 
- - Always set the `connect_timeout` and `timeout` arguments in the
+ - Always set the ``connect_timeout`` and ``timeout`` arguments in the
    :py:class:`pymemcache.client.base.Client` constructor to avoid blocking
    your process when memcached is slow. You might also want to enable the
-   `no_delay` option, which sets the TCP_NODELAY flag on the connection's
+   ``no_delay`` option, which sets the TCP_NODELAY flag on the connection's
    socket.
- - Use the "noreply" flag for a significant performance boost. The "noreply"
+ - Use the ``noreply`` flag for a significant performance boost. The ``"noreply``
    flag is enabled by default for "set", "add", "replace", "append", "prepend",
    and "delete". It is disabled by default for "cas", "incr" and "decr". It
    obviously doesn't apply to any get calls.
- - Use get_many and gets_many whenever possible, as they result in less
-   round trip times for fetching multiple keys.
- - Use the "ignore_exc" flag to treat memcache/network errors as cache misses
+ - Use :func:`pymemcache.client.base.Client.get_many` and
+   :func:`pymemcache.client.base.Client.gets_many` whenever possible, as they
+   result in fewer round trip times for fetching multiple keys.
+ - Use the ``ignore_exc`` flag to treat memcache/network errors as cache misses
    on calls to the get* methods. This prevents failures in memcache, or network
    errors, from killing your web requests. Do not use this flag if you need to
    know about errors from memcache, and make sure you have some other way to
