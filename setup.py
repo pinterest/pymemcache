@@ -1,20 +1,29 @@
 #!/usr/bin/env python
+
 import os
+import re
 
 from setuptools import setup, find_packages
-from pymemcache import __version__
 
 
-def read(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+def read(path):
+    return open(os.path.join(os.path.dirname(__file__), path)).read()
+
+
+def read_version(path):
+    match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", read(path), re.M)
+    if match:
+        return match.group(1)
+    raise RuntimeError("Unable to find __version__ in %s." % path)
 
 
 readme = read('README.rst')
 changelog = read('ChangeLog.rst')
+version = read_version('pymemcache/__init__.py')
 
 setup(
     name='pymemcache',
-    version=__version__,
+    version=version,
     author='Charles Gordon',
     author_email='charles@pinterest.com',
     packages=find_packages(),
