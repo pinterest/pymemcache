@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+New in version 2.1.1
+--------------------
+* Fix ``setup.py`` dependency on six already being installed.
+
 New in version 2.1.0
 --------------------
 * Public classes and exceptions can now be imported from the top-level
