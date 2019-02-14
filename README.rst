@@ -48,6 +48,13 @@ Usage
 
 See the documentation here: https://pymemcache.readthedocs.io/en/latest/
 
+Django
+------
+
+If you're planning on using pymemcache with Django, you might be interested in
+`django-pymemcache <https://github.com/django-pymemcache/django-pymemcache>`_.
+It provides a Django cache backend that is built on pymemcache.
+
 Comparison with Other Libraries
 ===============================
 
