@@ -227,7 +227,7 @@ class ClientTestMixin(object):
     def test_get_not_found_default(self):
         client = self.make_client([b'END\r\n'])
         result = client.get(b'key', default='foobar')
-        assert result is 'foobar'
+        assert result == 'foobar'
 
     def test_get_found(self):
         client = self.make_client([
