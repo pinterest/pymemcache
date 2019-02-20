@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+New in version 2.2.0
+--------------------
+* Using ``setup.cfg`` metadata instead ``setup.py`` config to generate package.
+
 New in version 2.1.1
 --------------------
 * Fix ``setup.py`` dependency on six already being installed.
