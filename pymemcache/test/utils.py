@@ -44,8 +44,6 @@ class MockMemcacheClient(object):
 
     def get(self, key, default=None):
         if not self.allow_unicode_keys:
-            if isinstance(key, six.text_type):
-                raise MemcacheIllegalInputError(key)
             if isinstance(key, six.string_types):
                 try:
                     if isinstance(key, bytes):
@@ -79,8 +77,6 @@ class MockMemcacheClient(object):
 
     def set(self, key, value, expire=0, noreply=True):
         if not self.allow_unicode_keys:
-            if isinstance(key, six.text_type):
-                raise MemcacheIllegalInputError(key)
             if isinstance(key, six.string_types):
                 try:
                     if isinstance(key, bytes):
@@ -89,8 +85,6 @@ class MockMemcacheClient(object):
                         key = key.encode('ascii')
                 except (UnicodeEncodeError, UnicodeDecodeError):
                     raise MemcacheIllegalInputError
-        if isinstance(value, six.text_type):
-            raise MemcacheIllegalInputError(value)
         if (isinstance(value, six.string_types) and
                 not isinstance(value, six.binary_type)):
             try:
