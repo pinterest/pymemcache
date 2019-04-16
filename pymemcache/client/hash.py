@@ -33,7 +33,8 @@ class HashClient(object):
         dead_timeout=60,
         use_pooling=False,
         ignore_exc=False,
-        allow_unicode_keys=False
+        allow_unicode_keys=False,
+        flush_on_reconnect=False
     ):
         """
         Constructor.
@@ -69,6 +70,8 @@ class HashClient(object):
         self._failed_clients = {}
         self._dead_clients = {}
         self._last_dead_check_time = time.time()
+        self.flush_on_reconnect = flush_on_reconnect
+        self.flush_on_next_connect = False
 
         self.hasher = hasher()
 
@@ -277,6 +280,9 @@ class HashClient(object):
             failed_metadata['attempts'] += 1
             failed_metadata['failed_time'] = time.time()
             self._failed_clients[server] = failed_metadata
+        # Handle if client user ask for flushing all data on reconnect
+        if self.flush_on_reconnect:
+            self.flush_on_next_connect = True
 
     def _run_cmd(self, cmd, key, default_val, *args, **kwargs):
         client = self._get_client(key)

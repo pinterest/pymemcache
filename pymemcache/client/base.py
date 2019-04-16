@@ -13,6 +13,7 @@
 # limitations under the License.
 import errno
 import socket
+import logging
 import six
 
 from pymemcache import pool
@@ -26,6 +27,7 @@ from pymemcache.exceptions import (
     MemcacheUnexpectedCloseError
 )
 
+logger = logging.getLogger(__name__)
 
 RECV_SIZE = 4096
 VALID_STORE_RESULTS = {
@@ -206,7 +208,8 @@ class Client(object):
                  socket_module=socket,
                  key_prefix=b'',
                  default_noreply=True,
-                 allow_unicode_keys=False):
+                 allow_unicode_keys=False,
+                 flush_on_reconnect=False):
         """
         Constructor.
 
@@ -233,6 +236,18 @@ class Client(object):
             store commands (except from cas, incr, and decr, which default to
             False).
           allow_unicode_keys: bool, support unicode (utf8) keys
+          flush_on_reconnect: bool, optional flag which prevents a scenario
+            that can cause stale data to be read: If there's more than one
+            memcached server and the connection to one is interrupted, keys
+            that mapped to that server will get reassigned to another.
+            If the first server comes back, those keys will map to it
+            again. If it still has its data, get()s can read stale data that
+            was overwritten on another server. This flag is off by
+            default for backwards compatibility.
+            CAUTION: Pass True to this flag on a cluster of memcache servers
+            will flush your entire memcache cluster by example if you facing
+            some intermittent connection. be sure to know what you are doing
+            before using this flag.
 
         Notes:
           The constructor does not make a connection to memcached. The first
@@ -254,6 +269,13 @@ class Client(object):
         self.key_prefix = key_prefix
         self.default_noreply = default_noreply
         self.allow_unicode_keys = allow_unicode_keys
+        self.flush_on_reconnect = flush_on_reconnect
+        self.flush_on_next_connect = False
+        if self.flush_on_reconnect:
+            logger.warn('You start client with `flush_on_reconnect` activated '
+                        'if your client lose the connection with your '
+                        'memcache server all your data will be flush on the '
+                        'next reconnect to your server!')
 
     def check_key(self, key):
         """Checks key and add key_prefix."""
@@ -277,9 +299,23 @@ class Client(object):
                 sock.setsockopt(self.socket_module.IPPROTO_TCP,
                                 self.socket_module.TCP_NODELAY, 1)
         except Exception:
+            if self.flush_on_reconnect:
+                logger.warn('You have choose to use `flush_on_reconnect`, '
+                            'your connection has just been lost, '
+                            'at the next pymemcache client server reconnect '
+                            'all your datas will been flushed')
+                self.flush_on_next_connect = True
             sock.close()
             raise
 
+        if self.flush_on_next_connect:
+            self.flush_all()
+            logger.warn('You have choose to use `flush_on_reconnect`, '
+                        'your connection with your server have been '
+                        'previously loosed, now that pymemcache client is now '
+                        'reconnected to your server all your datas '
+                        'have been flushed')
+            self.flush_on_next_connect = False
         self.sock = sock
 
     def close(self):

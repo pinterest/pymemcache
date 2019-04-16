@@ -78,6 +78,9 @@ class MockSocket(object):
     def setsockopt(self, level, option, value):
         self.socket_options.append((level, option, value))
 
+    def flush_all(self):
+        self.recv_bufs = collections.deque([])
+
 
 class MockUnixSocketServer(object):
     def __init__(self, socket_path):
@@ -112,6 +115,28 @@ class MockSocketModule(object):
 
     def __getattr__(self, name):
         return getattr(socket, name)
+
+
+class MockPermanentSocketModule(object):
+    def __init__(self, connect_failure=None, close_failure=None,
+                 recv_bufs=[]):
+        self.connect_failure = connect_failure
+        self.close_failure = close_failure
+        self.sockets = []
+        self.recv_bufs = recv_bufs
+        self.AF_INET = socket.AF_INET
+        self.AF_UNIX = socket.AF_UNIX
+        self.SOCK_STREAM = socket.SOCK_STREAM
+        self.sock = MockSocket(
+            self.recv_bufs,
+            connect_failure=self.connect_failure,
+            close_failure=self.close_failure)
+
+    def socket(self, family, type):
+        return self.sock
+
+    def __getattr__(self, name):
+        return getattr(self.sock, name)
 
 
 @pytest.mark.unit()
@@ -901,6 +926,55 @@ class TestClientSocketConnect(unittest.TestCase):
         assert len(socket_module.sockets) == 1
         assert socket_module.sockets[0].connections == []
         assert socket_module.sockets[0].closed
+
+    def test_socket_flush_on_reconnect(self):
+        server = ("example.com", 11211)
+        init_buf = [
+            b'STORED\r\n',
+            b'VALUE key 0 5\r\nvalue\r\nEND\r\n',
+        ]
+        mock_permanent_socket = MockPermanentSocketModule(recv_bufs=init_buf)
+        client = Client(server, connect_timeout=2,
+                        timeout=3,
+                        socket_module=mock_permanent_socket,
+                        flush_on_reconnect=True)
+        client._connect()
+        result = client.set(b'key', b'value', noreply=False)
+        assert result is True
+        client.sock.connect_failure = OSError()
+        with pytest.raises(OSError):
+            client._connect()
+        assert client.flush_on_next_connect is True
+        client.sock = mock_permanent_socket.sock
+        client.sock.connect_failure = None
+        client.flush_all = client.sock.flush_all
+        client._connect()
+        with pytest.raises(IndexError):
+            result = client.get(b'key')
+
+    def test_socket_not_flush_on_reconnect(self):
+        server = ("example.com", 11211)
+        init_buf = [
+            b'STORED\r\n',
+            b'VALUE key 0 5\r\nvalue\r\nEND\r\n',
+        ]
+        mock_permanent_socket = MockPermanentSocketModule(recv_bufs=init_buf)
+        client = Client(server, connect_timeout=2,
+                        timeout=3,
+                        socket_module=mock_permanent_socket)
+        client._connect()
+        result = client.set(b'key', b'value', noreply=False)
+        assert result is True
+        client.sock.connect_failure = OSError()
+        with pytest.raises(OSError):
+            client._connect()
+        assert client.flush_on_next_connect is False
+        client.sock = mock_permanent_socket.sock
+        client.sock.connect_failure = None
+        client.flush_all = client.sock.flush_all
+        client._connect()
+        result = client.get(b'key')
+        assert result == b'value'
 
     def test_socket_close(self):
         server = ("example.com", 11211)
