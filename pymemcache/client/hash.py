@@ -33,7 +33,8 @@ class HashClient(object):
         dead_timeout=60,
         use_pooling=False,
         ignore_exc=False,
-        allow_unicode_keys=False
+        allow_unicode_keys=False,
+        default_noreply=True
     ):
         """
         Constructor.
@@ -81,6 +82,7 @@ class HashClient(object):
             'serializer': serializer,
             'deserializer': deserializer,
             'allow_unicode_keys': allow_unicode_keys,
+            'default_noreply': default_noreply,
         }
 
         if use_pooling is True:
