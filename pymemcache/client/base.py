@@ -819,7 +819,8 @@ class Client(object):
                 try:
                     data = six.text_type(data).encode('ascii')
                 except UnicodeEncodeError as e:
-                    raise MemcacheIllegalInputError(str(e))
+                    raise MemcacheIllegalInputError(
+                            "Data values must be binary-safe: %s" % e)
 
             cmds.append(name + b' ' + key + b' ' +
                         six.text_type(flags).encode('ascii') +
