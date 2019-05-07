@@ -93,18 +93,18 @@ def _check_key(key, allow_unicode_keys, key_prefix=b''):
             else:
                 key = key.encode('ascii')
         except (UnicodeEncodeError, UnicodeDecodeError):
-            raise MemcacheIllegalInputError("Non-ASCII key: '%r'" % key)
+            raise MemcacheIllegalInputError("Non-ASCII key: %r" % key)
 
     key = key_prefix + key
     parts = key.split()
 
     if len(key) > 250:
-        raise MemcacheIllegalInputError("Key is too long: '%r'" % key)
+        raise MemcacheIllegalInputError("Key is too long: %r" % key)
     # second statement catches leading or trailing whitespace
     elif len(parts) > 1 or parts[0] != key:
-        raise MemcacheIllegalInputError("Key contains whitespace: '%r'" % key)
+        raise MemcacheIllegalInputError("Key contains whitespace: %r" % key)
     elif b'\00' in key:
-        raise MemcacheIllegalInputError("Key contains null: '%r'" % key)
+        raise MemcacheIllegalInputError("Key contains null: %r" % key)
 
     return key
 
