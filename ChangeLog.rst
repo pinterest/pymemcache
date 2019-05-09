@@ -1,9 +1,11 @@
 Change Log
 ==========
 
-New in version 2.2.0
---------------------
-* Using ``setup.cfg`` metadata instead ``setup.py`` config to generate package.
+New in version 2.2.0 (unreleased)
+---------------------------------
+* Use ``setup.cfg`` metadata instead ``setup.py`` config to generate package.
+* Add ``default_noreply`` parameter to ``HashClient``.
+* Handle unicode key values in ``MockMemcacheClient`` correctly.
 
 New in version 2.1.1
 --------------------
