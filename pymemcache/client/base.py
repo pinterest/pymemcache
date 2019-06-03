@@ -739,6 +739,10 @@ class Client(object):
             error = line[line.find(b' ') + 1:]
             raise MemcacheServerError(error)
 
+    # extract the key helper to support extensions
+    def _key_helper(self, key, remapped_keys, prefixed_keys):
+        return remapped_keys[key]
+
     def _fetch_cmd(self, name, keys, expect_cas):
         prefixed_keys = [self.check_key(k) for k in keys]
         remapped_keys = dict(zip(prefixed_keys, keys))
@@ -770,7 +774,8 @@ class Client(object):
                                              % (line, str(e)))
 
                     buf, value = _readvalue(self.sock, buf, int(size))
-                    key = remapped_keys[key]
+
+                    key = self._key_helper(key, remapped_keys, prefixed_keys)
 
                     if self.deserializer:
                         value = self.deserializer(key, value, int(flags))
