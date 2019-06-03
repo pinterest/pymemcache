@@ -293,7 +293,7 @@ class Client(object):
             finally:
                 self.sock = None
 
-    def set(self, key, value, expire=0, noreply=None):
+    def set(self, key, value, expire=0, noreply=None, flag=None, encoding='ascii'):
         """
         The memcached "set" command.
 
@@ -304,6 +304,9 @@ class Client(object):
                   from the cache, or zero for no expiry (the default).
           noreply: optional bool, True to not wait for the reply (defaults to
                    self.default_noreply).
+          flag: remcached operation flag
+          encoding: pymemcached use ascii, remcached use utf-8
+
 
         Returns:
           If no exception is raised, always returns True. If an exception is
@@ -312,7 +315,7 @@ class Client(object):
         """
         if noreply is None:
             noreply = self.default_noreply
-        return self._store_cmd(b'set', {key: value}, expire, noreply)[key]
+        return self._store_cmd(b'set', {key: value}, expire, noreply, flag=flag, encoding=encoding)[key]
 
     def set_many(self, values, expire=0, noreply=None):
         """
@@ -739,8 +742,17 @@ class Client(object):
             error = line[line.find(b' ') + 1:]
             raise MemcacheServerError(error)
 
-    # extract the key helper to support extensions
     def _key_helper(self, key, remapped_keys, prefixed_keys):
+        """
+        This function is extracted from _fetch_cmd to support future extension for remcached.
+        Remcached will support rich data structure like list/map/set, it reused and modified the memcached protocol.
+        The key will be slightly different from pymemcache, thus this function is extracted.
+
+        :param key: the orignal key read from socket
+        :param remapped_keys: a dic has prefixed_keys as key and keys as value
+        :param prefixed_keys: key after checking and adding prefix
+        :return: the actual key will be used in dic result
+        """
         return remapped_keys[key]
 
     def _fetch_cmd(self, name, keys, expect_cas):
@@ -759,11 +771,13 @@ class Client(object):
             buf = b''
             result = {}
             while True:
+
                 buf, line = _readline(self.sock, buf)
                 self._raise_errors(line, name)
                 if line == b'END' or line == b'OK':
                     return result
                 elif line.startswith(b'VALUE'):
+
                     if expect_cas:
                         _, key, flags, size, cas = line.split()
                     else:
@@ -772,11 +786,8 @@ class Client(object):
                         except Exception as e:
                             raise ValueError("Unable to parse line %s: %s"
                                              % (line, str(e)))
-
                     buf, value = _readvalue(self.sock, buf, int(size))
-
                     key = self._key_helper(key, remapped_keys, prefixed_keys)
-
                     if self.deserializer:
                         value = self.deserializer(key, value, int(flags))
 
@@ -799,7 +810,7 @@ class Client(object):
                 return {}
             raise
 
-    def _store_cmd(self, name, values, expire, noreply, cas=None):
+    def _store_cmd(self, name, values, expire, noreply, cas=None, flag=None, encoding='ascii'):
         cmds = []
         keys = []
 
@@ -808,7 +819,7 @@ class Client(object):
             extra += b' ' + cas
         if noreply:
             extra += b' noreply'
-        expire = six.text_type(expire).encode('ascii')
+        expire = six.text_type(expire).encode(encoding)
 
         for key, data in six.iteritems(values):
             # must be able to reliably map responses back to the original order
@@ -818,19 +829,23 @@ class Client(object):
             if self.serializer:
                 data, flags = self.serializer(key, data)
             else:
-                flags = 0
+                # flag is passed only by remcached operations
+                if flag:
+                    flags = flag
+                else:
+                    flags = 0
 
             if not isinstance(data, six.binary_type):
                 try:
-                    data = six.text_type(data).encode('ascii')
+                    data = six.text_type(data).encode(encoding)
                 except UnicodeEncodeError as e:
                     raise MemcacheIllegalInputError(
                             "Data values must be binary-safe: %s" % e)
 
             cmds.append(name + b' ' + key + b' ' +
-                        six.text_type(flags).encode('ascii') +
+                        six.text_type(flags).encode(encoding) +
                         b' ' + expire +
-                        b' ' + six.text_type(len(data)).encode('ascii') +
+                        b' ' + six.text_type(len(data)).encode(encoding) +
                         extra + b'\r\n' + data + b'\r\n')
 
         if self.sock is None:
