@@ -293,7 +293,8 @@ class Client(object):
             finally:
                 self.sock = None
 
-    def set(self, key, value, expire=0, noreply=None, flag=None, encoding='ascii'):
+    def set(self, key, value, expire=0, noreply=None, flag=None,
+            encoding='ascii'):
         """
         The memcached "set" command.
 
@@ -315,7 +316,8 @@ class Client(object):
         """
         if noreply is None:
             noreply = self.default_noreply
-        return self._store_cmd(b'set', {key: value}, expire, noreply, flag=flag, encoding=encoding)[key]
+        return self._store_cmd(b'set', {key: value}, expire, noreply, flag=flag,
+                               encoding=encoding)[key]
 
     def set_many(self, values, expire=0, noreply=None):
         """
@@ -744,9 +746,12 @@ class Client(object):
 
     def _key_helper(self, key, remapped_keys, prefixed_keys):
         """
-        This function is extracted from _fetch_cmd to support future extension for remcached.
-        Remcached will support rich data structure like list/map/set, it reused and modified the memcached protocol.
-        The key will be slightly different from pymemcache, thus this function is extracted.
+        This function is extracted from _fetch_cmd to support
+            future extension for remcached.
+        Remcached will support rich data structure like list/map/set,
+            it reused and modified the memcached protocol.
+        The key will be slightly different from pymemcache,
+            thus this function is extracted.
 
         :param key: the orignal key read from socket
         :param remapped_keys: a dic has prefixed_keys as key and keys as value
@@ -810,7 +815,8 @@ class Client(object):
                 return {}
             raise
 
-    def _store_cmd(self, name, values, expire, noreply, cas=None, flag=None, encoding='ascii'):
+    def _store_cmd(self, name, values, expire, noreply, cas=None, flag=None,
+                   encoding='ascii'):
         cmds = []
         keys = []
 
