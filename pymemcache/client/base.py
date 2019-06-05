@@ -305,8 +305,8 @@ class Client(object):
                   from the cache, or zero for no expiry (the default).
           noreply: optional bool, True to not wait for the reply (defaults to
                    self.default_noreply).
-          flag: remcached operation flag
-          encoding: pymemcached use ascii, remcached use utf-8
+          flag: memcached operation flag
+          encoding: determines how the data is encoded
 
 
         Returns:
@@ -744,21 +744,31 @@ class Client(object):
             error = line[line.find(b' ') + 1:]
             raise MemcacheServerError(error)
 
-    def _key_helper(self, key, remapped_keys, prefixed_keys):
+    def _value_helper(self, expect_cas, line, buf, remapped_keys,
+                      prefixed_keys):
         """
-        This function is extracted from _fetch_cmd to support
-            future extension for remcached.
-        Remcached will support rich data structure like list/map/set,
-            it reused and modified the memcached protocol.
-        The key will be slightly different from pymemcache,
-            thus this function is extracted.
+        This function is abstracted from _fetch_cmd to support different ways
+        of value extraction. In order to use this feature, _value_helper needs
+        to be overriden in the subclass.
 
-        :param key: the orignal key read from socket
-        :param remapped_keys: a dic has prefixed_keys as key and keys as value
-        :param prefixed_keys: key after checking and adding prefix
-        :return: the actual key will be used in dic result
         """
-        return remapped_keys[key]
+        if expect_cas:
+            _, key, flags, size, cas = line.split()
+        else:
+            try:
+                _, key, flags, size = line.split()
+            except Exception as e:
+                raise ValueError("Unable to parse line %s: %s"
+                                 % (line, str(e)))
+        buf, value = _readvalue(self.sock, buf, int(size))
+        key = remapped_keys[key]
+        if self.deserializer:
+            value = self.deserializer(key, value, int(flags))
+
+        if expect_cas:
+            return key, (value, cas), buf
+        else:
+            return key, value, buf
 
     def _fetch_cmd(self, name, keys, expect_cas):
         prefixed_keys = [self.check_key(k) for k in keys]
@@ -782,24 +792,10 @@ class Client(object):
                 if line == b'END' or line == b'OK':
                     return result
                 elif line.startswith(b'VALUE'):
-
-                    if expect_cas:
-                        _, key, flags, size, cas = line.split()
-                    else:
-                        try:
-                            _, key, flags, size = line.split()
-                        except Exception as e:
-                            raise ValueError("Unable to parse line %s: %s"
-                                             % (line, str(e)))
-                    buf, value = _readvalue(self.sock, buf, int(size))
-                    key = self._key_helper(key, remapped_keys, prefixed_keys)
-                    if self.deserializer:
-                        value = self.deserializer(key, value, int(flags))
-
-                    if expect_cas:
-                        result[key] = (value, cas)
-                    else:
-                        result[key] = value
+                    key, value, buf \
+                        = self._value_helper(expect_cas, line, buf,
+                                             remapped_keys, prefixed_keys)
+                    result[key] = value
                 elif name == b'stats' and line.startswith(b'STAT'):
                     key_value = line.split()
                     result[key_value[1]] = key_value[2]
