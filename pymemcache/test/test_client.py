@@ -131,6 +131,12 @@ class ClientTestMixin(object):
         result = client.set(b'key', b'value', noreply=False)
         assert result is True
 
+    # unit test for set operation with optional encoding parameter
+    def test_set_with_encoding_success(self):
+        client = self.make_client([b'STORED\r\n'])
+        result = client.set(b'key', b'value', noreply=False, encoding='utf-8')
+        assert result is True
+
     def test_set_future(self):
         client = self.make_client([b'STORED\r\n'])
         result = client.set(newbytes(b'key'), newbytes(b'value'), noreply=False)

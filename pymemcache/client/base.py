@@ -304,7 +304,7 @@ class Client(object):
                   from the cache, or zero for no expiry (the default).
           noreply: optional bool, True to not wait for the reply (defaults to
                    self.default_noreply).
-          encoding: determines how the data is encoded(binary or text).
+          encoding: optional str, controls data encoding (defaults to 'ascii').
 
         Returns:
           If no exception is raised, always returns True. If an exception is
@@ -970,9 +970,10 @@ class PooledClient(object):
     def close(self):
         self.client_pool.clear()
 
-    def set(self, key, value, expire=0, noreply=None):
+    def set(self, key, value, expire=0, noreply=None, encoding='ascii'):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
-            return client.set(key, value, expire=expire, noreply=noreply)
+            return client.set(key, value, expire=expire, noreply=noreply,
+                              encoding=encoding)
 
     def set_many(self, values, expire=0, noreply=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
