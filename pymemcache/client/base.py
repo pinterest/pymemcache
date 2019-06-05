@@ -293,8 +293,7 @@ class Client(object):
             finally:
                 self.sock = None
 
-    def set(self, key, value, expire=0, noreply=None, flag=None,
-            encoding='ascii'):
+    def set(self, key, value, expire=0, noreply=None, encoding='ascii'):
         """
         The memcached "set" command.
 
@@ -305,9 +304,7 @@ class Client(object):
                   from the cache, or zero for no expiry (the default).
           noreply: optional bool, True to not wait for the reply (defaults to
                    self.default_noreply).
-          flag: memcached operation flag
-          encoding: determines how the data is encoded
-
+          encoding: determines how the data is encoded(binary or text).
 
         Returns:
           If no exception is raised, always returns True. If an exception is
@@ -316,7 +313,7 @@ class Client(object):
         """
         if noreply is None:
             noreply = self.default_noreply
-        return self._store_cmd(b'set', {key: value}, expire, noreply, flag=flag,
+        return self._store_cmd(b'set', {key: value}, expire, noreply,
                                encoding=encoding)[key]
 
     def set_many(self, values, expire=0, noreply=None):
@@ -744,32 +741,6 @@ class Client(object):
             error = line[line.find(b' ') + 1:]
             raise MemcacheServerError(error)
 
-    def _value_helper(self, expect_cas, line, buf, remapped_keys,
-                      prefixed_keys):
-        """
-        This function is abstracted from _fetch_cmd to support different ways
-        of value extraction. In order to use this feature, _value_helper needs
-        to be overriden in the subclass.
-
-        """
-        if expect_cas:
-            _, key, flags, size, cas = line.split()
-        else:
-            try:
-                _, key, flags, size = line.split()
-            except Exception as e:
-                raise ValueError("Unable to parse line %s: %s"
-                                 % (line, str(e)))
-        buf, value = _readvalue(self.sock, buf, int(size))
-        key = remapped_keys[key]
-        if self.deserializer:
-            value = self.deserializer(key, value, int(flags))
-
-        if expect_cas:
-            return key, (value, cas), buf
-        else:
-            return key, value, buf
-
     def _fetch_cmd(self, name, keys, expect_cas):
         prefixed_keys = [self.check_key(k) for k in keys]
         remapped_keys = dict(zip(prefixed_keys, keys))
@@ -786,16 +757,30 @@ class Client(object):
             buf = b''
             result = {}
             while True:
-
                 buf, line = _readline(self.sock, buf)
                 self._raise_errors(line, name)
                 if line == b'END' or line == b'OK':
                     return result
                 elif line.startswith(b'VALUE'):
-                    key, value, buf \
-                        = self._value_helper(expect_cas, line, buf,
-                                             remapped_keys, prefixed_keys)
-                    result[key] = value
+                    if expect_cas:
+                        _, key, flags, size, cas = line.split()
+                    else:
+                        try:
+                            _, key, flags, size = line.split()
+                        except Exception as e:
+                            raise ValueError("Unable to parse line %s: %s"
+                                             % (line, str(e)))
+
+                    buf, value = _readvalue(self.sock, buf, int(size))
+                    key = remapped_keys[key]
+
+                    if self.deserializer:
+                        value = self.deserializer(key, value, int(flags))
+
+                    if expect_cas:
+                        result[key] = (value, cas)
+                    else:
+                        result[key] = value
                 elif name == b'stats' and line.startswith(b'STAT'):
                     key_value = line.split()
                     result[key_value[1]] = key_value[2]
@@ -811,7 +796,7 @@ class Client(object):
                 return {}
             raise
 
-    def _store_cmd(self, name, values, expire, noreply, cas=None, flag=None,
+    def _store_cmd(self, name, values, expire, noreply, cas=None,
                    encoding='ascii'):
         cmds = []
         keys = []
@@ -831,11 +816,7 @@ class Client(object):
             if self.serializer:
                 data, flags = self.serializer(key, data)
             else:
-                # flag is passed only by remcached operations
-                if flag:
-                    flags = flag
-                else:
-                    flags = 0
+                flags = 0
 
             if not isinstance(data, six.binary_type):
                 try:
