@@ -131,8 +131,18 @@ class ClientTestMixin(object):
         result = client.set(b'key', b'value', noreply=False)
         assert result is True
 
+        # unit test for encoding passed in __init__()
+        client = self.make_client([b'STORED\r\n'], encoding='utf-8')
+        result = client.set(b'key', b'value', noreply=False)
+        assert result is True
+
     def test_set_future(self):
         client = self.make_client([b'STORED\r\n'])
+        result = client.set(newbytes(b'key'), newbytes(b'value'), noreply=False)
+        assert result is True
+
+        # unit test for encoding passed in __init__()
+        client = self.make_client([b'STORED\r\n'], encoding='utf-8')
         result = client.set(newbytes(b'key'), newbytes(b'value'), noreply=False)
         assert result is True
 
@@ -196,8 +206,18 @@ class ClientTestMixin(object):
         result = client.set(b'key', b'value', noreply=True)
         assert result is True
 
+        # unit test for encoding passed in __init__()
+        client = self.make_client([], encoding='utf-8')
+        result = client.set(b'key', b'value', noreply=True)
+        assert result is True
+
     def test_set_many_success(self):
         client = self.make_client([b'STORED\r\n'])
+        result = client.set_many({b'key': b'value'}, noreply=False)
+        assert result == []
+
+        # unit test for encoding passed in __init__()
+        client = self.make_client([b'STORED\r\n'], encoding='utf-8')
         result = client.set_many({b'key': b'value'}, noreply=False)
         assert result == []
 
@@ -207,15 +227,33 @@ class ClientTestMixin(object):
         result = client.set_multi({b'key': b'value'}, noreply=False)
         assert result == []
 
+        # unit test for encoding passed in __init__()
+        client = self.make_client([b'STORED\r\n'], encoding='utf-8')
+        result = client.set_multi({b'key': b'value'}, noreply=False)
+        assert result == []
+
     def test_add_stored(self):
         client = self.make_client([b'STORED\r', b'\n'])
+        result = client.add(b'key', b'value', noreply=False)
+        assert result is True
+
+        # unit test for encoding passed in __init__()
+        client = self.make_client([b'STORED\r', b'\n'], encoding='utf-8')
         result = client.add(b'key', b'value', noreply=False)
         assert result is True
 
     def test_add_not_stored(self):
         client = self.make_client([b'STORED\r', b'\n',
                                    b'NOT_', b'STOR', b'ED', b'\r\n'])
+        client.add(b'key', b'value', noreply=False)
         result = client.add(b'key', b'value', noreply=False)
+        assert result is False
+
+        # unit test for encoding passed in __init__()
+        client = self.make_client([b'STORED\r', b'\n',
+                                   b'NOT_', b'STOR', b'ED', b'\r\n'],
+                                  encoding='utf-8')
+        client.add(b'key', b'value', noreply=False)
         result = client.add(b'key', b'value', noreply=False)
         assert result is False
 
@@ -234,7 +272,7 @@ class ClientTestMixin(object):
             b'STORED\r\n',
             b'VALUE key 0 5\r\nvalue\r\nEND\r\n',
         ])
-        result = client.set(b'key', b'value', noreply=False)
+        client.set(b'key', b'value', noreply=False)
         result = client.get(b'key')
         assert result == b'value'
 
@@ -253,7 +291,7 @@ class ClientTestMixin(object):
             b'STORED\r\n',
             b'VALUE key1 0 6\r\nvalue1\r\nEND\r\n',
         ])
-        result = client.set(b'key1', b'value1', noreply=False)
+        client.set(b'key1', b'value1', noreply=False)
         result = client.get_many([b'key1', b'key2'])
         assert result == {b'key1': b'value1'}
 
@@ -285,7 +323,7 @@ class ClientTestMixin(object):
 
     def test_delete_found(self):
         client = self.make_client([b'STORED\r', b'\n', b'DELETED\r\n'])
-        result = client.add(b'key', b'value', noreply=False)
+        client.add(b'key', b'value', noreply=False)
         result = client.delete(b'key', noreply=False)
         assert result is True
 
@@ -306,7 +344,7 @@ class ClientTestMixin(object):
 
     def test_delete_many_found(self):
         client = self.make_client([b'STORED\r', b'\n', b'DELETED\r\n'])
-        result = client.add(b'key', b'value', noreply=False)
+        client.add(b'key', b'value', noreply=False)
         result = client.delete_many([b'key'], noreply=False)
         assert result is True
 
@@ -316,7 +354,7 @@ class ClientTestMixin(object):
             b'DELETED\r\n',
             b'NOT_FOUND\r\n'
         ])
-        result = client.add(b'key', b'value', noreply=False)
+        client.add(b'key', b'value', noreply=False)
         result = client.delete_many([b'key', b'key2'], noreply=False)
         assert result is True
 
@@ -326,7 +364,7 @@ class ClientTestMixin(object):
             b'DELETED\r\n',
             b'NOT_FOUND\r\n'
         ])
-        result = client.add(b'key', b'value', noreply=False)
+        client.add(b'key', b'value', noreply=False)
         result = client.delete_multi([b'key', b'key2'], noreply=False)
         assert result is True
 
@@ -370,8 +408,18 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         result = client.append(b'key', b'value', noreply=False)
         assert result is True
 
+        # unit test for encoding passed in __init__()
+        client = self.make_client([b'STORED\r\n'], encoding='utf-8')
+        result = client.append(b'key', b'value', noreply=False)
+        assert result is True
+
     def test_prepend_stored(self):
         client = self.make_client([b'STORED\r\n'])
+        result = client.prepend(b'key', b'value', noreply=False)
+        assert result is True
+
+        # unit test for encoding passed in __init__()
+        client = self.make_client([b'STORED\r\n'], encoding='utf-8')
         result = client.prepend(b'key', b'value', noreply=False)
         assert result is True
 
@@ -380,13 +428,28 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         result = client.cas(b'key', b'value', b'cas', noreply=False)
         assert result is True
 
+        # unit test for encoding passed in __init__()
+        client = self.make_client([b'STORED\r\n'], encoding='utf-8')
+        result = client.cas(b'key', b'value', b'cas', noreply=False)
+        assert result is True
+
     def test_cas_exists(self):
         client = self.make_client([b'EXISTS\r\n'])
         result = client.cas(b'key', b'value', b'cas', noreply=False)
         assert result is False
 
+        # unit test for encoding passed in __init__()
+        client = self.make_client([b'EXISTS\r\n'], encoding='utf-8')
+        result = client.cas(b'key', b'value', b'cas', noreply=False)
+        assert result is False
+
     def test_cas_not_found(self):
         client = self.make_client([b'NOT_FOUND\r\n'])
+        result = client.cas(b'key', b'value', b'cas', noreply=False)
+        assert result is None
+
+        # unit test for encoding passed in __init__()
+        client = self.make_client([b'NOT_FOUND\r\n'], encoding='utf-8')
         result = client.cas(b'key', b'value', b'cas', noreply=False)
         assert result is None
 
@@ -538,8 +601,18 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         result = client.replace(b'key', b'value', noreply=False)
         assert result is True
 
+        # unit test for encoding passed in __init__()
+        client = self.make_client([b'STORED\r\n'], encoding='utf-8')
+        result = client.replace(b'key', b'value', noreply=False)
+        assert result is True
+
     def test_replace_not_stored(self):
         client = self.make_client([b'NOT_STORED\r\n'])
+        result = client.replace(b'key', b'value', noreply=False)
+        assert result is False
+
+        # unit test for encoding passed in __init__
+        client = self.make_client([b'NOT_STORED\r\n'], encoding='utf-8')
         result = client.replace(b'key', b'value', noreply=False)
         assert result is False
 
@@ -649,8 +722,28 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         assert client.sock.closed is False
         assert len(client.sock.send_bufs) == 1
 
+        # unit test for encoding passed in __init__()
+        client = self.make_client([b'STORED\r\n'], encoding='utf-8')
+        result = client.set_many({b'key': b'value'}, noreply=False)
+        assert result == []
+        assert client.sock.closed is False
+        assert len(client.sock.send_bufs) == 1
+
     def test_set_many_exception(self):
         client = self.make_client([b'STORED\r\n', Exception('fail')])
+
+        def _set():
+            client.set_many({b'key': b'value', b'other': b'value'},
+                            noreply=False)
+
+        with pytest.raises(Exception):
+            _set()
+
+        assert client.sock is None
+
+        # unit test for encoding passed in __init__()
+        client = self.make_client([b'STORED\r\n', Exception('fail')],
+                                  encoding='utf-8')
 
         def _set():
             client.set_many({b'key': b'value', b'other': b'value'},

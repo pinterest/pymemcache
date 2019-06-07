@@ -206,7 +206,8 @@ class Client(object):
                  socket_module=socket,
                  key_prefix=b'',
                  default_noreply=True,
-                 allow_unicode_keys=False):
+                 allow_unicode_keys=False,
+                 encoding='ascii'):
         """
         Constructor.
 
@@ -233,6 +234,7 @@ class Client(object):
             store commands (except from cas, incr, and decr, which default to
             False).
           allow_unicode_keys: bool, support unicode (utf8) keys
+          encoding: optional str, controls data encoding (defaults to 'ascii').
 
         Notes:
           The constructor does not make a connection to memcached. The first
@@ -254,6 +256,7 @@ class Client(object):
         self.key_prefix = key_prefix
         self.default_noreply = default_noreply
         self.allow_unicode_keys = allow_unicode_keys
+        self.encoding = encoding
 
     def check_key(self, key):
         """Checks key and add key_prefix."""
@@ -803,7 +806,7 @@ class Client(object):
             extra += b' ' + cas
         if noreply:
             extra += b' noreply'
-        expire = six.text_type(expire).encode('ascii')
+        expire = six.text_type(expire).encode(self.encoding)
 
         for key, data in six.iteritems(values):
             # must be able to reliably map responses back to the original order
@@ -817,15 +820,15 @@ class Client(object):
 
             if not isinstance(data, six.binary_type):
                 try:
-                    data = six.text_type(data).encode('ascii')
+                    data = six.text_type(data).encode(self.encoding)
                 except UnicodeEncodeError as e:
                     raise MemcacheIllegalInputError(
                             "Data values must be binary-safe: %s" % e)
 
             cmds.append(name + b' ' + key + b' ' +
-                        six.text_type(flags).encode('ascii') +
+                        six.text_type(flags).encode(self.encoding) +
                         b' ' + expire +
-                        b' ' + six.text_type(len(data)).encode('ascii') +
+                        b' ' + six.text_type(len(data)).encode(self.encoding) +
                         extra + b'\r\n' + data + b'\r\n')
 
         if self.sock is None:
@@ -921,7 +924,8 @@ class PooledClient(object):
                  max_pool_size=None,
                  lock_generator=None,
                  default_noreply=True,
-                 allow_unicode_keys=False):
+                 allow_unicode_keys=False,
+                 encoding='ascii'):
         self.server = server
         self.serializer = serializer
         self.deserializer = deserializer
@@ -942,6 +946,7 @@ class PooledClient(object):
             after_remove=lambda client: client.close(),
             max_size=max_pool_size,
             lock_generator=lock_generator)
+        self.encoding = encoding
 
     def check_key(self, key):
         """Checks key and add key_prefix."""

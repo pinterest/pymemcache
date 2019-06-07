@@ -34,7 +34,8 @@ class HashClient(object):
         use_pooling=False,
         ignore_exc=False,
         allow_unicode_keys=False,
-        default_noreply=True
+        default_noreply=True,
+        encoding='ascii'
     ):
         """
         Constructor.
@@ -55,6 +56,7 @@ class HashClient(object):
                                  attempts.
           dead_timeout (float): Time in seconds before attempting to add a node
                                 back in the pool.
+          encoding: optional str, controls data encoding (defaults to 'ascii').
 
         Further arguments are interpreted as for :py:class:`.Client`
         constructor.
@@ -93,6 +95,7 @@ class HashClient(object):
 
         for server, port in servers:
             self.add_server(server, port)
+        self.encoding = encoding
 
     def add_server(self, server, port):
         key = '%s:%s' % (server, port)
