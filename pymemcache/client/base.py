@@ -206,7 +206,8 @@ class Client(object):
                  socket_module=socket,
                  key_prefix=b'',
                  default_noreply=True,
-                 allow_unicode_keys=False):
+                 allow_unicode_keys=False,
+                 encoding='ascii'):
         """
         Constructor.
 
@@ -233,6 +234,7 @@ class Client(object):
             store commands (except from cas, incr, and decr, which default to
             False).
           allow_unicode_keys: bool, support unicode (utf8) keys
+          encoding: optional str, controls data encoding (defaults to 'ascii').
 
         Notes:
           The constructor does not make a connection to memcached. The first
@@ -254,6 +256,7 @@ class Client(object):
         self.key_prefix = key_prefix
         self.default_noreply = default_noreply
         self.allow_unicode_keys = allow_unicode_keys
+        self.encoding = encoding
 
     def check_key(self, key):
         """Checks key and add key_prefix."""
@@ -293,7 +296,7 @@ class Client(object):
             finally:
                 self.sock = None
 
-    def set(self, key, value, expire=0, noreply=None, encoding='ascii'):
+    def set(self, key, value, expire=0, noreply=None):
         """
         The memcached "set" command.
 
@@ -304,7 +307,6 @@ class Client(object):
                   from the cache, or zero for no expiry (the default).
           noreply: optional bool, True to not wait for the reply (defaults to
                    self.default_noreply).
-          encoding: optional str, controls data encoding (defaults to 'ascii').
 
         Returns:
           If no exception is raised, always returns True. If an exception is
@@ -313,8 +315,7 @@ class Client(object):
         """
         if noreply is None:
             noreply = self.default_noreply
-        return self._store_cmd(b'set', {key: value}, expire, noreply,
-                               encoding=encoding)[key]
+        return self._store_cmd(b'set', {key: value}, expire, noreply)[key]
 
     def set_many(self, values, expire=0, noreply=None):
         """
@@ -796,8 +797,7 @@ class Client(object):
                 return {}
             raise
 
-    def _store_cmd(self, name, values, expire, noreply, cas=None,
-                   encoding='ascii'):
+    def _store_cmd(self, name, values, expire, noreply, cas=None):
         cmds = []
         keys = []
 
@@ -806,7 +806,7 @@ class Client(object):
             extra += b' ' + cas
         if noreply:
             extra += b' noreply'
-        expire = six.text_type(expire).encode(encoding)
+        expire = six.text_type(expire).encode(self.encoding)
 
         for key, data in six.iteritems(values):
             # must be able to reliably map responses back to the original order
@@ -820,15 +820,15 @@ class Client(object):
 
             if not isinstance(data, six.binary_type):
                 try:
-                    data = six.text_type(data).encode(encoding)
+                    data = six.text_type(data).encode(self.encoding)
                 except UnicodeEncodeError as e:
                     raise MemcacheIllegalInputError(
                             "Data values must be binary-safe: %s" % e)
 
             cmds.append(name + b' ' + key + b' ' +
-                        six.text_type(flags).encode(encoding) +
+                        six.text_type(flags).encode(self.encoding) +
                         b' ' + expire +
-                        b' ' + six.text_type(len(data)).encode(encoding) +
+                        b' ' + six.text_type(len(data)).encode(self.encoding) +
                         extra + b'\r\n' + data + b'\r\n')
 
         if self.sock is None:
@@ -924,7 +924,8 @@ class PooledClient(object):
                  max_pool_size=None,
                  lock_generator=None,
                  default_noreply=True,
-                 allow_unicode_keys=False):
+                 allow_unicode_keys=False,
+                 encoding='ascii'):
         self.server = server
         self.serializer = serializer
         self.deserializer = deserializer
@@ -945,6 +946,7 @@ class PooledClient(object):
             after_remove=lambda client: client.close(),
             max_size=max_pool_size,
             lock_generator=lock_generator)
+        self.encoding=encoding
 
     def check_key(self, key):
         """Checks key and add key_prefix."""
@@ -970,10 +972,9 @@ class PooledClient(object):
     def close(self):
         self.client_pool.clear()
 
-    def set(self, key, value, expire=0, noreply=None, encoding='ascii'):
+    def set(self, key, value, expire=0, noreply=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
-            return client.set(key, value, expire=expire, noreply=noreply,
-                              encoding=encoding)
+            return client.set(key, value, expire=expire, noreply=noreply)
 
     def set_many(self, values, expire=0, noreply=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
