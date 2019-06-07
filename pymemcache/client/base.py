@@ -946,7 +946,7 @@ class PooledClient(object):
             after_remove=lambda client: client.close(),
             max_size=max_pool_size,
             lock_generator=lock_generator)
-        self.encoding=encoding
+        self.encoding = encoding
 
     def check_key(self, key):
         """Checks key and add key_prefix."""
