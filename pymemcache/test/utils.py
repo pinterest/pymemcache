@@ -77,7 +77,7 @@ class MockMemcacheClient(object):
 
     get_multi = get_many
 
-    def set(self, key, value, expire=0, noreply=True):
+    def set(self, key, value, expire=0, noreply=True, flags=0):
         if not self.allow_unicode_keys:
             if isinstance(key, six.string_types):
                 try:
