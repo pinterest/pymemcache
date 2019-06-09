@@ -316,7 +316,8 @@ class Client(object):
         """
         if noreply is None:
             noreply = self.default_noreply
-        return self._store_cmd(b'set', {key: value}, expire, noreply, flags=flags)[key]
+        return self._store_cmd(b'set', {key: value}, expire, noreply,
+                               flags=flags)[key]
 
     def set_many(self, values, expire=0, noreply=None):
         """
@@ -438,7 +439,8 @@ class Client(object):
           the key didn't exist, False if it existed but had a different cas
           value and True if it existed and was changed.
         """
-        return self._store_cmd(b'cas', {key: value}, expire, noreply, cas=cas)[key]
+        return self._store_cmd(b'cas', {key: value}, expire, noreply,
+                               cas=cas)[key]
 
     def get(self, key, default=None):
         """
@@ -973,7 +975,8 @@ class PooledClient(object):
 
     def set(self, key, value, expire=0, noreply=None, flags=0):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
-            return client.set(key, value, expire=expire, noreply=noreply, flags=flags)
+            return client.set(key, value, expire=expire, noreply=noreply,
+                              flags=flags)
 
     def set_many(self, values, expire=0, noreply=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
