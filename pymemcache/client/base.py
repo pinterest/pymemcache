@@ -296,7 +296,7 @@ class Client(object):
             finally:
                 self.sock = None
 
-    def set(self, key, value, expire=0, noreply=None):
+    def set(self, key, value, expire=0, noreply=None, flags=0):
         """
         The memcached "set" command.
 
@@ -307,6 +307,7 @@ class Client(object):
                   from the cache, or zero for no expiry (the default).
           noreply: optional bool, True to not wait for the reply (defaults to
                    self.default_noreply).
+          flags: int, arbitrary bit field used for server-specific flags
 
         Returns:
           If no exception is raised, always returns True. If an exception is
@@ -315,7 +316,7 @@ class Client(object):
         """
         if noreply is None:
             noreply = self.default_noreply
-        return self._store_cmd(b'set', {key: value}, expire, noreply)[key]
+        return self._store_cmd(b'set', {key: value}, expire, noreply, flags = flags)[key]
 
     def set_many(self, values, expire=0, noreply=None):
         """
@@ -797,7 +798,7 @@ class Client(object):
                 return {}
             raise
 
-    def _store_cmd(self, name, values, expire, noreply, cas=None):
+    def _store_cmd(self, name, values, expire, noreply, flags=0, cas=None):
         cmds = []
         keys = []
 
@@ -815,8 +816,6 @@ class Client(object):
             key = self.check_key(key)
             if self.serializer:
                 data, flags = self.serializer(key, data)
-            else:
-                flags = 0
 
             if not isinstance(data, six.binary_type):
                 try:
