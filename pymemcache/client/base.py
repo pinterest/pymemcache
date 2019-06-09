@@ -438,7 +438,7 @@ class Client(object):
           the key didn't exist, False if it existed but had a different cas
           value and True if it existed and was changed.
         """
-        return self._store_cmd(b'cas', {key: value}, expire, noreply, cas)[key]
+        return self._store_cmd(b'cas', {key: value}, expire, noreply, cas=cas)[key]
 
     def get(self, key, default=None):
         """
