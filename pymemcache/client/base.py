@@ -818,10 +818,10 @@ class Client(object):
 
             key = self.check_key(key)
             if self.serializer:
+                data, serializer_flags = self.serializer(key, data)
+                # Use the serializer's flags when 'flags' haven't been specified.
                 if flags == 0:
-                    data, flags = self.serializer(key, data)
-                else:
-                    data, _ = self.serializer(key, data)
+                    flags = serializer_flags
 
             if not isinstance(data, six.binary_type):
                 try:
