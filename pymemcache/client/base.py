@@ -818,7 +818,10 @@ class Client(object):
 
             key = self.check_key(key)
             if self.serializer:
-                data, flags = self.serializer(key, data)
+                if flags == 0:
+                    data, flags = self.serializer(key, data)
+                else:
+                    data, _ = self.serializer(key, data)
 
             if not isinstance(data, six.binary_type):
                 try:
