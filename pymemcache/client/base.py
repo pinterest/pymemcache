@@ -307,7 +307,8 @@ class Client(object):
                   from the cache, or zero for no expiry (the default).
           noreply: optional bool, True to not wait for the reply (defaults to
                    self.default_noreply).
-          flags: int, arbitrary bit field used for server-specific flags
+          flags: optional int, arbitrary bit field used for server-specific
+                flags
 
         Returns:
           If no exception is raised, always returns True. If an exception is
