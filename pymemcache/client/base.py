@@ -320,7 +320,7 @@ class Client(object):
         return self._store_cmd(b'set', {key: value}, expire, noreply,
                                flags=flags)[key]
 
-    def set_many(self, values, expire=0, noreply=None):
+    def set_many(self, values, expire=0, noreply=None, flags=0):
         """
         A convenience function for setting multiple values.
 
@@ -331,6 +331,8 @@ class Client(object):
                   from the cache, or zero for no expiry (the default).
           noreply: optional bool, True to not wait for the reply (defaults to
                    self.default_noreply).
+          flags: optional int, arbitrary bit field used for server-specific
+                 flags
 
         Returns:
           Returns a list of keys that failed to be inserted.
@@ -338,12 +340,12 @@ class Client(object):
         """
         if noreply is None:
             noreply = self.default_noreply
-        result = self._store_cmd(b'set', values, expire, noreply)
+        result = self._store_cmd(b'set', values, expire, noreply, flags=flags)
         return [k for k, v in six.iteritems(result) if not v]
 
     set_multi = set_many
 
-    def add(self, key, value, expire=0, noreply=None):
+    def add(self, key, value, expire=0, noreply=None, flags=0):
         """
         The memcached "add" command.
 
@@ -354,6 +356,8 @@ class Client(object):
                   from the cache, or zero for no expiry (the default).
           noreply: optional bool, True to not wait for the reply (defaults to
                    self.default_noreply).
+          flags: optional int, arbitrary bit field used for server-specific
+                  flags
 
         Returns:
           If noreply is True, the return value is always True. Otherwise the
@@ -362,9 +366,10 @@ class Client(object):
         """
         if noreply is None:
             noreply = self.default_noreply
-        return self._store_cmd(b'add', {key: value}, expire, noreply)[key]
+        return self._store_cmd(b'add', {key: value}, expire, noreply,
+                               flags=flags)[key]
 
-    def replace(self, key, value, expire=0, noreply=None):
+    def replace(self, key, value, expire=0, noreply=None, flags=0):
         """
         The memcached "replace" command.
 
@@ -375,6 +380,8 @@ class Client(object):
                   from the cache, or zero for no expiry (the default).
           noreply: optional bool, True to not wait for the reply (defaults to
                    self.default_noreply).
+          flags: optional int, arbitrary bit field used for server-specific
+                flags
 
         Returns:
           If noreply is True, always returns True. Otherwise returns True if
@@ -383,9 +390,10 @@ class Client(object):
         """
         if noreply is None:
             noreply = self.default_noreply
-        return self._store_cmd(b'replace', {key: value}, expire, noreply)[key]
+        return self._store_cmd(b'replace', {key: value}, expire, noreply,
+                               flags=flags)[key]
 
-    def append(self, key, value, expire=0, noreply=None):
+    def append(self, key, value, expire=0, noreply=None, flags=0):
         """
         The memcached "append" command.
 
@@ -396,15 +404,18 @@ class Client(object):
                   from the cache, or zero for no expiry (the default).
           noreply: optional bool, True to not wait for the reply (defaults to
                    self.default_noreply).
+          flags: optional int, arbitrary bit field used for server-specific
+                flags
 
         Returns:
           True.
         """
         if noreply is None:
             noreply = self.default_noreply
-        return self._store_cmd(b'append', {key: value}, expire, noreply)[key]
+        return self._store_cmd(b'append', {key: value}, expire, noreply,
+                               flags=flags)[key]
 
-    def prepend(self, key, value, expire=0, noreply=None):
+    def prepend(self, key, value, expire=0, noreply=None, flags=0):
         """
         The memcached "prepend" command.
 
@@ -415,15 +426,18 @@ class Client(object):
                   from the cache, or zero for no expiry (the default).
           noreply: optional bool, True to not wait for the reply (defaults to
                    self.default_noreply).
+          flags: optional int, arbitrary bit field used for server-specific
+                flags
 
         Returns:
           True.
         """
         if noreply is None:
             noreply = self.default_noreply
-        return self._store_cmd(b'prepend', {key: value}, expire, noreply)[key]
+        return self._store_cmd(b'prepend', {key: value}, expire, noreply,
+                               flags=flags)[key]
 
-    def cas(self, key, value, cas, expire=0, noreply=False):
+    def cas(self, key, value, cas, expire=0, noreply=False, flags=0):
         """
         The memcached "cas" command.
 
@@ -434,6 +448,8 @@ class Client(object):
           expire: optional int, number of seconds until the item is expired
                   from the cache, or zero for no expiry (the default).
           noreply: optional bool, False to wait for the reply (the default).
+          flags: optional int, arbitrary bit field used for server-specific
+                flags
 
         Returns:
           If noreply is True, always returns True. Otherwise returns None if
@@ -441,7 +457,7 @@ class Client(object):
           value and True if it existed and was changed.
         """
         return self._store_cmd(b'cas', {key: value}, expire, noreply,
-                               cas=cas)[key]
+                               flags=flags, cas=cas)[key]
 
     def get(self, key, default=None):
         """
@@ -819,7 +835,7 @@ class Client(object):
             key = self.check_key(key)
             if self.serializer:
                 data, serializer_flags = self.serializer(key, data)
-                # Use the serializer's flags when 'flags' haven't been specified.
+                # Use the serializer's flags when 'flags' haven't been specified
                 if flags == 0:
                     flags = serializer_flags
 
