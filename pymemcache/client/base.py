@@ -296,7 +296,7 @@ class Client(object):
             finally:
                 self.sock = None
 
-    def set(self, key, value, expire=0, noreply=None):
+    def set(self, key, value, expire=0, noreply=None, flags=None):
         """
         The memcached "set" command.
 
@@ -307,6 +307,8 @@ class Client(object):
                   from the cache, or zero for no expiry (the default).
           noreply: optional bool, True to not wait for the reply (defaults to
                    self.default_noreply).
+          flags: optional int, arbitrary bit field used for server-specific
+                flags
 
         Returns:
           If no exception is raised, always returns True. If an exception is
@@ -315,9 +317,10 @@ class Client(object):
         """
         if noreply is None:
             noreply = self.default_noreply
-        return self._store_cmd(b'set', {key: value}, expire, noreply)[key]
+        return self._store_cmd(b'set', {key: value}, expire, noreply,
+                               flags=flags)[key]
 
-    def set_many(self, values, expire=0, noreply=None):
+    def set_many(self, values, expire=0, noreply=None, flags=None):
         """
         A convenience function for setting multiple values.
 
@@ -328,6 +331,8 @@ class Client(object):
                   from the cache, or zero for no expiry (the default).
           noreply: optional bool, True to not wait for the reply (defaults to
                    self.default_noreply).
+          flags: optional int, arbitrary bit field used for server-specific
+                 flags
 
         Returns:
           Returns a list of keys that failed to be inserted.
@@ -335,12 +340,12 @@ class Client(object):
         """
         if noreply is None:
             noreply = self.default_noreply
-        result = self._store_cmd(b'set', values, expire, noreply)
+        result = self._store_cmd(b'set', values, expire, noreply, flags=flags)
         return [k for k, v in six.iteritems(result) if not v]
 
     set_multi = set_many
 
-    def add(self, key, value, expire=0, noreply=None):
+    def add(self, key, value, expire=0, noreply=None, flags=None):
         """
         The memcached "add" command.
 
@@ -351,6 +356,8 @@ class Client(object):
                   from the cache, or zero for no expiry (the default).
           noreply: optional bool, True to not wait for the reply (defaults to
                    self.default_noreply).
+          flags: optional int, arbitrary bit field used for server-specific
+                  flags
 
         Returns:
           If noreply is True, the return value is always True. Otherwise the
@@ -359,9 +366,10 @@ class Client(object):
         """
         if noreply is None:
             noreply = self.default_noreply
-        return self._store_cmd(b'add', {key: value}, expire, noreply)[key]
+        return self._store_cmd(b'add', {key: value}, expire, noreply,
+                               flags=flags)[key]
 
-    def replace(self, key, value, expire=0, noreply=None):
+    def replace(self, key, value, expire=0, noreply=None, flags=None):
         """
         The memcached "replace" command.
 
@@ -372,6 +380,8 @@ class Client(object):
                   from the cache, or zero for no expiry (the default).
           noreply: optional bool, True to not wait for the reply (defaults to
                    self.default_noreply).
+          flags: optional int, arbitrary bit field used for server-specific
+                flags
 
         Returns:
           If noreply is True, always returns True. Otherwise returns True if
@@ -380,9 +390,10 @@ class Client(object):
         """
         if noreply is None:
             noreply = self.default_noreply
-        return self._store_cmd(b'replace', {key: value}, expire, noreply)[key]
+        return self._store_cmd(b'replace', {key: value}, expire, noreply,
+                               flags=flags)[key]
 
-    def append(self, key, value, expire=0, noreply=None):
+    def append(self, key, value, expire=0, noreply=None, flags=None):
         """
         The memcached "append" command.
 
@@ -393,15 +404,18 @@ class Client(object):
                   from the cache, or zero for no expiry (the default).
           noreply: optional bool, True to not wait for the reply (defaults to
                    self.default_noreply).
+          flags: optional int, arbitrary bit field used for server-specific
+                flags
 
         Returns:
           True.
         """
         if noreply is None:
             noreply = self.default_noreply
-        return self._store_cmd(b'append', {key: value}, expire, noreply)[key]
+        return self._store_cmd(b'append', {key: value}, expire, noreply,
+                               flags=flags)[key]
 
-    def prepend(self, key, value, expire=0, noreply=None):
+    def prepend(self, key, value, expire=0, noreply=None, flags=None):
         """
         The memcached "prepend" command.
 
@@ -412,15 +426,18 @@ class Client(object):
                   from the cache, or zero for no expiry (the default).
           noreply: optional bool, True to not wait for the reply (defaults to
                    self.default_noreply).
+          flags: optional int, arbitrary bit field used for server-specific
+                flags
 
         Returns:
           True.
         """
         if noreply is None:
             noreply = self.default_noreply
-        return self._store_cmd(b'prepend', {key: value}, expire, noreply)[key]
+        return self._store_cmd(b'prepend', {key: value}, expire, noreply,
+                               flags=flags)[key]
 
-    def cas(self, key, value, cas, expire=0, noreply=False):
+    def cas(self, key, value, cas, expire=0, noreply=False, flags=None):
         """
         The memcached "cas" command.
 
@@ -431,13 +448,16 @@ class Client(object):
           expire: optional int, number of seconds until the item is expired
                   from the cache, or zero for no expiry (the default).
           noreply: optional bool, False to wait for the reply (the default).
+          flags: optional int, arbitrary bit field used for server-specific
+                flags
 
         Returns:
           If noreply is True, always returns True. Otherwise returns None if
           the key didn't exist, False if it existed but had a different cas
           value and True if it existed and was changed.
         """
-        return self._store_cmd(b'cas', {key: value}, expire, noreply, cas)[key]
+        return self._store_cmd(b'cas', {key: value}, expire, noreply,
+                               flags=flags, cas=cas)[key]
 
     def get(self, key, default=None):
         """
@@ -797,7 +817,7 @@ class Client(object):
                 return {}
             raise
 
-    def _store_cmd(self, name, values, expire, noreply, cas=None):
+    def _store_cmd(self, name, values, expire, noreply, flags=None, cas=None):
         cmds = []
         keys = []
 
@@ -814,8 +834,14 @@ class Client(object):
 
             key = self.check_key(key)
             if self.serializer:
-                data, flags = self.serializer(key, data)
-            else:
+                data, serializer_flags = self.serializer(key, data)
+                # Use the serializer's flags when 'flags' haven't been specified
+                # If 'flags' is specified, ignore the serializer_flags generated
+                #  from serializer, otherwise use serializer_flags.
+                if flags is None:
+                    flags = serializer_flags
+            # If no 'flags' or 'serializer' passed in, default flags to 0
+            if flags is None:
                 flags = 0
 
             if not isinstance(data, six.binary_type):
@@ -972,33 +998,38 @@ class PooledClient(object):
     def close(self):
         self.client_pool.clear()
 
-    def set(self, key, value, expire=0, noreply=None):
+    def set(self, key, value, expire=0, noreply=None, flags=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
-            return client.set(key, value, expire=expire, noreply=noreply)
+            return client.set(key, value, expire=expire, noreply=noreply,
+                              flags=flags)
 
-    def set_many(self, values, expire=0, noreply=None):
+    def set_many(self, values, expire=0, noreply=None, flags=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
-            failed = client.set_many(values, expire=expire, noreply=noreply)
+            failed = client.set_many(values, expire=expire, noreply=noreply,
+                                     flags=flags)
             return failed
 
     set_multi = set_many
 
-    def replace(self, key, value, expire=0, noreply=None):
+    def replace(self, key, value, expire=0, noreply=None, flags=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
-            return client.replace(key, value, expire=expire, noreply=noreply)
+            return client.replace(key, value, expire=expire, noreply=noreply,
+                                  flags=flags)
 
-    def append(self, key, value, expire=0, noreply=None):
+    def append(self, key, value, expire=0, noreply=None, flags=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
-            return client.append(key, value, expire=expire, noreply=noreply)
+            return client.append(key, value, expire=expire, noreply=noreply,
+                                 flags=flags)
 
-    def prepend(self, key, value, expire=0, noreply=None):
+    def prepend(self, key, value, expire=0, noreply=None, flags=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
-            return client.prepend(key, value, expire=expire, noreply=noreply)
+            return client.prepend(key, value, expire=expire, noreply=noreply,
+                                  flags=flags)
 
-    def cas(self, key, value, cas, expire=0, noreply=False):
+    def cas(self, key, value, cas, expire=0, noreply=False, flags=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             return client.cas(key, value, cas,
-                              expire=expire, noreply=noreply)
+                              expire=expire, noreply=noreply, flags=flags)
 
     def get(self, key, default=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
@@ -1052,9 +1083,10 @@ class PooledClient(object):
 
     delete_multi = delete_many
 
-    def add(self, key, value, expire=0, noreply=None):
+    def add(self, key, value, expire=0, noreply=None, flags=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
-            return client.add(key, value, expire=expire, noreply=noreply)
+            return client.add(key, value, expire=expire, noreply=noreply,
+                              flags=flags)
 
     def incr(self, key, value, noreply=False):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
