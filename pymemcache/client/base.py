@@ -763,7 +763,7 @@ class Client(object):
             raise MemcacheServerError(error)
 
     def _extract_value(self, expect_cas, line, buf, remapped_keys,
-                      prefixed_keys):
+                       prefixed_keys):
         """
         This function is abstracted from _fetch_cmd to support different ways
         of value extraction. In order to use this feature, _value_helper needs
@@ -808,8 +808,8 @@ class Client(object):
                     return result
                 elif line.startswith(b'VALUE'):
                     key, value, buf = self._extract_value(expect_cas, line, buf,
-                                                         remapped_keys,
-                                                         prefixed_keys)
+                                                          remapped_keys,
+                                                          prefixed_keys)
                     result[key] = value
                 elif name == b'stats' and line.startswith(b'STAT'):
                     key_value = line.split()
