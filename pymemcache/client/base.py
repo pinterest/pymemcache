@@ -809,7 +809,8 @@ class Client(object):
                     return result
                 elif line.startswith(b'VALUE'):
                     key, value, buf = self._value_helper(expect_cas, line, buf,
-                                                 remapped_keys, prefixed_keys)
+                                                         remapped_keys,
+                                                         prefixed_keys)
                     result[key] = value
                 elif name == b'stats' and line.startswith(b'STAT'):
                     key_value = line.split()
