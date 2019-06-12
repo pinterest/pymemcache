@@ -776,6 +776,7 @@ class Client(object):
                 _, key, flags, size = line.split()
             except Exception as e:
                 raise ValueError("Unable to parse line %s: %s" % (line, e))
+
         buf, value = _readvalue(self.sock, buf, int(size))
         key = remapped_keys[key]
         if self.deserializer:
