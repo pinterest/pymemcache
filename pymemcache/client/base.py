@@ -762,6 +762,31 @@ class Client(object):
             error = line[line.find(b' ') + 1:]
             raise MemcacheServerError(error)
 
+    def _value_helper(self, expect_cas, line, buf, remapped_keys,
+                      prefixed_keys):
+        """
+        This function is abstracted from _fetch_cmd to support different ways
+        of value extraction. In order to use this feature, _value_helper needs
+        to be overriden in the subclass.
+        """
+        if expect_cas:
+            _, key, flags, size, cas = line.split()
+        else:
+            try:
+                _, key, flags, size = line.split()
+            except Exception as e:
+                raise ValueError("Unable to parse line %s: %s"
+                                 % (line, str(e)))
+        buf, value = _readvalue(self.sock, buf, int(size))
+        key = remapped_keys[key]
+        if self.deserializer:
+            value = self.deserializer(key, value, int(flags))
+
+        if expect_cas:
+            return key, (value, cas), buf
+        else:
+            return key, value, buf
+
     def _fetch_cmd(self, name, keys, expect_cas):
         prefixed_keys = [self.check_key(k) for k in keys]
         remapped_keys = dict(zip(prefixed_keys, keys))
@@ -783,25 +808,9 @@ class Client(object):
                 if line == b'END' or line == b'OK':
                     return result
                 elif line.startswith(b'VALUE'):
-                    if expect_cas:
-                        _, key, flags, size, cas = line.split()
-                    else:
-                        try:
-                            _, key, flags, size = line.split()
-                        except Exception as e:
-                            raise ValueError("Unable to parse line %s: %s"
-                                             % (line, str(e)))
-
-                    buf, value = _readvalue(self.sock, buf, int(size))
-                    key = remapped_keys[key]
-
-                    if self.deserializer:
-                        value = self.deserializer(key, value, int(flags))
-
-                    if expect_cas:
-                        result[key] = (value, cas)
-                    else:
-                        result[key] = value
+                    key, value, buf = self._value_helper(expect_cas, line, buf,
+                                                 remapped_keys, prefixed_keys)
+                    result[key] = value
                 elif name == b'stats' and line.startswith(b'STAT'):
                     key_value = line.split()
                     result[key_value[1]] = key_value[2]
