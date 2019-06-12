@@ -23,6 +23,7 @@ import os
 import mock
 import socket
 import unittest
+
 import pytest
 
 from pymemcache.client.base import PooledClient, Client
@@ -114,10 +115,27 @@ class MockSocketModule(object):
         return getattr(socket, name)
 
 
+class CustomizedClient(Client):
+
+    def _extract_value(self, expect_cas, line, buf, remapped_keys,
+                       prefixed_keys):
+        return b'key', b'value', b'END\r\n'
+
+
 @pytest.mark.unit()
 class ClientTestMixin(object):
     def make_client(self, mock_socket_values, **kwargs):
         client = Client(None, **kwargs)
+        # mock out client._connect() rather than hard-settting client.sock to
+        # ensure methods are checking whether self.sock is None before
+        # attempting to use it
+        sock = MockSocket(list(mock_socket_values))
+        client._connect = mock.Mock(side_effect=functools.partial(
+            setattr, client, "sock", sock))
+        return client
+
+    def make_customized_client(self, mock_socket_values, **kwargs):
+        client = CustomizedClient(None, **kwargs)
         # mock out client._connect() rather than hard-settting client.sock to
         # ensure methods are checking whether self.sock is None before
         # attempting to use it
@@ -273,13 +291,32 @@ class ClientTestMixin(object):
         result = client.get(b'key')
         assert result is None
 
+        # Unit test for customized client (override _extract_value)
+        client = self.make_customized_client([b'END\r\n'])
+        result = client.get(b'key')
+        assert result is None
+
     def test_get_not_found_default(self):
         client = self.make_client([b'END\r\n'])
         result = client.get(b'key', default='foobar')
         assert result == 'foobar'
 
+        # Unit test for customized client (override _extract_value)
+        client = self.make_customized_client([b'END\r\n'])
+        result = client.get(b'key', default='foobar')
+        assert result == 'foobar'
+
     def test_get_found(self):
         client = self.make_client([
+            b'STORED\r\n',
+            b'VALUE key 0 5\r\nvalue\r\nEND\r\n',
+        ])
+        client.set(b'key', b'value', noreply=False)
+        result = client.get(b'key')
+        assert result == b'value'
+
+        # Unit test for customized client (override _extract_value)
+        client = self.make_customized_client([
             b'STORED\r\n',
             b'VALUE key 0 5\r\nvalue\r\nEND\r\n',
         ])
@@ -313,8 +350,8 @@ class ClientTestMixin(object):
             b'VALUE key1 0 6\r\nvalue1\r\n',
             b'VALUE key2 0 6\r\nvalue2\r\nEND\r\n',
         ])
-        result = client.set(b'key1', b'value1', noreply=False)
-        result = client.set(b'key2', b'value2', noreply=False)
+        client.set(b'key1', b'value1', noreply=False)
+        client.set(b'key2', b'value2', noreply=False)
         result = client.get_many([b'key1', b'key2'])
         assert result == {b'key1': b'value1', b'key2': b'value2'}
 
