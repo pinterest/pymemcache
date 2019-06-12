@@ -766,7 +766,7 @@ class Client(object):
                        prefixed_keys):
         """
         This function is abstracted from _fetch_cmd to support different ways
-        of value extraction. In order to use this feature, _value_helper needs
+        of value extraction. In order to use this feature, _extract_value needs
         to be overriden in the subclass.
         """
         if expect_cas:
