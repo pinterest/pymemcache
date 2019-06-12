@@ -315,7 +315,7 @@ class ClientTestMixin(object):
         result = client.get(b'key')
         assert result == b'value'
 
-        # Unit test for customized client (override _value_helper)
+        # Unit test for customized client (override _extract_value)
         client = self.make_customized_client([
             b'STORED\r\n',
             b'VALUE key 0 5\r\nvalue\r\nEND\r\n',
