@@ -291,7 +291,7 @@ class ClientTestMixin(object):
         result = client.get(b'key')
         assert result is None
 
-        # Unit test for customized client (override _value_helper)
+        # Unit test for customized client (override _extract_value)
         client = self.make_customized_client([b'END\r\n'])
         result = client.get(b'key')
         assert result is None
