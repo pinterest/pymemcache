@@ -762,7 +762,7 @@ class Client(object):
             error = line[line.find(b' ') + 1:]
             raise MemcacheServerError(error)
 
-    def _value_helper(self, expect_cas, line, buf, remapped_keys,
+    def _extract_value(self, expect_cas, line, buf, remapped_keys,
                       prefixed_keys):
         """
         This function is abstracted from _fetch_cmd to support different ways
@@ -775,8 +775,7 @@ class Client(object):
             try:
                 _, key, flags, size = line.split()
             except Exception as e:
-                raise ValueError("Unable to parse line %s: %s"
-                                 % (line, str(e)))
+                raise ValueError("Unable to parse line %s: %s" % (line, e))
         buf, value = _readvalue(self.sock, buf, int(size))
         key = remapped_keys[key]
         if self.deserializer:
@@ -808,7 +807,7 @@ class Client(object):
                 if line == b'END' or line == b'OK':
                     return result
                 elif line.startswith(b'VALUE'):
-                    key, value, buf = self._value_helper(expect_cas, line, buf,
+                    key, value, buf = self._extract_value(expect_cas, line, buf,
                                                          remapped_keys,
                                                          prefixed_keys)
                     result[key] = value

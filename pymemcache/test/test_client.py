@@ -117,7 +117,7 @@ class MockSocketModule(object):
 
 class CustomizedClient(Client):
 
-    def _value_helper(self, expect_cas, line, buf, remapped_keys,
+    def _extract_value(self, expect_cas, line, buf, remapped_keys,
                       prefixed_keys):
         return b'key', b'value', b'END\r\n'
 
