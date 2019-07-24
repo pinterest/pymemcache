@@ -594,7 +594,7 @@ class Client(object):
           value of the key, or None if the key wasn't found.
         """
         key = self.check_key(key)
-        cmd = b'incr ' + key + b' ' + six.text_type(value).encode('ascii')
+        cmd = b'incr ' + key + b' ' + six.text_type(value).encode(self.encoding)
         if noreply:
             cmd += b' noreply'
         cmd += b'\r\n'
@@ -619,7 +619,7 @@ class Client(object):
           value of the key, or None if the key wasn't found.
         """
         key = self.check_key(key)
-        cmd = b'decr ' + key + b' ' + six.text_type(value).encode('ascii')
+        cmd = b'decr ' + key + b' ' + six.text_type(value).encode(self.encoding)
         if noreply:
             cmd += b' noreply'
         cmd += b'\r\n'
@@ -648,7 +648,9 @@ class Client(object):
         if noreply is None:
             noreply = self.default_noreply
         key = self.check_key(key)
-        cmd = b'touch ' + key + b' ' + six.text_type(expire).encode('ascii')
+        cmd = (
+            b'touch ' + key + b' ' + six.text_type(expire).encode(self.encoding)
+        )
         if noreply:
             cmd += b' noreply'
         cmd += b'\r\n'
@@ -729,7 +731,7 @@ class Client(object):
         """
         if noreply is None:
             noreply = self.default_noreply
-        cmd = b'flush_all ' + six.text_type(delay).encode('ascii')
+        cmd = b'flush_all ' + six.text_type(delay).encode(self.encoding)
         if noreply:
             cmd += b' noreply'
         cmd += b'\r\n'
