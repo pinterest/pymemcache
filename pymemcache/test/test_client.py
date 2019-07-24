@@ -763,6 +763,18 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         with pytest.raises(MemcacheIllegalInputError):
             _set()
 
+    def test_set_key_with_noninteger_expire(self):
+        client = self.make_client([b''])
+
+        for noreply in (True, False):
+            for expire in (1.5, "1.5", "not_an_int"):
+                def _set():
+                    client.set(b'finekey', b'finevalue',
+                               noreply=noreply, expire=expire)
+
+                with pytest.raises(MemcacheIllegalInputError):
+                    _set()
+
     def test_set_many_socket_handling(self):
         client = self.make_client([b'STORED\r\n'])
         result = client.set_many({b'key': b'value'}, noreply=False)

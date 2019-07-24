@@ -109,6 +109,22 @@ def _check_key(key, allow_unicode_keys, key_prefix=b''):
     return key
 
 
+def _check_integer(value, name, encoding):
+    """Check that a value is an integer and encode it as a binary string"""
+    if isinstance(value, six.integer_types):  # includes "long" on py2
+        return six.text_type(value).encode(encoding)
+    elif isinstance(value, six.text_type):
+        try:
+            int(value)
+            return six.text_type(value).encode(encoding)
+        except ValueError:
+            pass  # fall-through to error below
+
+    raise MemcacheIllegalInputError(
+        '{} must be integer, got bad value: {}'.format(name, value)
+    )
+
+
 class Client(object):
     """
     A client for a single memcached server.
@@ -648,9 +664,8 @@ class Client(object):
         if noreply is None:
             noreply = self.default_noreply
         key = self.check_key(key)
-        cmd = (
-            b'touch ' + key + b' ' + six.text_type(expire).encode(self.encoding)
-        )
+        expire = _check_integer(expire, "expire", self.encoding)
+        cmd = b'touch ' + key + b' ' + expire
         if noreply:
             cmd += b' noreply'
         cmd += b'\r\n'
@@ -838,7 +853,7 @@ class Client(object):
             extra += b' ' + cas
         if noreply:
             extra += b' noreply'
-        expire = six.text_type(expire).encode(self.encoding)
+        expire = _check_integer(expire, "expire", self.encoding)
 
         for key, data in six.iteritems(values):
             # must be able to reliably map responses back to the original order
