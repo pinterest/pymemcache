@@ -128,7 +128,7 @@ Best Practices
    your process when memcached is slow. You might also want to enable the
    ``no_delay`` option, which sets the TCP_NODELAY flag on the connection's
    socket.
- - Use the ``noreply`` flag for a significant performance boost. The ``"noreply``
+ - Use the ``noreply`` flag for a significant performance boost. The ``noreply``
    flag is enabled by default for "set", "add", "replace", "append", "prepend",
    and "delete". It is disabled by default for "cas", "incr" and "decr". It
    obviously doesn't apply to any get calls.
@@ -140,3 +140,15 @@ Best Practices
    errors, from killing your web requests. Do not use this flag if you need to
    know about errors from memcache, and make sure you have some other way to
    detect memcache server failures.
+
+.. WARNING::
+
+    ``noreply`` will not read errors returned from the memcached server.
+
+    If a function with ``noreply=True`` causes an error on the server, it will
+    still succeed and your next call which reads a response from memcached may
+    fail unexpectedly.
+
+    ``pymemcached`` will try to catch and stop you from sending malformed
+    inputs to memcached, but if you are having unexplained errors, setting
+    ``noreply=False`` may help you troubleshoot the issue.
