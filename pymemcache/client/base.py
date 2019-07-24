@@ -113,7 +113,8 @@ def _check_integer(value, name, encoding):
     """Check that a value is an integer and encode it as a binary string"""
     if isinstance(value, six.integer_types):  # includes "long" on py2
         return six.text_type(value).encode(encoding)
-    elif isinstance(value, six.text_type):
+    # TODO: drop this behavior in a future version of pymemcached
+    elif isinstance(value, VALID_STRING_TYPES):
         try:
             int(value)
             return six.text_type(value).encode(encoding)
