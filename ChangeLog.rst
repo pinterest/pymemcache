@@ -1,11 +1,15 @@
 Change Log
 ==========
 
-New in version 2.2.0 (unreleased)
----------------------------------
+New in version 2.2.0
+--------------------
+* Drop official support for Python 3.4.
 * Use ``setup.cfg`` metadata instead ``setup.py`` config to generate package.
 * Add ``default_noreply`` parameter to ``HashClient``.
+* Add ``encoding`` parameter to ``Client`` constructors (defaults to ``ascii``).
+* Add ``flags`` parameter to write operation methods.
 * Handle unicode key values in ``MockMemcacheClient`` correctly.
+* Improve ASCII encoding failure exception.
 
 New in version 2.1.1
 --------------------
