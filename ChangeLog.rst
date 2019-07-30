@@ -15,6 +15,14 @@ New in version 2.2.1
 --------------------
 * Fix ``flags`` when setting multiple differently-typed values at once.
 
+New in version 3.0.0 (unreleased)
+---------------------------------
+
+* The serialization API has been reworked. Instead of consuming a serializer
+  and deserializer as separate arguments, client objects now expect
+  `serializer` to be an object which implements `serialize` and `deserialize`
+  as methods
+
 New in version 2.2.0
 --------------------
 * Drop official support for Python 3.4.

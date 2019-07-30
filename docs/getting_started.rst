@@ -49,20 +49,20 @@ Serialization
      import json
      from pymemcache.client.base import Client
 
-     def json_serializer(key, value):
-         if type(value) == str:
-             return value, 1
-         return json.dumps(value), 2
+     class JsonSerializer(object):
+         def serialize(self, key, value):
+             if isinstance(value, str):
+                 return value, 1
+             return json.dumps(value), 2
 
-     def json_deserializer(key, value, flags):
-        if flags == 1:
-            return value
-        if flags == 2:
-            return json.loads(value)
-        raise Exception("Unknown serialization format")
+         def deserialize(self, key, value, flags):
+            if flags == 1:
+                return value
+            if flags == 2:
+                return json.loads(value)
+            raise Exception("Unknown serialization format")
 
-     client = Client(('localhost', 11211), serializer=json_serializer,
-                     deserializer=json_deserializer)
+     client = Client(('localhost', 11211), serializer=JsonSerializer())
      client.set('key', {'a':'b', 'c':'d'})
      result = client.get('key')
 
@@ -78,33 +78,44 @@ pymemcache provides a default
       pass
 
     client = Client(('localhost', 11211),
-        serializer=serde.python_memcache_serializer,
-        deserializer=serde.python_memcache_deserializer)
+        serializer=serde.python_memcache_serializer)
     client.set('key', Foo())
     result client.get('key')
 
 The serializer uses the highest pickle protocol available. In order to make
 sure multiple versions of Python can read the protocol version, you can specify
-the version with :func:`pymemcache.serde.get_python_memcache_serializer`.
+the version by explicitly instantiating :class:`pymemcache.serde.PythonMemcacheSerializer`:
 
 .. code-block:: python
 
-    client = Client(('localhost', 11211),
-        serializer=serde.get_python_memcache_serializer(pickle_version=2),
-        deserializer=serde.python_memcache_deserializer)
+    client = Client(
+        ('localhost', 11211),
+        serializer=serde.PythonMemcacheSerializer(pickle_version=2)
+    )
 
 
 Deserialization with Python 3
 -----------------------------
 
+Values passed to the `deserialize()` method will be bytestrings. It is
+therefore necessary to encode and decode them correctly. Here's a version of
+the `JsonSerializer` from above which is more careful with encodings:
+
 .. code-block:: python
 
-    def json_deserializer(key, value, flags):
-        if flags == 1:
-            return value.decode('utf-8')
-        if flags == 2:
-            return json.loads(value.decode('utf-8'))
-        raise Exception("Unknown serialization format")
+     class JsonSerializer(object):
+         def serialize(self, key, value):
+             if isinstance(value, str):
+                 return value.encode('utf-8'), 1
+             return json.dumps(value).encode('utf-8'), 2
+
+         def deserialize(self, key, value, flags):
+            if flags == 1:
+                return value.decode('utf-8')
+            if flags == 2:
+                return json.loads(value.decode('utf-8'))
+            raise Exception("Unknown serialization format")
+
 
 Key Constraints
 ---------------
@@ -140,6 +151,9 @@ Best Practices
    errors, from killing your web requests. Do not use this flag if you need to
    know about errors from memcache, and make sure you have some other way to
    detect memcache server failures.
+ - Unless you have a known reason to do otherwise, use the provided serializer
+   in `pymemcache.serde.python_memcache_serializer` for any serialization or
+   deserialization
 
 .. WARNING::
 

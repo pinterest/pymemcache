@@ -21,7 +21,6 @@ class MockMemcacheClient(object):
     def __init__(self,
                  server=None,
                  serializer=None,
-                 deserializer=None,
                  connect_timeout=None,
                  timeout=None,
                  no_delay=False,
@@ -33,7 +32,6 @@ class MockMemcacheClient(object):
         self._contents = {}
 
         self.serializer = serializer
-        self.deserializer = deserializer
         self.allow_unicode_keys = allow_unicode_keys
 
         # Unused, but present for interface compatibility
@@ -63,8 +61,8 @@ class MockMemcacheClient(object):
             del self._contents[key]
             return default
 
-        if self.deserializer:
-            return self.deserializer(key, value, flags)
+        if self.serializer:
+            return self.serializer.deserialize(key, value, flags)
         return value
 
     def get_many(self, keys):
@@ -96,7 +94,7 @@ class MockMemcacheClient(object):
 
         flags = 0
         if self.serializer:
-            value, flags = self.serializer(key, value)
+            value, flags = self.serializer.serialize(key, value)
 
         if expire:
             expire += time.time()

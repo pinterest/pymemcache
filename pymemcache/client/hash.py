@@ -20,7 +20,6 @@ class HashClient(object):
         servers,
         hasher=RendezvousHash,
         serializer=None,
-        deserializer=None,
         connect_timeout=None,
         timeout=None,
         no_delay=False,
@@ -82,7 +81,6 @@ class HashClient(object):
             'socket_module': socket_module,
             'key_prefix': key_prefix,
             'serializer': serializer,
-            'deserializer': deserializer,
             'allow_unicode_keys': allow_unicode_keys,
             'default_noreply': default_noreply,
         }

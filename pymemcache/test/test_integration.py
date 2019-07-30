@@ -26,9 +26,7 @@ from pymemcache.exceptions import (
     MemcacheClientError
 )
 from pymemcache.serde import (
-    get_python_memcache_serializer,
-    python_memcache_serializer,
-    python_memcache_deserializer
+    PythonMemcacheSerializer, python_memcache_serializer
 )
 
 
@@ -233,15 +231,16 @@ def test_misc(client_class, host, port, socket_module):
 
 @pytest.mark.integration()
 def test_serialization_deserialization(host, port, socket_module):
-    def _ser(key, value):
-        return json.dumps(value).encode('ascii'), 1
+    class JsonSerializer(object):
+        def serialize(self, key, value):
+            return json.dumps(value).encode('ascii'), 1
 
-    def _des(key, value, flags):
-        if flags == 1:
-            return json.loads(value.decode('ascii'))
-        return value
+        def deserialize(self, key, value, flags):
+            if flags == 1:
+                return json.loads(value.decode('ascii'))
+            return value
 
-    client = Client((host, port), serializer=_ser, deserializer=_des,
+    client = Client((host, port), serializer=JsonSerializer(),
                     socket_module=socket_module)
     client.flush_all()
 
@@ -260,7 +259,6 @@ def serde_serialization_helper(client_class, host, port,
         assert type(result) is type(value)
 
     client = client_class((host, port), serializer=serializer,
-                          deserializer=python_memcache_deserializer,
                           socket_module=socket_module)
     client.flush_all()
 
@@ -289,7 +287,7 @@ def test_serde_serialization0(client_class, host, port, socket_module):
     serde_serialization_helper(
         client_class, host, port,
         socket_module,
-        get_python_memcache_serializer(pickle_version=0))
+        PythonMemcacheSerializer(pickle_version=0))
 
 
 @pytest.mark.integration()
@@ -297,7 +295,7 @@ def test_serde_serialization2(client_class, host, port, socket_module):
     serde_serialization_helper(
         client_class, host, port,
         socket_module,
-        get_python_memcache_serializer(pickle_version=2))
+        PythonMemcacheSerializer(pickle_version=2))
 
 
 @pytest.mark.integration()

@@ -2,8 +2,8 @@
 from unittest import TestCase
 
 from pymemcache.serde import (python_memcache_serializer,
-                              get_python_memcache_serializer,
-                              python_memcache_deserializer, FLAG_BYTES,
+                              PythonMemcacheSerializer,
+                              FLAG_BYTES,
                               FLAG_PICKLE, FLAG_INTEGER, FLAG_LONG, FLAG_TEXT)
 import pytest
 import six
@@ -25,7 +25,7 @@ class TestSerde(TestCase):
     serializer = python_memcache_serializer
 
     def check(self, value, expected_flags):
-        serialized, flags = self.serializer(b'key', value)
+        serialized, flags = self.serializer.serialize(b'key', value)
         assert flags == expected_flags
 
         # pymemcache stores values as byte strings, so we immediately the value
@@ -33,7 +33,7 @@ class TestSerde(TestCase):
         if not isinstance(serialized, six.binary_type):
             serialized = six.text_type(serialized).encode('ascii')
 
-        deserialized = python_memcache_deserializer(b'key', serialized, flags)
+        deserialized = self.serializer.deserialize(b'key', serialized, flags)
         assert deserialized == value
 
     def test_bytes(self):
@@ -66,20 +66,21 @@ class TestSerde(TestCase):
 
 @pytest.mark.unit()
 class TestSerdePickleVersion0(TestCase):
-    serializer = get_python_memcache_serializer(pickle_version=0)
+    serializer = PythonMemcacheSerializer(pickle_version=0)
 
 
 @pytest.mark.unit()
 class TestSerdePickleVersion1(TestCase):
-    serializer = get_python_memcache_serializer(pickle_version=1)
+    serializer = PythonMemcacheSerializer(pickle_version=1)
 
 
 @pytest.mark.unit()
 class TestSerdePickleVersion2(TestCase):
-    serializer = get_python_memcache_serializer(pickle_version=2)
+    serializer = PythonMemcacheSerializer(pickle_version=2)
 
 
 @pytest.mark.unit()
 class TestSerdePickleVersionHighest(TestCase):
-    serializer = get_python_memcache_serializer(
-        pickle_version=pickle.HIGHEST_PROTOCOL)
+    serializer = PythonMemcacheSerializer(
+        pickle_version=pickle.HIGHEST_PROTOCOL
+    )

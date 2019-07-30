@@ -144,36 +144,37 @@ class Client(object):
      just calling encode on the string (using UTF-8, for instance).
 
      If you intend to use anything but str as a value, it is a good idea to use
-     a serializer and deserializer. The pymemcache.serde library has some
-     already implemented serializers, including one that is compatible with
-     the python-memcache library.
+     a serializer. The pymemcache.serde library has an already implemented
+     serializer which pickles and unpickles data.
 
     *Serialization and Deserialization*
 
-     The constructor takes two optional functions, one for "serialization" of
-     values, and one for "deserialization". The serialization function takes
-     two arguments, a key and a value, and returns a tuple of two elements, the
-     serialized value, and an integer in the range 0-65535 (the "flags"). The
-     deserialization function takes three parameters, a key, value and flags
-     and returns the deserialized value.
+     The constructor takes an optional object, the "serializer", which is
+     responsible for both serialization and deserialization of objects. That
+     object must satisfy the serializer interface by providing two methods:
+     `serialize` and `deserialize`. `serialize` takes two arguments, a key and a
+     value, and returns a tuple of two elements, the serialized value, and an
+     integer in the range 0-65535 (the "flags"). `deserialize` takes three
+     parameters, a key, value, and flags, and returns the deserialized value.
 
      Here is an example using JSON for non-str values:
 
      .. code-block:: python
 
-         def serialize_json(key, value):
-             if type(value) == str:
-                 return value, 1
-             return json.dumps(value), 2
+         class JSONSerializer(object):
+             def serialize(self, key, value):
+                 if isinstance(value, str):
+                     return value, 1
+                 return json.dumps(value), 2
 
-         def deserialize_json(key, value, flags):
-             if flags == 1:
-                 return value
+             def deserialize(self, key, value, flags):
+                 if flags == 1:
+                     return value
 
-             if flags == 2:
-                 return json.loads(value)
+                 if flags == 2:
+                     return json.loads(value)
 
-             raise Exception("Unknown flags for value: {1}".format(flags))
+                 raise Exception("Unknown flags for value: {1}".format(flags))
 
     .. note::
 
@@ -206,7 +207,6 @@ class Client(object):
     def __init__(self,
                  server,
                  serializer=None,
-                 deserializer=None,
                  connect_timeout=None,
                  timeout=None,
                  no_delay=False,
@@ -221,8 +221,7 @@ class Client(object):
 
         Args:
           server: tuple(hostname, port) or string containing a UNIX socket path.
-          serializer: optional function, see notes in the class docs.
-          deserializer: optional function, see notes in the class docs.
+          serializer: optional seralizer object, see notes in the class docs.
           connect_timeout: optional float, seconds to wait for a connection to
             the memcached server. Defaults to "forever" (uses the underlying
             default socket timeout, which can be very long).
@@ -250,7 +249,6 @@ class Client(object):
         """
         self.server = server
         self.serializer = serializer
-        self.deserializer = deserializer
         self.connect_timeout = connect_timeout
         self.timeout = timeout
         self.no_delay = no_delay
@@ -800,8 +798,8 @@ class Client(object):
 
         buf, value = _readvalue(self.sock, buf, int(size))
         key = remapped_keys[key]
-        if self.deserializer:
-            value = self.deserializer(key, value, int(flags))
+        if self.serializer:
+            value = self.serializer.deserialize(key, value, int(flags))
 
         if expect_cas:
             return key, (value, cas), buf
@@ -865,7 +863,7 @@ class Client(object):
 
             key = self.check_key(key)
             if self.serializer:
-                data, data_flags = self.serializer(key, data)
+                data, data_flags = self.serializer.serialize(key, data)
             else:
                 data_flags = 0
 
@@ -970,7 +968,6 @@ class PooledClient(object):
     def __init__(self,
                  server,
                  serializer=None,
-                 deserializer=None,
                  connect_timeout=None,
                  timeout=None,
                  no_delay=False,
@@ -984,7 +981,6 @@ class PooledClient(object):
                  encoding='ascii'):
         self.server = server
         self.serializer = serializer
-        self.deserializer = deserializer
         self.connect_timeout = connect_timeout
         self.timeout = timeout
         self.no_delay = no_delay
@@ -1012,7 +1008,6 @@ class PooledClient(object):
     def _create_client(self):
         client = Client(self.server,
                         serializer=self.serializer,
-                        deserializer=self.deserializer,
                         connect_timeout=self.connect_timeout,
                         timeout=self.timeout,
                         no_delay=self.no_delay,
