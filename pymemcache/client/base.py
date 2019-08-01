@@ -180,14 +180,14 @@ class Client(object):
      All of the methods in this class that talk to memcached can throw one of
      the following exceptions:
 
-      * MemcacheUnknownCommandError
-      * MemcacheClientError
-      * MemcacheServerError
-      * MemcacheUnknownError
-      * MemcacheUnexpectedCloseError
-      * MemcacheIllegalInputError
-      * socket.timeout
-      * socket.error
+      * :class:`pymemcache.exceptions.MemcacheUnknownCommandError`
+      * :class:`pymemcache.exceptions.MemcacheClientError`
+      * :class:`pymemcache.exceptions.MemcacheServerError`
+      * :class:`pymemcache.exceptions.MemcacheUnknownError`
+      * :class:`pymemcache.exceptions.MemcacheUnexpectedCloseError`
+      * :class:`pymemcache.exceptions.MemcacheIllegalInputError`
+      * :class:`socket.timeout`
+      * :class:`socket.error`
 
      Instances of this class maintain a persistent connection to memcached
      which is terminated when any of these exceptions are raised. The next
