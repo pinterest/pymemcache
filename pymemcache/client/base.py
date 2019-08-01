@@ -175,6 +175,14 @@ class Client(object):
 
              raise Exception("Unknown flags for value: {1}".format(flags))
 
+    .. note::
+
+     Most write operations allow the caller to provide a ``flags`` value to
+     support advanced interaction with the server. This will **override** the
+     "flags" value returned by the serializer and should therefore only be
+     used when you have a complete understanding of how the value should be
+     serialized, stored, and deserialized.
+
     *Error Handling*
 
      All of the methods in this class that talk to memcached can throw one of
@@ -847,12 +855,12 @@ class Client(object):
             key = self.check_key(key)
             if self.serializer:
                 data, serializer_flags = self.serializer(key, data)
-                # Use the serializer's flags when 'flags' haven't been specified
-                # If 'flags' is specified, ignore the serializer_flags generated
-                #  from serializer, otherwise use serializer_flags.
+                # Use the serializer's flags if the caller hasn't specified an
+                # explicit, overridding value.
                 if flags is None:
                     flags = serializer_flags
-            # If no 'flags' or 'serializer' passed in, default flags to 0
+
+            # Set flags to 0 if none were provided by the caller or serializer.
             if flags is None:
                 flags = 0
 
