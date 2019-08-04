@@ -665,14 +665,14 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         assert result is False
 
     def test_serialization(self):
-        class JsonSerializer(object):
+        class JsonSerde(object):
             def serialize(self, key, value):
                 return json.dumps(value).encode('ascii'), 0
 
             def deserialize(self, key, value, flags):
                 return json.loads(value.decode('ascii'))
 
-        client = self.make_client([b'STORED\r\n'], serializer=JsonSerializer())
+        client = self.make_client([b'STORED\r\n'], serde=JsonSerde())
         client.set('key', {'c': 'd'})
         assert client.sock.send_bufs == [
             b'set key 0 0 10 noreply\r\n{"c": "d"}\r\n'
@@ -1209,7 +1209,7 @@ class TestMockClient(ClientTestMixin, unittest.TestCase):
         assert result == b'value'
 
     def test_deserialization(self):
-        class JsonSerializer(object):
+        class JsonSerde(object):
             def serialize(self, key, value):
                 if isinstance(value, dict):
                     return json.dumps(value).encode('UTF-8'), 1
@@ -1225,7 +1225,7 @@ class TestMockClient(ClientTestMixin, unittest.TestCase):
             b'VALUE key1 0 5\r\nhello\r\nEND\r\n',
             b'STORED\r\n',
             b'VALUE key2 0 18\r\n{"hello": "world"}\r\nEND\r\n',
-        ], serializer=JsonSerializer())
+        ], serde=JsonSerde())
 
         result = client.set(b'key1', b'hello', noreply=False)
         result = client.get(b'key1')

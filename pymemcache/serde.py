@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from functools import partial
 import logging
 from io import BytesIO
 import six
@@ -39,7 +40,74 @@ FLAG_TEXT = 1 << 4
 DEFAULT_PICKLE_VERSION = pickle.HIGHEST_PROTOCOL
 
 
-class PythonMemcacheSerializer(object):
+def _python_memcache_serializer(key, value, pickle_version=None):
+    flags = 0
+    value_type = type(value)
+
+    # Check against exact types so that subclasses of native types will be
+    # restored as their native type
+    if value_type is bytes:
+        pass
+
+    elif value_type is six.text_type:
+        flags |= FLAG_TEXT
+        value = value.encode('utf8')
+
+    elif value_type is int:
+        flags |= FLAG_INTEGER
+        value = "%d" % value
+
+    elif six.PY2 and value_type is long_type:
+        flags |= FLAG_LONG
+        value = "%d" % value
+
+    else:
+        flags |= FLAG_PICKLE
+        output = BytesIO()
+        pickler = pickle.Pickler(output, pickle_version)
+        pickler.dump(value)
+        value = output.getvalue()
+
+    return value, flags
+
+
+def get_python_memcache_serializer(pickle_version=DEFAULT_PICKLE_VERSION):
+    """Return a serializer using a specific pickle version"""
+    return partial(_python_memcache_serializer, pickle_version=pickle_version)
+
+
+python_memcache_serializer = get_python_memcache_serializer()
+
+
+def python_memcache_deserializer(key, value, flags):
+    if flags == 0:
+        return value
+
+    elif flags & FLAG_TEXT:
+        return value.decode('utf8')
+
+    elif flags & FLAG_INTEGER:
+        return int(value)
+
+    elif flags & FLAG_LONG:
+        if six.PY3:
+            return int(value)
+        else:
+            return long_type(value)
+
+    elif flags & FLAG_PICKLE:
+        try:
+            buf = BytesIO(value)
+            unpickler = pickle.Unpickler(buf)
+            return unpickler.load()
+        except Exception:
+            logging.info('Pickle error', exc_info=True)
+            return None
+
+    return value
+
+
+class PythonMemcachePickleSerde(object):
     """
     An object which implements the serialization/deserialization protocol for
     :py:class:`pymemcache.client.base.Client` and its descendants using pickle.
@@ -47,75 +115,43 @@ class PythonMemcacheSerializer(object):
     Serialization and deserialization are implemented as methods of this class.
     To implement a custom serialization/deserialization method for pymemcache,
     you should implement the same interface as the one provided by this object
-    -- :py:meth:`pymemcache.serde.PythonMemcacheSerializer.serialize` and
-    :py:meth:`pymemcache.serde.PythonMemcacheSerializer.deserialize`. Then,
+    -- :py:meth:`pymemcache.serde.PythonMemcachePickleSerde.serialize` and
+    :py:meth:`pymemcache.serde.PythonMemcachePickleSerde.deserialize`. Then,
     pass your custom object to the pymemcache client object in place of
-    `PythonMemcacheSerializer`.
+    `PythonMemcachePickleSerde`.
 
     For more details on the serialization protocol, see the class documentation
     for :py:class:`pymemcache.client.base.Client`
     """
-
     def __init__(self, pickle_version=DEFAULT_PICKLE_VERSION):
-        self.pickle_version = pickle_version
+        self._serialize_func = get_python_memcache_serializer(pickle_version)
 
     def serialize(self, key, value):
-        flags = 0
-        value_type = type(value)
-
-        # Check against exact types so that subclasses of native types will be
-        # restored as their native type
-        if value_type is bytes:
-            pass
-
-        elif value_type is six.text_type:
-            flags |= FLAG_TEXT
-            value = value.encode('utf8')
-
-        elif value_type is int:
-            flags |= FLAG_INTEGER
-            value = "%d" % value
-
-        elif six.PY2 and value_type is long_type:
-            flags |= FLAG_LONG
-            value = "%d" % value
-
-        else:
-            flags |= FLAG_PICKLE
-            output = BytesIO()
-            pickler = pickle.Pickler(output, self.pickle_version)
-            pickler.dump(value)
-            value = output.getvalue()
-
-        return value, flags
+        return self._serialize_func(key, value)
 
     def deserialize(self, key, value, flags):
-        if flags == 0:
-            return value
+        return python_memcache_deserializer(key, value, flags)
 
-        elif flags & FLAG_TEXT:
-            return value.decode('utf8')
 
-        elif flags & FLAG_INTEGER:
-            return int(value)
+class LegacyWrappingSerde(object):
+    """
+    This class defines how to wrap legacy de/serialization functions into a
+    'serde' object which implements '.serialize' and '.deserialize' methods.
+    It is used automatically by pymemcache.client.base.Client when the
+    'serializer' or 'deserializer' arguments are given.
 
-        elif flags & FLAG_LONG:
-            if six.PY3:
-                return int(value)
-            else:
-                return long_type(value)
+    The serializer_func and deserializer_func are expected to be None in the
+    case that they are missing.
+    """
+    def __init__(self, serializer_func, deserializer_func):
+        self.serialize = serializer_func or self._default_serialize
+        self.deserialize = deserializer_func or self._default_deserialize
 
-        elif flags & FLAG_PICKLE:
-            try:
-                buf = BytesIO(value)
-                unpickler = pickle.Unpickler(buf)
-                return unpickler.load()
-            except Exception:
-                logging.info('Pickle error', exc_info=True)
-                return None
+    def _default_serialize(self, key, value):
+        return value, 0
 
+    def _default_deserialize(self, key, value, flags):
         return value
 
 
-# default instance of the class, to be used in client construction, etc
-python_memcache_serializer = PythonMemcacheSerializer()
+python_memcache_pickle_serde = PythonMemcachePickleSerde()

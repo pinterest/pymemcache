@@ -49,7 +49,7 @@ Serialization
      import json
      from pymemcache.client.base import Client
 
-     class JsonSerializer(object):
+     class JsonSerde(object):
          def serialize(self, key, value):
              if isinstance(value, str):
                  return value, 1
@@ -62,7 +62,7 @@ Serialization
                 return json.loads(value)
             raise Exception("Unknown serialization format")
 
-     client = Client(('localhost', 11211), serializer=JsonSerializer())
+     client = Client(('localhost', 11211), serde=JsonSerde())
      client.set('key', {'a':'b', 'c':'d'})
      result = client.get('key')
 
@@ -78,32 +78,32 @@ pymemcache provides a default
       pass
 
     client = Client(('localhost', 11211),
-        serializer=serde.python_memcache_serializer)
+        serde=serde.python_memcache_pickle_serde)
     client.set('key', Foo())
     result client.get('key')
 
 The serializer uses the highest pickle protocol available. In order to make
 sure multiple versions of Python can read the protocol version, you can specify
-the version by explicitly instantiating :class:`pymemcache.serde.PythonMemcacheSerializer`:
+the version by explicitly instantiating :class:`pymemcache.serde.PythonMemcachePickleSerde`:
 
 .. code-block:: python
 
     client = Client(
         ('localhost', 11211),
-        serializer=serde.PythonMemcacheSerializer(pickle_version=2)
+        serde=serde.PythonMemcachePickleSerde(pickle_version=2)
     )
 
 
 Deserialization with Python 3
 -----------------------------
 
-Values passed to the `deserialize()` method will be bytestrings. It is
+Values passed to the `serde.deserialize()` method will be bytestrings. It is
 therefore necessary to encode and decode them correctly. Here's a version of
-the `JsonSerializer` from above which is more careful with encodings:
+the `JsonSerde` from above which is more careful with encodings:
 
 .. code-block:: python
 
-     class JsonSerializer(object):
+     class JsonSerde(object):
          def serialize(self, key, value):
              if isinstance(value, str):
                  return value.encode('utf-8'), 1
@@ -152,8 +152,8 @@ Best Practices
    know about errors from memcache, and make sure you have some other way to
    detect memcache server failures.
  - Unless you have a known reason to do otherwise, use the provided serializer
-   in `pymemcache.serde.python_memcache_serializer` for any serialization or
-   deserialization
+   in `pymemcache.serde.python_memcache_pickle_serde` for any de/serialization
+   of objects
 
 .. WARNING::
 

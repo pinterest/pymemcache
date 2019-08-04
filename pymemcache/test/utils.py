@@ -10,6 +10,7 @@ import time
 import six
 
 from pymemcache.exceptions import MemcacheIllegalInputError
+from pymemcache.serde import LegacyWrappingSerde
 
 
 class MockMemcacheClient(object):
@@ -20,7 +21,7 @@ class MockMemcacheClient(object):
 
     def __init__(self,
                  server=None,
-                 serializer=None,
+                 serde=None,
                  connect_timeout=None,
                  timeout=None,
                  no_delay=False,
@@ -31,7 +32,7 @@ class MockMemcacheClient(object):
 
         self._contents = {}
 
-        self.serializer = serializer
+        self.serde = serde or LegacyWrappingSerde(None, None)
         self.allow_unicode_keys = allow_unicode_keys
 
         # Unused, but present for interface compatibility
@@ -61,9 +62,7 @@ class MockMemcacheClient(object):
             del self._contents[key]
             return default
 
-        if self.serializer:
-            return self.serializer.deserialize(key, value, flags)
-        return value
+        return self.serde.deserialize(key, value, flags)
 
     def get_many(self, keys):
         out = {}
@@ -92,9 +91,7 @@ class MockMemcacheClient(object):
             except (UnicodeEncodeError, UnicodeDecodeError):
                 raise MemcacheIllegalInputError
 
-        flags = 0
-        if self.serializer:
-            value, flags = self.serializer.serialize(key, value)
+        value, flags = self.serde.serialize(key, value)
 
         if expire:
             expire += time.time()
