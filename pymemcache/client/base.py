@@ -854,15 +854,14 @@ class Client(object):
 
             key = self.check_key(key)
             if self.serializer:
-                data, serializer_flags = self.serializer(key, data)
-                # Use the serializer's flags if the caller hasn't specified an
-                # explicit, overridding value.
-                if flags is None:
-                    flags = serializer_flags
+                data, data_flags = self.serializer(key, data)
+            else:
+                data_flags = 0
 
-            # Set flags to 0 if none were provided by the caller or serializer.
-            if flags is None:
-                flags = 0
+            # If 'flags' was explicitly provided, it overrides the value
+            # returned by the serializer.
+            if flags is not None:
+                data_flags = flags
 
             if not isinstance(data, six.binary_type):
                 try:
@@ -872,7 +871,7 @@ class Client(object):
                             "Data values must be binary-safe: %s" % e)
 
             cmds.append(name + b' ' + key + b' ' +
-                        six.text_type(flags).encode(self.encoding) +
+                        six.text_type(data_flags).encode(self.encoding) +
                         b' ' + expire +
                         b' ' + six.text_type(len(data)).encode(self.encoding) +
                         extra + b'\r\n' + data + b'\r\n')

@@ -1,6 +1,10 @@
 Change Log
 ==========
 
+New in version 2.2.1
+--------------------
+* Fix ``flags`` when setting multiple differently-typed values at once.
+
 New in version 2.2.0
 --------------------
 * Drop official support for Python 3.4.
