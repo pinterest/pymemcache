@@ -1,5 +1,9 @@
-Change Log
-==========
+Changelog
+=========
+
+New in version 2.2.2
+--------------------
+* Fix ``long_description`` string in Python packaging.
 
 New in version 2.2.1
 --------------------
@@ -72,8 +76,8 @@ New in version 1.4.1
 
 New in version 1.4.0
 --------------------
-* Unicode keys support. It is now possible to pass the flag `allow_unicode_keys` when creating the clients, thanks @jogo!
-* Fixed a bug where PooledClient wasn't following `default_noreply` arg set on init, thanks @kols!
+* Unicode keys support. It is now possible to pass the flag ``allow_unicode_keys`` when creating the clients, thanks @jogo!
+* Fixed a bug where PooledClient wasn't following ``default_noreply`` arg set on init, thanks @kols!
 * Improved documentation
 
 New in version 1.3.8
