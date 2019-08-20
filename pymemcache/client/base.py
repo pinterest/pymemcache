@@ -602,7 +602,8 @@ class Client(object):
           value of the key, or None if the key wasn't found.
         """
         key = self.check_key(key)
-        cmd = b'incr ' + key + b' ' + six.text_type(value).encode(self.encoding)
+        value = self._check_integer(value, "value")
+        cmd = b'incr ' + key + b' ' + value
         if noreply:
             cmd += b' noreply'
         cmd += b'\r\n'
@@ -627,7 +628,8 @@ class Client(object):
           value of the key, or None if the key wasn't found.
         """
         key = self.check_key(key)
-        cmd = b'decr ' + key + b' ' + six.text_type(value).encode(self.encoding)
+        value = self._check_integer(value, "value")
+        cmd = b'decr ' + key + b' ' + value
         if noreply:
             cmd += b' noreply'
         cmd += b'\r\n'
@@ -656,9 +658,8 @@ class Client(object):
         if noreply is None:
             noreply = self.default_noreply
         key = self.check_key(key)
-        cmd = (
-            b'touch ' + key + b' ' + six.text_type(expire).encode(self.encoding)
-        )
+        expire = self._check_integer(expire, "expire")
+        cmd = b'touch ' + key + b' ' + expire
         if noreply:
             cmd += b' noreply'
         cmd += b'\r\n'
@@ -704,8 +705,8 @@ class Client(object):
         Returns:
           If no exception is raised, always returns True.
         """
-
-        self._fetch_cmd(b'cache_memlimit', [str(int(memlimit))], False)
+        memlimit = self._check_integer(memlimit, "memlimit")
+        self._fetch_cmd(b'cache_memlimit', [memlimit], False)
         return True
 
     def version(self):
@@ -739,7 +740,8 @@ class Client(object):
         """
         if noreply is None:
             noreply = self.default_noreply
-        cmd = b'flush_all ' + six.text_type(delay).encode(self.encoding)
+        delay = self._check_integer(delay, "delay")
+        cmd = b'flush_all ' + delay
         if noreply:
             cmd += b' noreply'
         cmd += b'\r\n'
@@ -771,6 +773,15 @@ class Client(object):
         if line.startswith(b'SERVER_ERROR'):
             error = line[line.find(b' ') + 1:]
             raise MemcacheServerError(error)
+
+    def _check_integer(self, value, name):
+        """Check that a value is an integer and encode it as a binary string"""
+        if not isinstance(value, six.integer_types):  # includes "long" on py2
+            raise MemcacheIllegalInputError(
+                '%s must be integer, got bad value: %r' % (name, value)
+            )
+
+        return six.text_type(value).encode(self.encoding)
 
     def _extract_value(self, expect_cas, line, buf, remapped_keys,
                        prefixed_keys):
@@ -846,7 +857,7 @@ class Client(object):
             extra += b' ' + cas
         if noreply:
             extra += b' noreply'
-        expire = six.text_type(expire).encode(self.encoding)
+        expire = self._check_integer(expire, "expire")
 
         for key, data in six.iteritems(values):
             # must be able to reliably map responses back to the original order
