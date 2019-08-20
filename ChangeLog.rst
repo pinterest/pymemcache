@@ -1,6 +1,12 @@
 Changelog
 =========
 
+New in version 3.0.0 (unreleased)
+---------------------------------
+
+* Validate integer inputs for ``expire``, ``delay``, ``incr``, ``decr``, and
+  ``memlimit`` -- non-integer values now raise ``MemcacheIllegalInputError``
+
 New in version 2.2.2
 --------------------
 * Fix ``long_description`` string in Python packaging.
@@ -8,12 +14,6 @@ New in version 2.2.2
 New in version 2.2.1
 --------------------
 * Fix ``flags`` when setting multiple differently-typed values at once.
-
-New in version 3.0.0 (unreleased)
----------------------------------
-
-* Validate integer inputs for ``expire``, ``delay``, ``incr``, ``decr``, and
-  ``memlimit`` -- non-integer values now cause ``MemcacheIllegalInputError``s
 
 New in version 2.2.0
 --------------------
