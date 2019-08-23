@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from unittest import TestCase
 
-from pymemcache.serde import (python_memcache_pickle_serde,
-                              PythonMemcachePickleSerde,
+from pymemcache.serde import (pickle_serde,
+                              PickleSerde,
                               FLAG_BYTES,
                               FLAG_PICKLE, FLAG_INTEGER, FLAG_LONG, FLAG_TEXT)
 import pytest
@@ -22,7 +22,7 @@ class CustomInt(int):
 
 @pytest.mark.unit()
 class TestSerde(TestCase):
-    serde = python_memcache_pickle_serde
+    serde = pickle_serde
 
     def check(self, value, expected_flags):
         serialized, flags = self.serde.serialize(b'key', value)
@@ -66,21 +66,21 @@ class TestSerde(TestCase):
 
 @pytest.mark.unit()
 class TestSerdePickleVersion0(TestCase):
-    serde = PythonMemcachePickleSerde(pickle_version=0)
+    serde = PickleSerde(pickle_version=0)
 
 
 @pytest.mark.unit()
 class TestSerdePickleVersion1(TestCase):
-    serde = PythonMemcachePickleSerde(pickle_version=1)
+    serde = PickleSerde(pickle_version=1)
 
 
 @pytest.mark.unit()
 class TestSerdePickleVersion2(TestCase):
-    serde = PythonMemcachePickleSerde(pickle_version=2)
+    serde = PickleSerde(pickle_version=2)
 
 
 @pytest.mark.unit()
 class TestSerdePickleVersionHighest(TestCase):
-    serde = PythonMemcachePickleSerde(
+    serde = PickleSerde(
         pickle_version=pickle.HIGHEST_PROTOCOL
     )

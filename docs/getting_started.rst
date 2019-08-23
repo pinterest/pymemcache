@@ -77,20 +77,19 @@ pymemcache provides a default
     class Foo(object):
       pass
 
-    client = Client(('localhost', 11211),
-        serde=serde.python_memcache_pickle_serde)
+    client = Client(('localhost', 11211), serde=serde.pickle_serde)
     client.set('key', Foo())
     result client.get('key')
 
 The serializer uses the highest pickle protocol available. In order to make
 sure multiple versions of Python can read the protocol version, you can specify
-the version by explicitly instantiating :class:`pymemcache.serde.PythonMemcachePickleSerde`:
+the version by explicitly instantiating :class:`pymemcache.serde.PickleSerde`:
 
 .. code-block:: python
 
     client = Client(
         ('localhost', 11211),
-        serde=serde.PythonMemcachePickleSerde(pickle_version=2)
+        serde=serde.PickleSerde(pickle_version=2)
     )
 
 
@@ -152,8 +151,7 @@ Best Practices
    know about errors from memcache, and make sure you have some other way to
    detect memcache server failures.
  - Unless you have a known reason to do otherwise, use the provided serializer
-   in `pymemcache.serde.python_memcache_pickle_serde` for any de/serialization
-   of objects
+   in `pymemcache.serde.pickle_serde` for any de/serialization of objects.
 
 .. WARNING::
 

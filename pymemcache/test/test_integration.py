@@ -26,7 +26,8 @@ from pymemcache.exceptions import (
     MemcacheClientError
 )
 from pymemcache.serde import (
-    PythonMemcachePickleSerde, python_memcache_pickle_serde
+    PickleSerde,
+    pickle_serde
 )
 
 
@@ -279,7 +280,7 @@ def serde_serialization_helper(client_class, host, port,
 @pytest.mark.integration()
 def test_serde_serialization(client_class, host, port, socket_module):
     serde_serialization_helper(client_class, host, port,
-                               socket_module, python_memcache_pickle_serde)
+                               socket_module, pickle_serde)
 
 
 @pytest.mark.integration()
@@ -287,7 +288,7 @@ def test_serde_serialization0(client_class, host, port, socket_module):
     serde_serialization_helper(
         client_class, host, port,
         socket_module,
-        PythonMemcachePickleSerde(pickle_version=0))
+        PickleSerde(pickle_version=0))
 
 
 @pytest.mark.integration()
@@ -295,7 +296,7 @@ def test_serde_serialization2(client_class, host, port, socket_module):
     serde_serialization_helper(
         client_class, host, port,
         socket_module,
-        PythonMemcachePickleSerde(pickle_version=2))
+        PickleSerde(pickle_version=2))
 
 
 @pytest.mark.integration()

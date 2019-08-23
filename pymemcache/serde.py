@@ -107,21 +107,23 @@ def python_memcache_deserializer(key, value, flags):
     return value
 
 
-class PythonMemcachePickleSerde(object):
+class PickleSerde(object):
     """
     An object which implements the serialization/deserialization protocol for
-    :py:class:`pymemcache.client.base.Client` and its descendants using pickle.
+    :py:class:`pymemcache.client.base.Client` and its descendants using pickle_.
 
     Serialization and deserialization are implemented as methods of this class.
     To implement a custom serialization/deserialization method for pymemcache,
     you should implement the same interface as the one provided by this object
-    -- :py:meth:`pymemcache.serde.PythonMemcachePickleSerde.serialize` and
-    :py:meth:`pymemcache.serde.PythonMemcachePickleSerde.deserialize`. Then,
+    -- :py:meth:`pymemcache.serde.PickleSerde.serialize` and
+    :py:meth:`pymemcache.serde.PickleSerde.deserialize`. Then,
     pass your custom object to the pymemcache client object in place of
-    `PythonMemcachePickleSerde`.
+    `PickleSerde`.
 
     For more details on the serialization protocol, see the class documentation
     for :py:class:`pymemcache.client.base.Client`
+
+    .. pickle: https://docs.python.org/3/library/pickle.html
     """
     def __init__(self, pickle_version=DEFAULT_PICKLE_VERSION):
         self._serialize_func = get_python_memcache_serializer(pickle_version)
@@ -154,4 +156,4 @@ class LegacyWrappingSerde(object):
         return value
 
 
-python_memcache_pickle_serde = PythonMemcachePickleSerde()
+pickle_serde = PickleSerde()

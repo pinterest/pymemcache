@@ -7,6 +7,12 @@ New in version 3.0.0 (unreleased)
 * Validate integer inputs for ``expire``, ``delay``, ``incr``, ``decr``, and
   ``memlimit`` -- non-integer values now raise ``MemcacheIllegalInputError``
 
+* The serialization API has been reworked. Instead of consuming a serializer
+  and deserializer as separate arguments, client objects now expect an argument
+  `serde` to be an object which implements `serialize` and `deserialize`
+  as methods. (`serialize` and `deserialize` are still supported but considered
+  deprecated)
+
 New in version 2.2.2
 --------------------
 * Fix ``long_description`` string in Python packaging.
@@ -14,14 +20,6 @@ New in version 2.2.2
 New in version 2.2.1
 --------------------
 * Fix ``flags`` when setting multiple differently-typed values at once.
-
-New in version 3.0.0 (unreleased)
----------------------------------
-
-* The serialization API has been reworked. Instead of consuming a serializer
-  and deserializer as separate arguments, client objects now expect
-  `serializer` to be an object which implements `serialize` and `deserialize`
-  as methods
 
 New in version 2.2.0
 --------------------

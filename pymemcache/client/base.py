@@ -254,8 +254,7 @@ class Client(object):
           call to a method on the object will do that.
         """
         self.server = server
-        self.serde = (serde if serde else
-                      LegacyWrappingSerde(serializer, deserializer))
+        self.serde = serde or LegacyWrappingSerde(serializer, deserializer)
         self.connect_timeout = connect_timeout
         self.timeout = timeout
         self.no_delay = no_delay
@@ -988,8 +987,7 @@ class PooledClient(object):
                  allow_unicode_keys=False,
                  encoding='ascii'):
         self.server = server
-        self.serde = (serde if serde else
-                      LegacyWrappingSerde(serializer, deserializer))
+        self.serde = serde or LegacyWrappingSerde(serializer, deserializer)
         self.connect_timeout = connect_timeout
         self.timeout = timeout
         self.no_delay = no_delay
