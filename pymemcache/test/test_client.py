@@ -471,34 +471,47 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         result = client.prepend(b'key', b'value', noreply=False)
         assert result is True
 
+    def test_cas_malformed(self):
+        client = self.make_client([b'STORED\r\n'])
+        with pytest.raises(MemcacheIllegalInputError):
+            client.cas(b'key', b'value', 'nonintegerstring', noreply=False)
+
+        with pytest.raises(MemcacheIllegalInputError):
+            # even a space makes it a noninteger string
+            client.cas(b'key', b'value', '123 ', noreply=False)
+
+        with pytest.raises(MemcacheIllegalInputError):
+            # non-ASCII digit
+            client.cas(b'key', b'value', u'⁰', noreply=False)
+
     def test_cas_stored(self):
         client = self.make_client([b'STORED\r\n'])
-        result = client.cas(b'key', b'value', b'cas', noreply=False)
+        result = client.cas(b'key', b'value', b'123', noreply=False)
         assert result is True
 
         # unit test for encoding passed in __init__()
         client = self.make_client([b'STORED\r\n'], encoding='utf-8')
-        result = client.cas(b'key', b'value', b'cas', noreply=False)
+        result = client.cas(b'key', b'value', b'123', noreply=False)
         assert result is True
 
     def test_cas_exists(self):
         client = self.make_client([b'EXISTS\r\n'])
-        result = client.cas(b'key', b'value', b'cas', noreply=False)
+        result = client.cas(b'key', b'value', b'123', noreply=False)
         assert result is False
 
         # unit test for encoding passed in __init__()
         client = self.make_client([b'EXISTS\r\n'], encoding='utf-8')
-        result = client.cas(b'key', b'value', b'cas', noreply=False)
+        result = client.cas(b'key', b'value', b'123', noreply=False)
         assert result is False
 
     def test_cas_not_found(self):
         client = self.make_client([b'NOT_FOUND\r\n'])
-        result = client.cas(b'key', b'value', b'cas', noreply=False)
+        result = client.cas(b'key', b'value', b'123', noreply=False)
         assert result is None
 
         # unit test for encoding passed in __init__()
         client = self.make_client([b'NOT_FOUND\r\n'], encoding='utf-8')
-        result = client.cas(b'key', b'value', b'cas', noreply=False)
+        result = client.cas(b'key', b'value', b'123', noreply=False)
         assert result is None
 
     def test_cr_nl_boundaries(self):

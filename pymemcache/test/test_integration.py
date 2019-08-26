@@ -151,7 +151,12 @@ def test_cas(client_class, host, port, socket_module):
     result = client.set(b'key', b'value', noreply=False)
     assert result is True
 
+    # binary, string, and raw int all match -- should all be encoded as b'1'
     result = client.cas(b'key', b'value', b'1', noreply=False)
+    assert result is False
+    result = client.cas(b'key', b'value', '1', noreply=False)
+    assert result is False
+    result = client.cas(b'key', b'value', 1, noreply=False)
     assert result is False
 
     result, cas = client.gets(b'key')

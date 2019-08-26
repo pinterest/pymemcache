@@ -787,6 +787,32 @@ class Client(object):
 
         return six.text_type(value).encode(self.encoding)
 
+    def _check_cas(self, cas):
+        """Check that a value is a valid input for 'cas' -- either an int or a
+        string containing only 0-9
+
+        The value will be (re)encoded so that we can accept strings or bytes.
+        """
+        # convert non-binary values to binary
+        if isinstance(cas, (six.integer_types, VALID_STRING_TYPES)):
+            try:
+                cas = six.text_type(cas).encode(self.encoding)
+            except UnicodeEncodeError:
+                raise MemcacheIllegalInputError(
+                    'non-ASCII cas value: %r' % cas)
+        elif not isinstance(cas, six.binary_type):
+            raise MemcacheIllegalInputError(
+                'cas must be integer, string, or bytes, got bad value: %r' % cas
+            )
+
+        if not cas.isdigit():
+            raise MemcacheIllegalInputError(
+                'cas must only contain values in 0-9, got bad value: %r'
+                % cas
+            )
+
+        return cas
+
     def _extract_value(self, expect_cas, line, buf, remapped_keys,
                        prefixed_keys):
         """
@@ -857,6 +883,7 @@ class Client(object):
 
         extra = b''
         if cas is not None:
+            cas = self._check_cas(cas)
             extra += b' ' + cas
         if noreply:
             extra += b' noreply'
