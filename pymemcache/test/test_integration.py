@@ -26,9 +26,8 @@ from pymemcache.exceptions import (
     MemcacheClientError
 )
 from pymemcache.serde import (
-    get_python_memcache_serializer,
-    python_memcache_serializer,
-    python_memcache_deserializer
+    PickleSerde,
+    pickle_serde
 )
 
 
@@ -233,15 +232,16 @@ def test_misc(client_class, host, port, socket_module):
 
 @pytest.mark.integration()
 def test_serialization_deserialization(host, port, socket_module):
-    def _ser(key, value):
-        return json.dumps(value).encode('ascii'), 1
+    class JsonSerde(object):
+        def serialize(self, key, value):
+            return json.dumps(value).encode('ascii'), 1
 
-    def _des(key, value, flags):
-        if flags == 1:
-            return json.loads(value.decode('ascii'))
-        return value
+        def deserialize(self, key, value, flags):
+            if flags == 1:
+                return json.loads(value.decode('ascii'))
+            return value
 
-    client = Client((host, port), serializer=_ser, deserializer=_des,
+    client = Client((host, port), serde=JsonSerde(),
                     socket_module=socket_module)
     client.flush_all()
 
@@ -252,15 +252,14 @@ def test_serialization_deserialization(host, port, socket_module):
 
 
 def serde_serialization_helper(client_class, host, port,
-                               socket_module, serializer):
+                               socket_module, serde):
     def check(value):
         client.set(b'key', value, noreply=False)
         result = client.get(b'key')
         assert result == value
         assert type(result) is type(value)
 
-    client = client_class((host, port), serializer=serializer,
-                          deserializer=python_memcache_deserializer,
+    client = client_class((host, port), serde=serde,
                           socket_module=socket_module)
     client.flush_all()
 
@@ -281,7 +280,7 @@ def serde_serialization_helper(client_class, host, port,
 @pytest.mark.integration()
 def test_serde_serialization(client_class, host, port, socket_module):
     serde_serialization_helper(client_class, host, port,
-                               socket_module, python_memcache_serializer)
+                               socket_module, pickle_serde)
 
 
 @pytest.mark.integration()
@@ -289,7 +288,7 @@ def test_serde_serialization0(client_class, host, port, socket_module):
     serde_serialization_helper(
         client_class, host, port,
         socket_module,
-        get_python_memcache_serializer(pickle_version=0))
+        PickleSerde(pickle_version=0))
 
 
 @pytest.mark.integration()
@@ -297,7 +296,7 @@ def test_serde_serialization2(client_class, host, port, socket_module):
     serde_serialization_helper(
         client_class, host, port,
         socket_module,
-        get_python_memcache_serializer(pickle_version=2))
+        PickleSerde(pickle_version=2))
 
 
 @pytest.mark.integration()

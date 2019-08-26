@@ -17,6 +17,7 @@ import six
 
 from pymemcache import pool
 
+from pymemcache.serde import LegacyWrappingSerde
 from pymemcache.exceptions import (
     MemcacheClientError,
     MemcacheUnknownCommandError,
@@ -144,36 +145,38 @@ class Client(object):
      just calling encode on the string (using UTF-8, for instance).
 
      If you intend to use anything but str as a value, it is a good idea to use
-     a serializer and deserializer. The pymemcache.serde library has some
-     already implemented serializers, including one that is compatible with
-     the python-memcache library.
+     a serializer. The pymemcache.serde library has an already implemented
+     serializer which pickles and unpickles data.
 
     *Serialization and Deserialization*
 
-     The constructor takes two optional functions, one for "serialization" of
-     values, and one for "deserialization". The serialization function takes
-     two arguments, a key and a value, and returns a tuple of two elements, the
-     serialized value, and an integer in the range 0-65535 (the "flags"). The
-     deserialization function takes three parameters, a key, value and flags
-     and returns the deserialized value.
+     The constructor takes an optional object, the "serializer/deserializer"
+     ("serde"), which is responsible for both serialization and deserialization
+     of objects. That object must satisfy the serializer interface by providing
+     two methods: `serialize` and `deserialize`. `serialize` takes two
+     arguments, a key and a value, and returns a tuple of two elements, the
+     serialized value, and an integer in the range 0-65535 (the "flags").
+     `deserialize` takes three parameters, a key, value, and flags, and returns
+     the deserialized value.
 
      Here is an example using JSON for non-str values:
 
      .. code-block:: python
 
-         def serialize_json(key, value):
-             if type(value) == str:
-                 return value, 1
-             return json.dumps(value), 2
+         class JSONSerde(object):
+             def serialize(self, key, value):
+                 if isinstance(value, str):
+                     return value, 1
+                 return json.dumps(value), 2
 
-         def deserialize_json(key, value, flags):
-             if flags == 1:
-                 return value
+             def deserialize(self, key, value, flags):
+                 if flags == 1:
+                     return value
 
-             if flags == 2:
-                 return json.loads(value)
+                 if flags == 2:
+                     return json.loads(value)
 
-             raise Exception("Unknown flags for value: {1}".format(flags))
+                 raise Exception("Unknown flags for value: {1}".format(flags))
 
     .. note::
 
@@ -205,6 +208,7 @@ class Client(object):
 
     def __init__(self,
                  server,
+                 serde=None,
                  serializer=None,
                  deserializer=None,
                  connect_timeout=None,
@@ -221,8 +225,9 @@ class Client(object):
 
         Args:
           server: tuple(hostname, port) or string containing a UNIX socket path.
-          serializer: optional function, see notes in the class docs.
-          deserializer: optional function, see notes in the class docs.
+          serde: optional seralizer object, see notes in the class docs.
+          serializer: deprecated serialization function
+          deserializer: deprecated deserialization function
           connect_timeout: optional float, seconds to wait for a connection to
             the memcached server. Defaults to "forever" (uses the underlying
             default socket timeout, which can be very long).
@@ -249,8 +254,7 @@ class Client(object):
           call to a method on the object will do that.
         """
         self.server = server
-        self.serializer = serializer
-        self.deserializer = deserializer
+        self.serde = serde or LegacyWrappingSerde(serializer, deserializer)
         self.connect_timeout = connect_timeout
         self.timeout = timeout
         self.no_delay = no_delay
@@ -800,8 +804,7 @@ class Client(object):
 
         buf, value = _readvalue(self.sock, buf, int(size))
         key = remapped_keys[key]
-        if self.deserializer:
-            value = self.deserializer(key, value, int(flags))
+        value = self.serde.deserialize(key, value, int(flags))
 
         if expect_cas:
             return key, (value, cas), buf
@@ -864,10 +867,7 @@ class Client(object):
             keys.append(key)
 
             key = self.check_key(key)
-            if self.serializer:
-                data, data_flags = self.serializer(key, data)
-            else:
-                data_flags = 0
+            data, data_flags = self.serde.serialize(key, data)
 
             # If 'flags' was explicitly provided, it overrides the value
             # returned by the serializer.
@@ -965,10 +965,14 @@ class PooledClient(object):
                       eventlet lock or semaphore could be used instead)
 
     Further arguments are interpreted as for :py:class:`.Client` constructor.
+
+    Note: if `serde` is given, the same object will be used for *all* clients
+    in the pool. Your serde object must therefore be thread-safe.
     """
 
     def __init__(self,
                  server,
+                 serde=None,
                  serializer=None,
                  deserializer=None,
                  connect_timeout=None,
@@ -983,8 +987,7 @@ class PooledClient(object):
                  allow_unicode_keys=False,
                  encoding='ascii'):
         self.server = server
-        self.serializer = serializer
-        self.deserializer = deserializer
+        self.serde = serde or LegacyWrappingSerde(serializer, deserializer)
         self.connect_timeout = connect_timeout
         self.timeout = timeout
         self.no_delay = no_delay
@@ -1011,8 +1014,7 @@ class PooledClient(object):
 
     def _create_client(self):
         client = Client(self.server,
-                        serializer=self.serializer,
-                        deserializer=self.deserializer,
+                        serde=self.serde,
                         connect_timeout=self.connect_timeout,
                         timeout=self.timeout,
                         no_delay=self.no_delay,
