@@ -13,6 +13,9 @@ New in version 3.0.0 (unreleased)
   as methods. (`serialize` and `deserialize` are still supported but considered
   deprecated)
 
+* Validate inputs for ``cas`` -- values which are not integers or strings of
+  0-9 now raise ``MemcacheIllegalInputError``
+
 New in version 2.2.2
 --------------------
 * Fix ``long_description`` string in Python packaging.
