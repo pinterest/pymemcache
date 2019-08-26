@@ -126,6 +126,7 @@ Credits
 * `Nicholas Charriere <https://github.com/nichochar>`_
 * `Joe Gordon <https://github.com/jogo>`_
 * `Jon Parise <https://github.com/jparise>`_
+* `Stephen Rosen <https://github.com/sirosen>`_
 
 We're Hiring!
 =============
