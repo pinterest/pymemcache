@@ -29,6 +29,6 @@ jobs:
       memcached:
         image: memcached:latest
         ports:
-        - 11211/udp
+        - 11211/tcp
         # needed because the memcached container does not provide a healthcheck
         options: --health-cmd "timeout 5 bash -c 'cat < /dev/null > /dev/udp/127.0.0.1/11211'" --health-interval 10s --health-timeout 5s --health-retries 5
