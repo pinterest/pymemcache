@@ -16,18 +16,19 @@ jobs:
       uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Dump matrix context
-      env:
-        MATRIX_CONTEXT: ${{ toJson(matrix) }}
-      run: echo "$MATRIX_CONTEXT"
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         sudo apt-get install libmemcached-dev
-    - name: Run tox
+    - name: Lint
       run: |
-        pip install tox
-        tox -- pymemcache/test/ -m unit,integration --port ${{ job.services.memcached.ports[11211] }}
+        pip install flake8
+        flake8 pymemcache/
+        python setup.py check --restructuredtext
+    - name: Tests
+      run: |
+        pip install -r test-requirements.txt
+        py.test pymemcache/test/ -m unit,integration --port ${{ job.services.memcached.ports[11211] }}
 
     services:
       memcached:
