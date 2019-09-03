@@ -20,10 +20,14 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-    - name: Start memcached
-      run: |
-        docker run --name pymemcache -d memcached memcached -m 4
     - name: Run tox
       run: |
         pip install tox
         tox -- -m unit,integration
+    services:
+      memcached:
+        image: memcached:latest
+        ports:
+        - 11211/udp
+        # needed because the memcached container does not provide a healthcheck
+        options: --health-cmd "timeout 5 bash -c 'cat < /dev/null > /dev/udp/127.0.0.1/11211'" --health-interval 10s --health-timeout 5s --health-retries 5
