@@ -24,7 +24,7 @@ jobs:
     - name: Run tox
       run: |
         pip install tox
-        tox -- -m unit,integration --port ${{ job.services.memcached.ports[11211] }}
+        tox -- pymemcache/test/ -m unit,integration --port ${{ job.services.memcached.ports[11211] }}
     services:
       memcached:
         image: memcached:latest
