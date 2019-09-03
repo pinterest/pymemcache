@@ -21,6 +21,7 @@ jobs:
         python -m pip install --upgrade pip
         sudo apt-get install libmemcached-dev
     - name: Lint
+      if: matrix.python-version == '2.7' || matrix.python-version == '3.7'
       run: |
         pip install flake8
         flake8 pymemcache/
