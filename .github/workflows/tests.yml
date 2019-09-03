@@ -4,12 +4,11 @@ on: [push]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
       matrix:
-        python-version: [2.7, 3.5, 3.6, 3.7, pypy, pypy3]
+        python-version: [2.7, 3.5, 3.6, 3.7, pypy2, pypy3]
 
     steps:
     - uses: actions/checkout@v1
@@ -25,10 +24,9 @@ jobs:
       run: |
         pip install tox
         tox -- pymemcache/test/ -m unit,integration --port ${{ job.services.memcached.ports[11211] }}
+
     services:
       memcached:
         image: memcached:latest
         ports:
         - 11211/tcp
-        # needed because the memcached container does not provide a healthcheck
-        options: --health-cmd "timeout 5 bash -c 'cat < /dev/null > /dev/udp/127.0.0.1/11211'" --health-interval 10s --health-timeout 5s --health-retries 5
