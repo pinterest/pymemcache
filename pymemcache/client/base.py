@@ -376,7 +376,7 @@ class Client(object):
           return value is True if the value was stored, and False if it was
           not (because the key already existed).
         """
-        if noreply is None:
+        if noreply is True:
             noreply = self.default_noreply
         return self._store_cmd(b'add', {key: value}, expire, noreply,
                                flags=flags)[key]
