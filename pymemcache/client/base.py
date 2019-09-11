@@ -372,9 +372,10 @@ class Client(object):
                   flags
 
         Returns:
-          If noreply is True, the return value is always True. Otherwise the
-          return value is True if the value was stored, and False if it was
-          not (because the key already existed).
+          If ``noreply`` is True (or if it is unset and ``self.default_noreply``
+          is True), the return value is always True. Otherwise the return value
+          is True if the value was stored, and False if it was not (because
+          the key already existed).
         """
         if noreply is None:
             noreply = self.default_noreply
@@ -396,7 +397,8 @@ class Client(object):
                 flags
 
         Returns:
-          If noreply is True, always returns True. Otherwise returns True if
+          If ``noreply`` is True (or if it is unset and ``self.default_noreply``
+          is True), the return value is always True. Otherwise returns True if
           the value was stored and False if it wasn't (because the key didn't
           already exist).
         """
@@ -464,7 +466,8 @@ class Client(object):
                 flags
 
         Returns:
-          If noreply is True, always returns True. Otherwise returns None if
+          If ``noreply`` is True (or if it is unset and ``self.default_noreply``
+          is True), the return value is always True. Otherwise returns None if
           the key didn't exist, False if it existed but had a different cas
           value and True if it existed and was changed.
         """
@@ -546,7 +549,8 @@ class Client(object):
                    self.default_noreply).
 
         Returns:
-          If noreply is True, always returns True. Otherwise returns True if
+          If ``noreply`` is True (or if it is unset and ``self.default_noreply``
+          is True), the return value is always True. Otherwise returns True if
           the key was deleted, and False if it wasn't found.
         """
         if noreply is None:
