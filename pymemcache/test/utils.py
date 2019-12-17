@@ -138,6 +138,30 @@ class MockMemcacheClient(object):
             self.delete(key, noreply)
         return True
 
+    def prepend(self, key, value, expire=0, noreply=None, flags=None):
+        current = self.get(key)
+        if current is not None:
+            if (isinstance(value, six.string_types) and
+                    not isinstance(value, six.binary_type)):
+                try:
+                    value = value.encode(self.encoding)
+                except (UnicodeEncodeError, UnicodeDecodeError):
+                    raise MemcacheIllegalInputError
+            self.set(key, value + current)
+        return True
+
+    def append(self, key, value, expire=0, noreply=None, flags=None):
+        current = self.get(key)
+        if current is not None:
+            if (isinstance(value, six.string_types) and
+                    not isinstance(value, six.binary_type)):
+                try:
+                    value = value.encode(self.encoding)
+                except (UnicodeEncodeError, UnicodeDecodeError):
+                    raise MemcacheIllegalInputError
+            self.set(key, current + value)
+        return True
+
     delete_multi = delete_many
 
     def stats(self):
