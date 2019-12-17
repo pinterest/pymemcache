@@ -103,3 +103,13 @@ def test_incr_decr():
 
     client.decr(b"k", 2)
     assert client.get(b"k") == 4
+
+
+@pytest.mark.unit()
+def test_prepand_append():
+    client = MockMemcacheClient()
+
+    client.set(b"k", '1')
+    client.append(b"k", 'a')
+    client.prepend(b"k", 'p')
+    assert client.get(b"k") == b'p1a'
