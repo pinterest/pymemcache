@@ -230,6 +230,24 @@ def test_incr_decr(client_class, host, port, socket_module):
 
 
 @pytest.mark.integration()
+def test_touch(client_class, host, port, socket_module):
+    client = client_class((host, port), socket_module=socket_module)
+    client.flush_all()
+
+    result = client.touch(b'key', noreply=False)
+    assert result is False
+
+    result = client.set(b'key', b'0', 1, noreply=False)
+    assert result is True
+
+    result = client.touch(b'key', noreply=False)
+    assert result is True
+
+    result = client.touch(b'key', 1, noreply=False)
+    assert result is True
+
+
+@pytest.mark.integration()
 def test_misc(client_class, host, port, socket_module):
     client = Client((host, port), socket_module=socket_module)
     client.flush_all()

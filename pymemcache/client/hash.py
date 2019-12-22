@@ -422,6 +422,9 @@ class HashClient(object):
     def replace(self, key, *args, **kwargs):
         return self._run_cmd('replace', key, False, *args, **kwargs)
 
+    def touch(self, key, *args, **kwargs):
+        return self._run_cmd('touch', key, False, *args, **kwargs)
+
     def flush_all(self):
         for _, client in self.clients.items():
             self._safely_run_func(client, client.flush_all, False)
