@@ -143,6 +143,21 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         assert (result ==
                 {b'key1': (b'value1', b'1'), b'key3': (b'value2', b'1')})
 
+    def test_touch_not_found(self):
+        client = self.make_client([b'NOT_FOUND\r\n'])
+        result = client.touch(b'key', noreply=False)
+        assert result is False
+
+    def test_touch_no_expiry_found(self):
+        client = self.make_client([b'TOUCHED\r\n'])
+        result = client.touch(b'key', noreply=False)
+        assert result is True
+
+    def test_touch_with_expiry_found(self):
+        client = self.make_client([b'TOUCHED\r\n'])
+        result = client.touch(b'key', 1, noreply=False)
+        assert result is True
+
     def test_no_servers_left(self):
         from pymemcache.client.hash import HashClient
         client = HashClient(
