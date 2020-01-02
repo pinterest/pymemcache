@@ -1,20 +1,20 @@
 Changelog
 =========
 
-New in version 3.0.0 (unreleased)
----------------------------------
-
-* Validate integer inputs for ``expire``, ``delay``, ``incr``, ``decr``, and
-  ``memlimit`` -- non-integer values now raise ``MemcacheIllegalInputError``
-
+New in version 3.0.0
+--------------------
 * The serialization API has been reworked. Instead of consuming a serializer
   and deserializer as separate arguments, client objects now expect an argument
-  `serde` to be an object which implements `serialize` and `deserialize`
-  as methods. (`serialize` and `deserialize` are still supported but considered
-  deprecated)
-
+  ``serde`` to be an object which implements ``serialize`` and ``deserialize``
+  as methods. (``serialize`` and ``deserialize`` are still supported but
+  considered deprecated.)
+* Validate integer inputs for ``expire``, ``delay``, ``incr``, ``decr``, and
+  ``memlimit`` -- non-integer values now raise ``MemcacheIllegalInputError``
 * Validate inputs for ``cas`` -- values which are not integers or strings of
   0-9 now raise ``MemcacheIllegalInputError``
+* Add ``prepend`` and ``append`` support to ``MockMemcacheClient``.
+* Add the ``touch`` method to ``HashClient``.
+* Added official support for Python 3.8.
 
 New in version 2.2.2
 --------------------
