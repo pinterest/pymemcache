@@ -43,6 +43,10 @@ class MockMemcacheClient(object):
         self.ignore_exc = ignore_exc
         self.encoding = encoding
 
+    def clear(self):
+        """Method used to clear/reset mock cache"""
+        self._contents.clear()
+
     def get(self, key, default=None):
         if not self.allow_unicode_keys:
             if isinstance(key, six.string_types):
