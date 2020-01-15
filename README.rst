@@ -124,6 +124,7 @@ Credits
 * `Joe Gordon <https://github.com/jogo>`_
 * `Jon Parise <https://github.com/jparise>`_
 * `Stephen Rosen <https://github.com/sirosen>`_
+* `Feras Alazzeh <https://github.com/FerasAlazzeh>`_
 
 We're Hiring!
 =============
