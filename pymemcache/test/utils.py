@@ -22,6 +22,8 @@ class MockMemcacheClient(object):
     def __init__(self,
                  server=None,
                  serde=None,
+                 serializer=None,
+                 deserializer=None,
                  connect_timeout=None,
                  timeout=None,
                  no_delay=False,
@@ -32,7 +34,7 @@ class MockMemcacheClient(object):
 
         self._contents = {}
 
-        self.serde = serde or LegacyWrappingSerde(None, None)
+        self.serde = serde or LegacyWrappingSerde(serializer, deserializer)
         self.allow_unicode_keys = allow_unicode_keys
 
         # Unused, but present for interface compatibility
