@@ -266,6 +266,33 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
             [b'STORED\r\n', b'NOT_STORED\r\n', b'STORED\r\n'],
         ])
         result = client.set_many(values, noreply=True)
-        assert result == []
+        assert result == 
+       
+    def test_server_encoding_pooled(self):
+        """
+        test passed encoding from hash client to pooled clients
+        """
+        encoding = 'utf8'
+        from pymemcache.client.hash import HashClient
+        hash_client = HashClient(
+            [('example.com', 11211)], use_pooling=True,
+            encoding=encoding
+        )
+
+        for key, client in hash_client.clients.items():
+            assert client.encoding == encoding
+
+    def test_server_encoding_client(self):
+        """
+        test passed encoding from hash client to pooled clients
+        """
+        encoding = 'utf8'
+        from pymemcache.client.hash import HashClient
+        hash_client = HashClient(
+            [('example.com', 11211)], encoding=encoding
+        )
+
+        for key, client in hash_client.clients.items():
+            assert client.encoding == encoding
 
     # TODO: Test failover logic
