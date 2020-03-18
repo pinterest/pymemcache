@@ -267,7 +267,7 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         ])
         result = client.set_many(values, noreply=True)
         assert result == []
-       
+
     def test_server_encoding_pooled(self):
         """
         test passed encoding from hash client to pooled clients
@@ -279,7 +279,7 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
             encoding=encoding
         )
 
-        for key, client in hash_client.clients.items():
+        for client in hash_client.clients.values():
             assert client.encoding == encoding
 
     def test_server_encoding_client(self):
@@ -292,7 +292,7 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
             [('example.com', 11211)], encoding=encoding
         )
 
-        for key, client in hash_client.clients.items():
+        for client in hash_client.clients.values():
             assert client.encoding == encoding
 
     # TODO: Test failover logic
