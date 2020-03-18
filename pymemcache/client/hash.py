@@ -87,6 +87,7 @@ class HashClient(object):
             'deserializer': deserializer,
             'allow_unicode_keys': allow_unicode_keys,
             'default_noreply': default_noreply,
+            'encoding': encoding
         }
 
         if use_pooling is True:
