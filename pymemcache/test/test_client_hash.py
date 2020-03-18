@@ -284,7 +284,7 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
 
     def test_server_encoding_client(self):
         """
-        test passed encoding from hash client to pooled clients
+        test passed encoding from hash client to clients
         """
         encoding = 'utf8'
         from pymemcache.client.hash import HashClient
