@@ -266,7 +266,7 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
             [b'STORED\r\n', b'NOT_STORED\r\n', b'STORED\r\n'],
         ])
         result = client.set_many(values, noreply=True)
-        assert result == 
+        assert result == []
        
     def test_server_encoding_pooled(self):
         """
