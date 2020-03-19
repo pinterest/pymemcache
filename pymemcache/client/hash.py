@@ -3,7 +3,7 @@ import time
 import logging
 import six
 
-from pymemcache.client.base import Client, PooledClient, _check_key
+from pymemcache.client.base import Client, PooledClient, check_key_helper
 from pymemcache.client.rendezvous import RendezvousHash
 from pymemcache.exceptions import MemcacheError
 
@@ -122,7 +122,7 @@ class HashClient(object):
         self.hasher.remove_node(key)
 
     def _get_client(self, key):
-        _check_key(key, self.allow_unicode_keys, self.key_prefix)
+        check_key_helper(key, self.allow_unicode_keys, self.key_prefix)
         if len(self._dead_clients) > 0:
             current_time = time.time()
             ldc = self._last_dead_check_time

@@ -82,7 +82,7 @@ STAT_TYPES = {
 # Common helper functions.
 
 
-def _check_key(key, allow_unicode_keys, key_prefix=b''):
+def check_key_helper(key, allow_unicode_keys, key_prefix=b''):
     """Checks key and add key_prefix."""
     if allow_unicode_keys:
         if isinstance(key, six.text_type):
@@ -272,8 +272,8 @@ class Client(object):
 
     def check_key(self, key):
         """Checks key and add key_prefix."""
-        return _check_key(key, allow_unicode_keys=self.allow_unicode_keys,
-                          key_prefix=self.key_prefix)
+        return check_key_helper(key, allow_unicode_keys=self.allow_unicode_keys,
+                                key_prefix=self.key_prefix)
 
     def _connect(self):
         self.close()
@@ -1040,8 +1040,8 @@ class PooledClient(object):
 
     def check_key(self, key):
         """Checks key and add key_prefix."""
-        return _check_key(key, allow_unicode_keys=self.allow_unicode_keys,
-                          key_prefix=self.key_prefix)
+        return check_key_helper(key, allow_unicode_keys=self.allow_unicode_keys,
+                                key_prefix=self.key_prefix)
 
     def _create_client(self):
         client = Client(self.server,

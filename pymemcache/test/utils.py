@@ -11,6 +11,7 @@ import six
 
 from pymemcache.exceptions import MemcacheIllegalInputError
 from pymemcache.serde import LegacyWrappingSerde
+from pymemcache.client.base import check_key_helper
 
 
 class MockMemcacheClient(object):
@@ -45,20 +46,16 @@ class MockMemcacheClient(object):
         self.ignore_exc = ignore_exc
         self.encoding = encoding
 
+    def check_key(self, key):
+        """Checks key and add key_prefix."""
+        return check_key_helper(key, allow_unicode_keys=self.allow_unicode_keys)
+
     def clear(self):
         """Method used to clear/reset mock cache"""
         self._contents.clear()
 
     def get(self, key, default=None):
-        if not self.allow_unicode_keys:
-            if isinstance(key, six.string_types):
-                try:
-                    if isinstance(key, bytes):
-                        key = key.decode().encode('ascii')
-                    else:
-                        key = key.encode('ascii')
-                except (UnicodeEncodeError, UnicodeDecodeError):
-                    raise MemcacheIllegalInputError
+        key = self.check_key(key)
 
         if key not in self._contents:
             return default
@@ -81,15 +78,7 @@ class MockMemcacheClient(object):
     get_multi = get_many
 
     def set(self, key, value, expire=0, noreply=True, flags=0):
-        if not self.allow_unicode_keys:
-            if isinstance(key, six.string_types):
-                try:
-                    if isinstance(key, bytes):
-                        key = key.decode().encode()
-                    else:
-                        key = key.encode(self.encoding)
-                except (UnicodeEncodeError, UnicodeDecodeError):
-                    raise MemcacheIllegalInputError
+        key = self.check_key(key)
         if (isinstance(value, six.string_types) and
                 not isinstance(value, six.binary_type)):
             try:

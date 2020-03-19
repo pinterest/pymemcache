@@ -296,6 +296,14 @@ class ClientTestMixin(object):
         result = client.get(b'key')
         assert result is None
 
+    def test_space_key(self):
+        client = self.make_client([b''])
+        with pytest.raises(MemcacheIllegalInputError):
+            client.get(b'space key')
+
+        with pytest.raises(MemcacheIllegalInputError):
+            client.set(b'space key', b'value')
+
     def test_get_not_found_default(self):
         client = self.make_client([b'END\r\n'])
         result = client.get(b'key', default='foobar')
