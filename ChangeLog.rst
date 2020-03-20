@@ -1,6 +1,12 @@
 Changelog
 =========
 
+New in version 3.0.1
+--------------------
+* Make MockMemcacheClient more consistent with the real client.
+* Pass ``encoding`` from HashClient to its pooled clients when ``use_pooling``
+  is enabled.
+
 New in version 3.0.0
 --------------------
 * The serialization API has been reworked. Instead of consuming a serializer
