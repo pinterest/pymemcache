@@ -313,4 +313,24 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         # Client should be retried and brought back
         assert client.get(b"key") == "Some value"
         assert ("127.0.0.1", 11211) not in client._dead_clients
+
+    @mock.patch("pymemcache.client.hash.Client")
+    def test_failed_is_retried(self, client_patch):
+        client = HashClient([], retry_attempts=1, retry_timeout=0)
+        client.add_server("127.0.0.1", 11211)
+
+        assert client_patch.call_count == 1
+
+        test_client = client_patch.return_value
+        test_client.server = ("127.0.0.1", 11211)
+
+        test_client.get.side_effect = socket.timeout()
+        with pytest.raises(socket.timeout):
+            client.get(b"key", noreply=False)
+
+        test_client.get.side_effect = lambda *_: "Some value"
+        assert client.get(b"key") == "Some value"
+
+        assert client_patch.call_count == 1
+
     # TODO: Test failover logic
