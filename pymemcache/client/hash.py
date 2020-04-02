@@ -36,7 +36,8 @@ class HashClient(object):
         ignore_exc=False,
         allow_unicode_keys=False,
         default_noreply=True,
-        encoding='ascii'
+        encoding='ascii',
+        tls_context=None
     ):
         """
         Constructor.
@@ -87,7 +88,8 @@ class HashClient(object):
             'deserializer': deserializer,
             'allow_unicode_keys': allow_unicode_keys,
             'default_noreply': default_noreply,
-            'encoding': encoding
+            'encoding': encoding,
+            'tls_context': tls_context,
         }
 
         if use_pooling is True:
@@ -99,6 +101,7 @@ class HashClient(object):
         for server, port in servers:
             self.add_server(server, port)
         self.encoding = encoding
+        self.tls_context = tls_context
 
     def add_server(self, server, port):
         key = '%s:%s' % (server, port)

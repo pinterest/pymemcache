@@ -219,7 +219,8 @@ class Client(object):
                  key_prefix=b'',
                  default_noreply=True,
                  allow_unicode_keys=False,
-                 encoding='ascii'):
+                 encoding='ascii',
+                 tls_context=None):
         """
         Constructor.
 
@@ -269,6 +270,7 @@ class Client(object):
         self.default_noreply = default_noreply
         self.allow_unicode_keys = allow_unicode_keys
         self.encoding = encoding
+        self.tls_context = tls_context
 
     def check_key(self, key):
         """Checks key and add key_prefix."""
@@ -291,6 +293,11 @@ class Client(object):
             if self.no_delay and sock.family == self.socket_module.AF_INET:
                 sock.setsockopt(self.socket_module.IPPROTO_TCP,
                                 self.socket_module.TCP_NODELAY, 1)
+
+            if self.tls_context is not None and self.socket_module.AF_INET:
+                sock = self.tls_context.wrap_socket(
+                    sock, server_hostname=self.server[0]
+                )
         except Exception:
             sock.close()
             raise
@@ -1016,7 +1023,8 @@ class PooledClient(object):
                  lock_generator=None,
                  default_noreply=True,
                  allow_unicode_keys=False,
-                 encoding='ascii'):
+                 encoding='ascii',
+                 tls_context=None):
         self.server = server
         self.serde = serde or LegacyWrappingSerde(serializer, deserializer)
         self.connect_timeout = connect_timeout
@@ -1037,6 +1045,7 @@ class PooledClient(object):
             max_size=max_pool_size,
             lock_generator=lock_generator)
         self.encoding = encoding
+        self.tls_context = tls_context
 
     def check_key(self, key):
         """Checks key and add key_prefix."""
@@ -1055,7 +1064,8 @@ class PooledClient(object):
                         socket_module=self.socket_module,
                         key_prefix=self.key_prefix,
                         default_noreply=self.default_noreply,
-                        allow_unicode_keys=self.allow_unicode_keys)
+                        allow_unicode_keys=self.allow_unicode_keys,
+                        tls_context=self.tls_context)
         return client
 
     def close(self):
