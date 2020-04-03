@@ -41,3 +41,7 @@ jobs:
         image: memcached:latest
         ports:
         - 11211/tcp
+      tls_memcached:
+        image: scoriacorp/tls_memcached:latest
+        ports:
+        - 11211/tcp
