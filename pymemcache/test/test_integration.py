@@ -366,9 +366,6 @@ def test_errors(client_class, host, port, socket_module):
 
 @pytest.mark.integration()
 def test_tls(client_class, tls_host, tls_port, socket_module, tls_context):
-    if six.PY2:
-        pytest.skip("Not testing py2 for now due to some gevent issues")
-
     client = client_class(
         (tls_host, tls_port),
         socket_module=socket_module,
