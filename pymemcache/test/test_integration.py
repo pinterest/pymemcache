@@ -362,3 +362,19 @@ def test_errors(client_class, host, port, socket_module):
 
     with pytest.raises(MemcacheClientError):
         _unicode_value_in_set()
+
+
+@pytest.mark.integration()
+def test_tls(client_class, tls_host, tls_port, socket_module, tls_context):
+    client = client_class(
+        (tls_host, tls_port),
+        socket_module=socket_module,
+        tls_context=tls_context
+    )
+    client.flush_all()
+
+    key = b'key'
+    value = b'value'
+    key2 = b'key2'
+    value2 = b'value2'
+    get_set_helper(client, key, value, key2, value2)

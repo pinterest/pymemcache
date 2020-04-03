@@ -1,5 +1,6 @@
 import pytest
 import socket
+import ssl
 
 
 def pytest_addoption(parser):
@@ -8,6 +9,12 @@ def pytest_addoption(parser):
 
     parser.addoption('--port', action='store', default='11211',
                      help='memcached server port')
+
+    parser.addoption('--tls-server', action='store', default='localhost',
+                     help='TLS memcached server')
+
+    parser.addoption('--tls-port', action='store', default='11212',
+                     help='TLS memcached server port')
 
     parser.addoption('--size', action='store', default=1024,
                      help='size of data in benchmarks')
@@ -30,6 +37,16 @@ def port(request):
 
 
 @pytest.fixture(scope='session')
+def tls_host(request):
+    return request.config.option.tls_server
+
+
+@pytest.fixture(scope='session')
+def tls_port(request):
+    return int(request.config.option.tls_port)
+
+
+@pytest.fixture(scope='session')
 def size(request):
     return int(request.config.option.size)
 
@@ -47,6 +64,13 @@ def keys(request):
 @pytest.fixture(scope='session')
 def pairs(size, keys):
     return {'pymemcache_test:%d' % i: 'X' * size for i in range(keys)}
+
+
+@pytest.fixture(scope='session')
+def tls_context():
+    return ssl.create_default_context(
+        cafile="extras/tls/ca-root.crt"
+    )
 
 
 def pytest_generate_tests(metafunc):
