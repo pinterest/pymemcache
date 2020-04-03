@@ -283,6 +283,11 @@ class Client(object):
         if isinstance(self.server, (list, tuple)):
             sock = self.socket_module.socket(self.socket_module.AF_INET,
                                              self.socket_module.SOCK_STREAM)
+
+            if self.tls_context:
+                sock = self.tls_context.wrap_socket(
+                    sock, server_hostname=self.server[0]
+                )
         else:
             sock = self.socket_module.socket(self.socket_module.AF_UNIX,
                                              self.socket_module.SOCK_STREAM)
@@ -294,11 +299,6 @@ class Client(object):
                 sock.setsockopt(self.socket_module.IPPROTO_TCP,
                                 self.socket_module.TCP_NODELAY, 1)
 
-            if self.tls_context is not None and self.socket_module.AF_INET:
-                sock = self.tls_context.wrap_socket(
-                    sock, server_hostname=self.server[0],
-                    do_handshake_on_connect=False,
-                )
         except Exception:
             sock.close()
             raise
