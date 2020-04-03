@@ -296,7 +296,8 @@ class Client(object):
 
             if self.tls_context is not None and self.socket_module.AF_INET:
                 sock = self.tls_context.wrap_socket(
-                    sock, server_hostname=self.server[0]
+                    sock, server_hostname=self.server[0],
+                    do_handshake_on_connect=False,
                 )
         except Exception:
             sock.close()
