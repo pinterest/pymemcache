@@ -141,7 +141,7 @@ class HashClient(object):
 
     def _get_client(self, key):
         check_key_helper(key, self.allow_unicode_keys, self.key_prefix)
-        if len(self._dead_clients) > 0:
+        if self._dead_clients:
             self._retry_dead()
 
         server = self.hasher.get_node(key)
