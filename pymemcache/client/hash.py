@@ -121,22 +121,28 @@ class HashClient(object):
         key = '%s:%s' % (server, port)
         self.hasher.remove_node(key)
 
+    def _retry_dead(self):
+        current_time = time.time()
+        ldc = self._last_dead_check_time
+        # We have reached the retry timeout
+        if current_time - ldc > self.dead_timeout:
+            candidates = []
+            for server, dead_time in self._dead_clients.items():
+                if current_time - dead_time > self.dead_timeout:
+                    candidates.append(server)
+            for server in candidates:
+                logger.debug(
+                    'bringing server back into rotation %s',
+                    server
+                )
+                self.add_server(*server)
+                del self._dead_clients[server]
+            self._last_dead_check_time = current_time
+
     def _get_client(self, key):
         check_key_helper(key, self.allow_unicode_keys, self.key_prefix)
-        if len(self._dead_clients) > 0:
-            current_time = time.time()
-            ldc = self._last_dead_check_time
-            # we have dead clients and we have reached the
-            # timeout retry
-            if current_time - ldc > self.dead_timeout:
-                for server, dead_time in self._dead_clients.items():
-                    if current_time - dead_time > self.dead_timeout:
-                        logger.debug(
-                            'bringing server back into rotation %s',
-                            server
-                        )
-                        self.add_server(*server)
-                        self._last_dead_check_time = current_time
+        if self._dead_clients:
+            self._retry_dead()
 
         server = self.hasher.get_node(key)
         # We've ran out of servers to try
