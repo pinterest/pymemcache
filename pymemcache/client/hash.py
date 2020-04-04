@@ -124,8 +124,7 @@ class HashClient(object):
     def _retry_dead(self):
         current_time = time.time()
         ldc = self._last_dead_check_time
-        # we have dead clients and we have reached the
-        # timeout retry
+        # We have reached the retry timeout
         if current_time - ldc > self.dead_timeout:
             candidates = []
             for server, dead_time in self._dead_clients.items():
