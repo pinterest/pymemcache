@@ -34,10 +34,17 @@ jobs:
     - name: Tests
       run: |
         pip install -r test-requirements.txt
-        py.test pymemcache/test/ -m unit,integration --port ${{ job.services.memcached.ports[11211] }}
+        py.test pymemcache/test/ \
+            -m unit,integration \
+            --port ${{ job.services.memcached.ports[11211] }} \
+            --tls-port ${{ job.services.tls_memcached.ports[11211] }}
 
     services:
       memcached:
         image: memcached:latest
+        ports:
+        - 11211/tcp
+      tls_memcached:
+        image: scoriacorp/tls_memcached:latest
         ports:
         - 11211/tcp

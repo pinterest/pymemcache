@@ -41,6 +41,30 @@ on if a server goes down.
     client.set('some_key', 'some value')
     result = client.get('some_key')
 
+
+Using TLS
+---------
+**Memcached** `supports <https://github.com/memcached/memcached/wiki/TLS>`_
+authentication and encryption via TLS since version **1.5.13**.
+
+A Memcached server running with TLS enabled will only accept TLS connections.
+
+To enable TLS in pymemcache, pass a valid TLS context to the client's
+``tls_context`` parameter:
+
+.. code-block:: python
+    import ssl
+    from pymemcache.client.base import Client
+
+    context = ssl.create_default_context(
+        cafile="my-ca-root.crt",
+    )
+
+    client = Client(('localhost', 11211), tls_context=context)
+    client.set('some_key', 'some_value')
+    result = client.get('some_key')
+
+
 Serialization
 --------------
 
