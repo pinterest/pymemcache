@@ -125,6 +125,7 @@ Credits
 * `Jon Parise <https://github.com/jparise>`_
 * `Stephen Rosen <https://github.com/sirosen>`_
 * `Feras Alazzeh <https://github.com/FerasAlazzeh>`_
+* `Moisés Guimarães de Medeiros <https://github.com/moisesguimaraes>`_
 
 We're Hiring!
 =============
