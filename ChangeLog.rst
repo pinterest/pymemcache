@@ -1,6 +1,11 @@
 Changelog
 =========
 
+New in version 3.1.0
+--------------------
+* Add TLS support for TCP sockets.
+* Fix corner case when dead hashed server comes back alive.
+
 New in version 3.0.1
 --------------------
 * Make MockMemcacheClient more consistent with the real client.
