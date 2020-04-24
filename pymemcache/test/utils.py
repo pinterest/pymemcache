@@ -8,8 +8,9 @@ This module is considered public API.
 import time
 
 import six
+import socket
 
-from pymemcache.exceptions import MemcacheIllegalInputError
+from pymemcache.exceptions import MemcacheClientError, MemcacheIllegalInputError
 from pymemcache.serde import LegacyWrappingSerde
 from pymemcache.client.base import check_key_helper
 
@@ -29,9 +30,11 @@ class MockMemcacheClient(object):
                  timeout=None,
                  no_delay=False,
                  ignore_exc=False,
+                 socket_module=None,
                  default_noreply=True,
                  allow_unicode_keys=False,
-                 encoding='ascii'):
+                 encoding='ascii',
+                 tls_context=None):
 
         self._contents = {}
 
@@ -44,7 +47,10 @@ class MockMemcacheClient(object):
         self.timeout = timeout
         self.no_delay = no_delay
         self.ignore_exc = ignore_exc
+        self.socket_module = socket
+        self.sock = None
         self.encoding = encoding
+        self.tls_context = tls_context
 
     def check_key(self, key):
         """Checks key and add key_prefix."""
@@ -77,7 +83,7 @@ class MockMemcacheClient(object):
 
     get_multi = get_many
 
-    def set(self, key, value, expire=0, noreply=True, flags=0):
+    def set(self, key, value, expire=0, noreply=True, flags=None):
         key = self.check_key(key)
         if (isinstance(value, six.string_types) and
                 not isinstance(value, six.binary_type)):
@@ -94,10 +100,13 @@ class MockMemcacheClient(object):
         self._contents[key] = expire, value, flags
         return True
 
-    def set_many(self, values, expire=None, noreply=True):
+    def set_many(self, values, expire=0, noreply=True, flags=None):
+        result = []
         for key, value in six.iteritems(values):
-            self.set(key, value, expire, noreply)
-        return []
+            ret = self.set(key, value, expire, noreply, flags=flags)
+            if not ret:
+                result.append(key)
+        return [] if noreply else result
 
     set_multi = set_many
 
@@ -110,20 +119,20 @@ class MockMemcacheClient(object):
 
     def decr(self, key, value, noreply=False):
         current = self.get(key)
-        if current is None:
-            return
+        present = current is not None
+        if present:
+            self.set(key, current - value, noreply=noreply)
+        return None if noreply or not present else current - value
 
-        self.set(key, current - value, noreply=noreply)
-        return current - value
-
-    def add(self, key, value, expire=None, noreply=True):
+    def add(self, key, value, expire=0, noreply=True, flags=None):
         current = self.get(key)
         present = current is not None
         if not present:
-            self.set(key, value, expire, noreply)
-        return not present
+            self.set(key, value, expire, noreply, flags=flags)
+        return noreply or not present
 
     def delete(self, key, noreply=True):
+        key = self.check_key(key)
         current = self._contents.pop(key, None)
         present = current is not None
         return noreply or present
@@ -133,7 +142,7 @@ class MockMemcacheClient(object):
             self.delete(key, noreply)
         return True
 
-    def prepend(self, key, value, expire=0, noreply=None, flags=None):
+    def prepend(self, key, value, expire=0, noreply=True, flags=None):
         current = self.get(key)
         if current is not None:
             if (isinstance(value, six.string_types) and
@@ -142,10 +151,10 @@ class MockMemcacheClient(object):
                     value = value.encode(self.encoding)
                 except (UnicodeEncodeError, UnicodeDecodeError):
                     raise MemcacheIllegalInputError
-            self.set(key, value + current)
+            self.set(key, value + current, expire, noreply, flags=flags)
         return True
 
-    def append(self, key, value, expire=0, noreply=None, flags=None):
+    def append(self, key, value, expire=0, noreply=True, flags=None):
         current = self.get(key)
         if current is not None:
             if (isinstance(value, six.string_types) and
@@ -154,12 +163,12 @@ class MockMemcacheClient(object):
                     value = value.encode(self.encoding)
                 except (UnicodeEncodeError, UnicodeDecodeError):
                     raise MemcacheIllegalInputError
-            self.set(key, current + value)
+            self.set(key, current + value, expire, noreply, flags=flags)
         return True
 
     delete_multi = delete_many
 
-    def stats(self):
+    def stats(self, *_args):
         # I make no claim that these values make any sense, but the format
         # of the output is the same as for pymemcache.client.Client.stats()
         return {
@@ -180,3 +189,37 @@ class MockMemcacheClient(object):
             "slab_reassign": False,
             "slab_automove": False,
         }
+
+    def replace(self, key, value, expire=0, noreply=True, flags=None):
+        current = self.get(key)
+        present = current is not None
+        if present:
+            self.set(key, value, expire, noreply, flags=flags)
+        return noreply or present
+
+    def cas(self, key, value, cas, expire=0, noreply=False, flags=None):
+        raise MemcacheClientError('CAS is not enabled for this instance')
+
+    def touch(self, key, expire=0, noreply=True):
+        current = self.get(key)
+        present = current is not None
+        if present:
+            self.set(key, current, expire, noreply=noreply)
+        return True if noreply or present else False
+
+    def cache_memlimit(self, memlimit):
+        return True
+
+    def version(self):
+        return 'MockMemcacheClient'
+
+    def flush_all(self, delay=0, noreply=True):
+        self.clear()
+
+        return noreply or self._contents == {}
+
+    def quit(self):
+        pass
+
+    def close(self):
+        pass
