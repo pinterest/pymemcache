@@ -204,7 +204,7 @@ class MockMemcacheClient(object):
         current = self.get(key)
         present = current is not None
         if present:
-            self.set(key, value, expire, noreply=noreply)
+            self.set(key, current, expire, noreply=noreply)
         return True if noreply or present else False
 
     def cache_memlimit(self, memlimit):
