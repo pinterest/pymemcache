@@ -10,7 +10,7 @@ import time
 import six
 import socket
 
-from pymemcache.exceptions import MemcacheIllegalInputError, MemcacheClientError
+from pymemcache.exceptions import MemcacheClientError, MemcacheIllegalInputError
 from pymemcache.serde import LegacyWrappingSerde
 from pymemcache.client.base import check_key_helper
 
