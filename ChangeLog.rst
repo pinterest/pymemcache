@@ -1,6 +1,10 @@
 Changelog
 =========
 
+New in version 3.1.1
+--------------------
+* Improve ``MockMemcacheClient`` to behave even more like ``Client``
+
 New in version 3.1.0
 --------------------
 * Add TLS support for TCP sockets.
