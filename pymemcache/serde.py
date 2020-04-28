@@ -110,7 +110,8 @@ def python_memcache_deserializer(key, value, flags):
 class PickleSerde(object):
     """
     An object which implements the serialization/deserialization protocol for
-    :py:class:`pymemcache.client.base.Client` and its descendants using pickle_.
+    :py:class:`pymemcache.client.base.Client` and its descendants using the
+    :mod:`pickle` module.
 
     Serialization and deserialization are implemented as methods of this class.
     To implement a custom serialization/deserialization method for pymemcache,
@@ -122,8 +123,6 @@ class PickleSerde(object):
 
     For more details on the serialization protocol, see the class documentation
     for :py:class:`pymemcache.client.base.Client`
-
-    .. pickle: https://docs.python.org/3/library/pickle.html
     """
     def __init__(self, pickle_version=DEFAULT_PICKLE_VERSION):
         self._serialize_func = get_python_memcache_serializer(pickle_version)
