@@ -14,6 +14,8 @@ class HashClient(object):
     """
     A client for communicating with a cluster of memcached servers
     """
+    #: :class:`Client` class used to create new clients
+    client_class = Client
 
     def __init__(
         self,
@@ -112,7 +114,7 @@ class HashClient(object):
                 **self.default_kwargs
             )
         else:
-            client = Client((server, port), **self.default_kwargs)
+            client = self.client_class((server, port), **self.default_kwargs)
 
         self.clients[key] = client
         self.hasher.add_node(key)

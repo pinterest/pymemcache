@@ -1009,6 +1009,9 @@ class PooledClient(object):
     in the pool. Your serde object must therefore be thread-safe.
     """
 
+    #: :class:`Client` class used to create new clients
+    client_class = Client
+
     def __init__(self,
                  server,
                  serde=None,
@@ -1054,20 +1057,20 @@ class PooledClient(object):
                                 key_prefix=self.key_prefix)
 
     def _create_client(self):
-        client = Client(self.server,
-                        serde=self.serde,
-                        connect_timeout=self.connect_timeout,
-                        timeout=self.timeout,
-                        no_delay=self.no_delay,
-                        # We need to know when it fails *always* so that we
-                        # can remove/destroy it from the pool...
-                        ignore_exc=False,
-                        socket_module=self.socket_module,
-                        key_prefix=self.key_prefix,
-                        default_noreply=self.default_noreply,
-                        allow_unicode_keys=self.allow_unicode_keys,
-                        tls_context=self.tls_context)
-        return client
+        return self.client_class(
+            self.server,
+            serde=self.serde,
+            connect_timeout=self.connect_timeout,
+            timeout=self.timeout,
+            no_delay=self.no_delay,
+            # We need to know when it fails *always* so that we
+            # can remove/destroy it from the pool...
+            ignore_exc=False,
+            socket_module=self.socket_module,
+            key_prefix=self.key_prefix,
+            default_noreply=self.default_noreply,
+            allow_unicode_keys=self.allow_unicode_keys,
+            tls_context=self.tls_context)
 
     def close(self):
         self.client_pool.clear()

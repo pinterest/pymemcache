@@ -39,7 +39,8 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         return client
 
     def test_setup_client_without_pooling(self):
-        with mock.patch('pymemcache.client.hash.Client') as internal_client:
+        client_class = 'pymemcache.client.hash.HashClient.client_class'
+        with mock.patch(client_class) as internal_client:
             client = HashClient([], timeout=999, key_prefix='foo_bar_baz')
             client.add_server('127.0.0.1', '11211')
 
@@ -295,7 +296,7 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         for client in hash_client.clients.values():
             assert client.encoding == encoding
 
-    @mock.patch("pymemcache.client.hash.Client")
+    @mock.patch("pymemcache.client.hash.HashClient.client_class")
     def test_dead_server_comes_back(self, client_patch):
         client = HashClient([], dead_timeout=0, retry_attempts=0)
         client.add_server("127.0.0.1", 11211)
@@ -314,7 +315,7 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         assert client.get(b"key") == "Some value"
         assert ("127.0.0.1", 11211) not in client._dead_clients
 
-    @mock.patch("pymemcache.client.hash.Client")
+    @mock.patch("pymemcache.client.hash.HashClient.client_class")
     def test_failed_is_retried(self, client_patch):
         client = HashClient([], retry_attempts=1, retry_timeout=0)
         client.add_server("127.0.0.1", 11211)
@@ -332,5 +333,14 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         assert client.get(b"key") == "Some value"
 
         assert client_patch.call_count == 1
+
+    def test_custom_client(self):
+        class MyClient(Client):
+            pass
+
+        client = HashClient([])
+        client.client_class = MyClient
+        client.add_server('host', 11211)
+        assert isinstance(client.clients['host:11211'], MyClient)
 
     # TODO: Test failover logic
