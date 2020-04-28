@@ -1213,6 +1213,13 @@ class TestPooledClient(ClientTestMixin, unittest.TestCase):
                                     [b'__FAKE_RESPONSE__\r\n'])
         self._default_noreply_true('flush_all', (), [b'__FAKE_RESPONSE__\r\n'])
 
+    def test_custom_client(self):
+        class MyClient(Client):
+            pass
+        client = PooledClient(('host', 11211))
+        client.client_class = MyClient
+        assert isinstance(client.client_pool.get(), MyClient)
+
 
 class TestMockClient(ClientTestMixin, unittest.TestCase):
     def make_client(self, mock_socket_values, **kwargs):
