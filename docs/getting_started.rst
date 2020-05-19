@@ -26,10 +26,10 @@ passing the socket's path to the client's ``server`` parameter:
 
 Using a client pool
 -------------------
-:class:`pymemcache.base.PooledClient`: is a thread-safe client pool that
-provides the same API as :class:`pymemcache.base.Client`:. It's useful in
-for cases when you want to maintain a pool of already-connected clients
-for improved performance.
+:class:`pymemcache.client.base.PooledClient` is a thread-safe client pool
+that provides the same API as :class:`pymemcache.client.base.Client`. It's
+useful in for cases when you want to maintain a pool of already-connected
+clients for improved performance.
 
 .. code-block:: python
 
