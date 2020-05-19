@@ -24,6 +24,19 @@ passing the socket's path to the client's ``server`` parameter:
 
     client = Client('/var/run/memcached/memcached.sock')
 
+Using a client pool
+-------------------
+:class:`pymemcache.base.PooledClient`: is a thread-safe client pool that
+provides the same API as :class:`pymemcache.base.Client`:. It's useful in
+for cases when you want to maintain a pool of already-connected clients
+for improved performance.
+
+.. code-block:: python
+
+    from pymemcache.client.base import PooledClient
+
+    client = PooledClient(('127.0.0.1', 11211), max_pool_size=4)
+
 Using a memcached cluster
 -------------------------
 This will use a consistent hashing algorithm to choose which server to
@@ -53,6 +66,7 @@ To enable TLS in pymemcache, pass a valid TLS context to the client's
 ``tls_context`` parameter:
 
 .. code-block:: python
+
     import ssl
     from pymemcache.client.base import Client
 
