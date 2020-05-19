@@ -1,6 +1,10 @@
 Changelog
 =========
 
+New in version 3.2.0
+--------------------
+* ``PooledClient`` and ``HashClient`` now support custom ``Client`` classes
+
 New in version 3.1.1
 --------------------
 * Improve ``MockMemcacheClient`` to behave even more like ``Client``
