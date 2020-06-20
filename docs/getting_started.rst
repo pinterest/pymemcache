@@ -117,7 +117,7 @@ pymemcache provides a default
 
     client = Client(('localhost', 11211), serde=serde.pickle_serde)
     client.set('key', Foo())
-    result client.get('key')
+    result = client.get('key')
 
 The serializer uses the highest pickle protocol available. In order to make
 sure multiple versions of Python can read the protocol version, you can specify
