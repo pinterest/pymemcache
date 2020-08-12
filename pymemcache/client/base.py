@@ -636,7 +636,7 @@ class Client(object):
 
         Args:
           key: str, see class docs for details.
-          value: int, the amount by which to increment the value.
+          value: int, the amount by which to decrement the value.
           noreply: optional bool, False to wait for the reply (the default).
 
         Returns:
