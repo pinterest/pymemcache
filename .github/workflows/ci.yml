@@ -35,7 +35,7 @@ jobs:
       run: |
         pip install -r test-requirements.txt
         py.test pymemcache/test/ \
-            -m unit,integration \
+            -m 'unit or integration' \
             --port ${{ job.services.memcached.ports[11211] }} \
             --tls-port ${{ job.services.tls_memcached.ports[11211] }}
 
