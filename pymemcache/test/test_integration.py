@@ -183,7 +183,7 @@ def test_gets(client_class, host, port, socket_module):
     assert result[0] == b'value'
 
 
-@pytest.mark.delete()
+@pytest.mark.integration()
 def test_delete(client_class, host, port, socket_module):
     client = client_class((host, port), socket_module=socket_module)
     client.flush_all()
