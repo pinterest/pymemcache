@@ -2,6 +2,7 @@
 
 from pymemcache.client.base import Client  # noqa
 from pymemcache.client.base import PooledClient  # noqa
+from pymemcache.client.hash import HashClient  # noqa
 
 from pymemcache.exceptions import MemcacheError  # noqa
 from pymemcache.exceptions import MemcacheClientError  # noqa
