@@ -241,7 +241,7 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         )
 
         result = client.get_many(['foo', 'bar'])
-        assert result == {'foo': False, 'bar': False}
+        assert result == {}
 
     def test_ignore_exec_set_many(self):
         values = {

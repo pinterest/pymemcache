@@ -377,7 +377,6 @@ class HashClient(object):
             client = self._get_client(key)
 
             if client is None:
-                end[key] = False
                 continue
 
             client_batches[client.server].append(key)
