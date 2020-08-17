@@ -1,6 +1,14 @@
 Changelog
 =========
 
+New in version 3.3.0
+--------------------
+* ``HashClient`` can now be imported from the top-level ``pymemcache`` package
+  (e.g. ``pymemcache.HashClient``).
+* ``HashClient.get_many()`` now longer stores ``False`` for missing keys from
+  unavailable clients. Instead, the result won't contain the key at all.
+* Added missing ``HashClient.close()`` and ``HashClient.quit()``.
+
 New in version 3.2.0
 --------------------
 * ``PooledClient`` and ``HashClient`` now support custom ``Client`` classes
