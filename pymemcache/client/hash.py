@@ -1,3 +1,4 @@
+import collections
 import socket
 import time
 import logging
@@ -326,6 +327,12 @@ class HashClient(object):
 
         return succeeded, failed, None
 
+    def close(self):
+        for client in self.clients.values():
+            self._safely_run_func(client, client.close, False)
+
+    disconnect_all = close
+
     def set(self, key, *args, **kwargs):
         return self._run_cmd('set', key, False, *args, **kwargs)
 
@@ -339,7 +346,7 @@ class HashClient(object):
         return self._run_cmd('decr', key, False, *args, **kwargs)
 
     def set_many(self, values, *args, **kwargs):
-        client_batches = {}
+        client_batches = collections.defaultdict(dict)
         failed = []
 
         for key, value in six.iteritems(values):
@@ -348,9 +355,6 @@ class HashClient(object):
             if client is None:
                 failed.append(key)
                 continue
-
-            if client.server not in client_batches:
-                client_batches[client.server] = {}
 
             client_batches[client.server][key] = value
 
@@ -366,18 +370,14 @@ class HashClient(object):
     set_multi = set_many
 
     def get_many(self, keys, gets=False, *args, **kwargs):
-        client_batches = {}
+        client_batches = collections.defaultdict(list)
         end = {}
 
         for key in keys:
             client = self._get_client(key)
 
             if client is None:
-                end[key] = False
                 continue
-
-            if client.server not in client_batches:
-                client_batches[client.server] = []
 
             client_batches[client.server].append(key)
 
@@ -438,5 +438,9 @@ class HashClient(object):
         return self._run_cmd('touch', key, False, *args, **kwargs)
 
     def flush_all(self):
-        for _, client in self.clients.items():
+        for client in self.clients.values():
             self._safely_run_func(client, client.flush_all, False)
+
+    def quit(self):
+        for client in self.clients.values():
+            self._safely_run_func(client, client.quit, False)

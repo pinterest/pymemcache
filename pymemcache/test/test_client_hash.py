@@ -159,6 +159,20 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         result = client.touch(b'key', 1, noreply=False)
         assert result is True
 
+    def test_close(self):
+        client = self.make_client([])
+        assert all(c.sock is not None for c in client.clients.values())
+        result = client.close()
+        assert result is None
+        assert all(c.sock is None for c in client.clients.values())
+
+    def test_quit(self):
+        client = self.make_client([])
+        assert all(c.sock is not None for c in client.clients.values())
+        result = client.quit()
+        assert result is None
+        assert all(c.sock is None for c in client.clients.values())
+
     def test_no_servers_left(self):
         from pymemcache.client.hash import HashClient
         client = HashClient(
@@ -227,7 +241,7 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         )
 
         result = client.get_many(['foo', 'bar'])
-        assert result == {'foo': False, 'bar': False}
+        assert result == {}
 
     def test_ignore_exec_set_many(self):
         values = {
