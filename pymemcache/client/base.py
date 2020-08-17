@@ -316,6 +316,8 @@ class Client(object):
             finally:
                 self.sock = None
 
+    disconnect_all = close
+
     def set(self, key, value, expire=0, noreply=None, flags=None):
         """
         The memcached "set" command.
@@ -1074,6 +1076,8 @@ class PooledClient(object):
 
     def close(self):
         self.client_pool.clear()
+
+    disconnect_all = close
 
     def set(self, key, value, expire=0, noreply=None, flags=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:

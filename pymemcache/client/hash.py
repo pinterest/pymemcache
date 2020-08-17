@@ -327,6 +327,12 @@ class HashClient(object):
 
         return succeeded, failed, None
 
+    def close(self):
+        for client in self.clients.values():
+            self._safely_run_func(client, client.close, False)
+
+    disconnect_all = close
+
     def set(self, key, *args, **kwargs):
         return self._run_cmd('set', key, False, *args, **kwargs)
 
@@ -435,3 +441,7 @@ class HashClient(object):
     def flush_all(self):
         for client in self.clients.values():
             self._safely_run_func(client, client.flush_all, False)
+
+    def quit(self):
+        for client in self.clients.values():
+            self._safely_run_func(client, client.quit, False)
