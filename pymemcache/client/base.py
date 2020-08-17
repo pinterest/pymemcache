@@ -1082,9 +1082,8 @@ class PooledClient(object):
 
     def set_many(self, values, expire=0, noreply=None, flags=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
-            failed = client.set_many(values, expire=expire, noreply=noreply,
-                                     flags=flags)
-            return failed
+            return client.set_many(values, expire=expire, noreply=noreply,
+                                   flags=flags)
 
     set_multi = set_many
 

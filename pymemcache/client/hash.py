@@ -438,5 +438,5 @@ class HashClient(object):
         return self._run_cmd('touch', key, False, *args, **kwargs)
 
     def flush_all(self):
-        for _, client in self.clients.items():
+        for client in self.clients.values():
             self._safely_run_func(client, client.flush_all, False)
