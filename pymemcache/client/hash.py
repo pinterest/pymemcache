@@ -1,3 +1,4 @@
+import collections
 import socket
 import time
 import logging
@@ -339,7 +340,7 @@ class HashClient(object):
         return self._run_cmd('decr', key, False, *args, **kwargs)
 
     def set_many(self, values, *args, **kwargs):
-        client_batches = {}
+        client_batches = collections.defaultdict(dict)
         failed = []
 
         for key, value in six.iteritems(values):
@@ -348,9 +349,6 @@ class HashClient(object):
             if client is None:
                 failed.append(key)
                 continue
-
-            if client.server not in client_batches:
-                client_batches[client.server] = {}
 
             client_batches[client.server][key] = value
 
@@ -366,7 +364,7 @@ class HashClient(object):
     set_multi = set_many
 
     def get_many(self, keys, gets=False, *args, **kwargs):
-        client_batches = {}
+        client_batches = collections.defaultdict(list)
         end = {}
 
         for key in keys:
@@ -375,9 +373,6 @@ class HashClient(object):
             if client is None:
                 end[key] = False
                 continue
-
-            if client.server not in client_batches:
-                client_batches[client.server] = []
 
             client_batches[client.server].append(key)
 
