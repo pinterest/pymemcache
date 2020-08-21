@@ -832,7 +832,7 @@ class Client(object):
         """
         This function is abstracted from _fetch_cmd to support different ways
         of value extraction. In order to use this feature, _extract_value needs
-        to be overriden in the subclass.
+        to be overridden in the subclass.
         """
         if expect_cas:
             _, key, flags, size, cas = line.split()
@@ -1001,7 +1001,7 @@ class PooledClient(object):
                      triggers a runtime error), by default this is 2147483648L
                      when not provided (or none).
       lock_generator: a callback/type that takes no arguments that will
-                      be called to create a lock or sempahore that can
+                      be called to create a lock or semaphore that can
                       protect the pool from concurrent access (for example a
                       eventlet lock or semaphore could be used instead)
 

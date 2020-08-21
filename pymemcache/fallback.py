@@ -16,7 +16,7 @@
 A client for falling back to older memcached servers when performing reads.
 
 It is sometimes necessary to deploy memcached on new servers, or with a
-different configuration. In theses cases, it is undesirable to start up an
+different configuration. In these cases, it is undesirable to start up an
 empty memcached server and point traffic to it, since the cache will be cold,
 and the backing store will have a large increase in traffic.
 
