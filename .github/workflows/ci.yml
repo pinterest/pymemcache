@@ -30,7 +30,7 @@ jobs:
       run: |
         pip install codespell flake8
         codespell . --ignore-words-list=ba --skip=./.* --quiet-level=2
-        flake8 --max-complexity=10 pymemcache/
+        flake8 --max-complexity=18 .
         python setup.py check --restructuredtext
     - name: Tests
       run: |
