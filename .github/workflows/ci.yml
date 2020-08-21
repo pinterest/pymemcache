@@ -29,7 +29,7 @@ jobs:
       if: matrix.python-version == '2.7' || matrix.python-version == '3.8'
       run: |
         pip install codespell flake8
-        codespell . --skip=./.* --quiet-level=2
+        codespell . --ignore-words-list=ba --skip=./.* --quiet-level=2
         flake8 --max-complexity=10 pymemcache/
         python setup.py check --restructuredtext
     - name: Tests
