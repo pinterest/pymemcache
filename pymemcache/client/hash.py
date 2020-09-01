@@ -46,7 +46,8 @@ class HashClient(object):
         Constructor.
 
         Args:
-          servers: list(tuple(hostname, port))
+          servers: list() of tuple(hostname, port) or string containing a UNIX
+                   socket path.
           hasher: optional class three functions ``get_node``, ``add_node``,
                   and ``remove_node``
                   defaults to Rendezvous (HRW) hash.
@@ -101,30 +102,51 @@ class HashClient(object):
                 'lock_generator': lock_generator
             })
 
-        for server, port in servers:
-            self.add_server(server, port)
+        for server in servers:
+            self.add_server(server)
         self.encoding = encoding
         self.tls_context = tls_context
 
-    def add_server(self, server, port):
-        key = '%s:%s' % (server, port)
+    def add_server(self, server, port=None):
+        # To maintain backward compatibility, if a port is provided, assume
+        # that server wasn't provided as a (host, port) tuple.
+        if port is not None:
+            if not isinstance(server, six.string_types):
+                raise TypeError('Server must be a string when passing port.')
+            server = (server, port)
+
+        if isinstance(server, six.string_types):
+            key = server
+        else:
+            key = '%s:%s' % server
 
         if self.use_pooling:
             client = PooledClient(
-                (server, port),
+                server,
                 **self.default_kwargs
             )
         else:
-            client = self.client_class((server, port), **self.default_kwargs)
+            client = self.client_class(server, **self.default_kwargs)
 
         self.clients[key] = client
         self.hasher.add_node(key)
 
-    def remove_server(self, server, port):
+    def remove_server(self, server, port=None):
+        # To maintain backward compatibility, if a port is provided, assume
+        # that server wasn't provided as a (host, port) tuple.
+        if port is not None:
+            if not isinstance(server, six.string_types):
+                raise TypeError('Server must be a string when passing port.')
+            server = (server, port)
+
+        if isinstance(server, six.string_types):
+            key = server
+        else:
+            key = '%s:%s' % server
+
         dead_time = time.time()
-        self._failed_clients.pop((server, port))
-        self._dead_clients[(server, port)] = dead_time
-        key = '%s:%s' % (server, port)
+        self._failed_clients.pop(server)
+        self._dead_clients[server] = dead_time
         self.hasher.remove_node(key)
 
     def _retry_dead(self):
@@ -141,7 +163,7 @@ class HashClient(object):
                     'bringing server back into rotation %s',
                     server
                 )
-                self.add_server(*server)
+                self.add_server(server)
                 del self._dead_clients[server]
             self._last_dead_check_time = current_time
 
@@ -185,7 +207,7 @@ class HashClient(object):
                     # We've reached our max retry attempts, we need to mark
                     # the sever as dead
                     logger.debug('marking server as dead: %s', client.server)
-                    self.remove_server(*client.server)
+                    self.remove_server(client.server)
 
             result = func(*args, **kwargs)
             return result
@@ -239,7 +261,7 @@ class HashClient(object):
                     # We've reached our max retry attempts, we need to mark
                     # the sever as dead
                     logger.debug('marking server as dead: %s', client.server)
-                    self.remove_server(*client.server)
+                    self.remove_server(client.server)
 
             succeeded, failed, err = self._set_many(
                 client, values, *args, **kwargs
@@ -289,7 +311,7 @@ class HashClient(object):
                 'attempts': 0,
             }
             logger.debug("marking server as dead %s", server)
-            self.remove_server(*server)
+            self.remove_server(server)
         # This client has failed previously, we need to update the metadata
         # to reflect that we have attempted it again
         else:
