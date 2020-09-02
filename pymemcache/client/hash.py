@@ -120,13 +120,10 @@ class HashClient(object):
         else:
             key = '%s:%s' % server
 
+        _class = PooledClient if self.use_pooling else self.client_class
+        client = _class(server, **self.default_kwargs)
         if self.use_pooling:
-            client = PooledClient(
-                server,
-                **self.default_kwargs
-            )
-        else:
-            client = self.client_class(server, **self.default_kwargs)
+            client.client_class = self.client_class
 
         self.clients[key] = client
         self.hasher.add_node(key)

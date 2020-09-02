@@ -358,6 +358,19 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         client.add_server(('host', 11211))
         assert isinstance(client.clients['host:11211'], MyClient)
 
+    def test_custom_client_with_pooling(self):
+        class MyClient(Client):
+            pass
+
+        client = HashClient([], use_pooling=True)
+        client.client_class = MyClient
+        client.add_server(('host', 11211))
+        assert isinstance(client.clients['host:11211'], PooledClient)
+
+        pool = client.clients['host:11211'].client_pool
+        with pool.get_and_release(destroy_on_fail=True) as c:
+            assert isinstance(c, MyClient)
+
     def test_mixed_inet_and_unix_sockets(self):
         servers = [
             '/tmp/pymemcache.{pid}'.format(pid=os.getpid()),
