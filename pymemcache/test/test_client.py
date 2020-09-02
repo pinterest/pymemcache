@@ -21,12 +21,13 @@ import functools
 import json
 import os
 import mock
+import re
 import socket
 import unittest
 
 import pytest
 
-from pymemcache.client.base import PooledClient, Client
+from pymemcache.client.base import PooledClient, Client, normalize_server_spec
 from pymemcache.exceptions import (
     MemcacheClientError,
     MemcacheServerError,
@@ -52,7 +53,10 @@ class MockSocket(object):
 
     @property
     def family(self):
-        return socket.AF_INET
+        # TODO: Use ipaddress module when dropping support for Python < 3.3
+        ipv6_re = re.compile(r'^[0-9a-f:]+$')
+        is_ipv6 = any(ipv6_re.match(c[0]) for c in self.connections)
+        return socket.AF_INET6 if is_ipv6 else socket.AF_INET
 
     def sendall(self, value):
         self.send_bufs.append(value)
@@ -103,7 +107,7 @@ class MockSocketModule(object):
         self.close_failure = close_failure
         self.sockets = []
 
-    def socket(self, family, type):
+    def socket(self, family, type, proto=0, fileno=None):
         socket = MockSocket(
             [],
             connect_failure=self.connect_failure,
@@ -1075,12 +1079,40 @@ class TestClient(ClientTestMixin, unittest.TestCase):
 
 @pytest.mark.unit()
 class TestClientSocketConnect(unittest.TestCase):
-    def test_socket_connect(self):
-        server = ("example.com", 11211)
+    def test_socket_connect_ipv4(self):
+        server = ('127.0.0.1', 11211)
 
         client = Client(server, socket_module=MockSocketModule())
         client._connect()
+        print(client.sock.connections)
         assert client.sock.connections == [server]
+        assert client.sock.family == socket.AF_INET
+
+        timeout = 2
+        connect_timeout = 3
+        client = Client(
+            server, connect_timeout=connect_timeout, timeout=timeout,
+            socket_module=MockSocketModule())
+        client._connect()
+        assert client.sock.timeouts == [connect_timeout, timeout]
+
+        client = Client(server, socket_module=MockSocketModule())
+        client._connect()
+        assert client.sock.socket_options == []
+
+        client = Client(
+            server, socket_module=MockSocketModule(), no_delay=True)
+        client._connect()
+        assert client.sock.socket_options == [(socket.IPPROTO_TCP,
+                                               socket.TCP_NODELAY, 1)]
+
+    def test_socket_connect_ipv6(self):
+        server = ('::1', 11211)
+
+        client = Client(server, socket_module=MockSocketModule())
+        client._connect()
+        assert client.sock.connections == [server + (0, 0)]
+        assert client.sock.family == socket.AF_INET6
 
         timeout = 2
         connect_timeout = 3
@@ -1330,3 +1362,28 @@ class TestRetryOnEINTR(unittest.TestCase):
             b'ue1\r\nEND\r\n',
         ])
         assert client[b'key1'] == b'value1'
+
+
+@pytest.mark.unit()
+class TestNormalizeServerSpec(unittest.TestCase):
+    def test_normalize_server_spec(self):
+        f = normalize_server_spec
+        assert f(None) is None
+        assert f(('127.0.0.1', 12345)) == ('127.0.0.1', 12345)
+        assert f(['127.0.0.1', 12345]) == ('127.0.0.1', 12345)
+        assert f('unix:/run/memcached/socket') == '/run/memcached/socket'
+        assert f('/run/memcached/socket') == '/run/memcached/socket'
+        assert f('localhost') == ('localhost', 11211)
+        assert f('localhost:12345') == ('localhost', 12345)
+        assert f('[::1]') == ('::1', 11211)
+        assert f('[::1]:12345') == ('::1', 12345)
+        assert f('127.0.0.1') == ('127.0.0.1', 11211)
+        assert f('127.0.0.1:12345') == ('127.0.0.1', 12345)
+
+        with pytest.raises(ValueError) as excinfo:
+            f({'host': 12345})
+        assert str(excinfo.value) == "Unknown server provided: {'host': 12345}"
+
+        with pytest.raises(ValueError) as excinfo:
+            f(12345)
+        assert str(excinfo.value) == "Unknown server provided: 12345"

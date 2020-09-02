@@ -9,20 +9,43 @@ Basic Usage
 
     from pymemcache.client.base import Client
 
-    client = Client(('localhost', 11211))
+    client = Client('localhost')
     client.set('some_key', 'some_value')
     result = client.get('some_key')
 
-Using UNIX domain sockets
--------------------------
-You can also connect to a local memcached server over a UNIX domain socket by
-passing the socket's path to the client's ``server`` parameter:
+The server to connect to can be specified in a number of ways.
+
+If using TCP connections over IPv4 or IPv6, the ``server`` parameter can be
+passed a ``host`` string, a ``host:port`` string, or a ``(host, port)``
+2-tuple. The host part may be a domain name, an IPv4 address, or an IPv6
+address. The port may be omitted, in which case it will default to ``11211``.
 
 .. code-block:: python
 
-    from pymemcache.client.base import Client
+    ipv4_client = Client('127.0.0.1')
+    ipv4_client_with_port = Client('127.0.0.1:11211')
+    ipv4_client_using_tuple = Client(('127.0.0.1', 11211))
 
-    client = Client('/var/run/memcached/memcached.sock')
+    ipv6_client = Client('[::1]')
+    ipv6_client_with_port = Client('[::1]:11211')
+    ipv6_client_using_tuple = Client(('::1', 11211))
+
+    domain_client = Client('localhost')
+    domain_client_with_port = Client('localhost:11211')
+    domain_client_using_tuple = Client(('localhost', 11211))
+
+Note that IPv6 may be used in preference to IPv4 when passing a domain name as
+the host if an IPv6 address can be resolved for that domain.
+
+You can also connect to a local memcached server over a UNIX domain socket by
+passing the socket's path to the client's ``server`` parameter. An optional
+``unix:`` prefix may be used for compatibility in code that uses other client
+libraries that require it.
+
+.. code-block:: python
+
+    client = Client('/run/memcached/memcached.sock')
+    client_with_prefix = Client('unix:/run/memcached/memcached.sock')
 
 Using a client pool
 -------------------
@@ -35,7 +58,7 @@ clients for improved performance.
 
     from pymemcache.client.base import PooledClient
 
-    client = PooledClient(('127.0.0.1', 11211), max_pool_size=4)
+    client = PooledClient('127.0.0.1', max_pool_size=4)
 
 Using a memcached cluster
 -------------------------
@@ -48,8 +71,8 @@ on if a server goes down.
     from pymemcache.client.hash import HashClient
 
     client = HashClient([
-        ('127.0.0.1', 11211),
-        ('127.0.0.1', 11212)
+        '127.0.0.1:11211',
+        '127.0.0.1:11212',
     ])
     client.set('some_key', 'some value')
     result = client.get('some_key')
@@ -74,7 +97,7 @@ To enable TLS in pymemcache, pass a valid TLS context to the client's
         cafile="my-ca-root.crt",
     )
 
-    client = Client(('localhost', 11211), tls_context=context)
+    client = Client('localhost', tls_context=context)
     client.set('some_key', 'some_value')
     result = client.get('some_key')
 
@@ -100,7 +123,7 @@ Serialization
                 return json.loads(value)
             raise Exception("Unknown serialization format")
 
-     client = Client(('localhost', 11211), serde=JsonSerde())
+     client = Client('localhost', serde=JsonSerde())
      client.set('key', {'a':'b', 'c':'d'})
      result = client.get('key')
 
@@ -115,7 +138,7 @@ pymemcache provides a default
     class Foo(object):
       pass
 
-    client = Client(('localhost', 11211), serde=serde.pickle_serde)
+    client = Client('localhost', serde=serde.pickle_serde)
     client.set('key', Foo())
     result = client.get('key')
 
@@ -125,10 +148,7 @@ the version by explicitly instantiating :class:`pymemcache.serde.PickleSerde`:
 
 .. code-block:: python
 
-    client = Client(
-        ('localhost', 11211),
-        serde=serde.PickleSerde(pickle_version=2)
-    )
+    client = Client('localhost', serde=serde.PickleSerde(pickle_version=2))
 
 
 Deserialization with Python 3

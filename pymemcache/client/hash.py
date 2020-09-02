@@ -4,7 +4,12 @@ import time
 import logging
 import six
 
-from pymemcache.client.base import Client, PooledClient, check_key_helper
+from pymemcache.client.base import (
+    Client,
+    PooledClient,
+    check_key_helper,
+    normalize_server_spec,
+)
 from pymemcache.client.rendezvous import RendezvousHash
 from pymemcache.exceptions import MemcacheError
 
@@ -103,7 +108,7 @@ class HashClient(object):
             })
 
         for server in servers:
-            self.add_server(server)
+            self.add_server(normalize_server_spec(server))
         self.encoding = encoding
         self.tls_context = tls_context
 
