@@ -37,7 +37,6 @@ VALID_STORE_RESULTS = {
     b'prepend': (b'STORED', b'NOT_STORED'),
     b'cas':     (b'STORED', b'EXISTS', b'NOT_FOUND'),
 }
-VALID_STRING_TYPES = (six.text_type, six.string_types)
 
 
 # Some of the values returned by the "stats" command
@@ -87,9 +86,9 @@ def check_key_helper(key, allow_unicode_keys, key_prefix=b''):
     if allow_unicode_keys:
         if isinstance(key, six.text_type):
             key = key.encode('utf8')
-    elif isinstance(key, VALID_STRING_TYPES):
+    elif isinstance(key, six.string_types):
         try:
-            if isinstance(key, bytes):
+            if isinstance(key, six.binary_type):
                 key = key.decode().encode('ascii')
             else:
                 key = key.encode('ascii')
@@ -264,7 +263,7 @@ class Client(object):
         self.sock = None
         if isinstance(key_prefix, six.text_type):
             key_prefix = key_prefix.encode('ascii')
-        if not isinstance(key_prefix, bytes):
+        if not isinstance(key_prefix, six.binary_type):
             raise TypeError("key_prefix should be bytes.")
         self.key_prefix = key_prefix
         self.default_noreply = default_noreply
@@ -794,7 +793,7 @@ class Client(object):
 
     def _check_integer(self, value, name):
         """Check that a value is an integer and encode it as a binary string"""
-        if not isinstance(value, six.integer_types):  # includes "long" on py2
+        if not isinstance(value, six.integer_types):
             raise MemcacheIllegalInputError(
                 '%s must be integer, got bad value: %r' % (name, value)
             )
@@ -808,7 +807,7 @@ class Client(object):
         The value will be (re)encoded so that we can accept strings or bytes.
         """
         # convert non-binary values to binary
-        if isinstance(cas, (six.integer_types, VALID_STRING_TYPES)):
+        if isinstance(cas, (six.integer_types, six.string_types)):
             try:
                 cas = six.text_type(cas).encode(self.encoding)
             except UnicodeEncodeError:
@@ -1042,7 +1041,7 @@ class PooledClient(object):
         self.allow_unicode_keys = allow_unicode_keys
         if isinstance(key_prefix, six.text_type):
             key_prefix = key_prefix.encode('ascii')
-        if not isinstance(key_prefix, bytes):
+        if not isinstance(key_prefix, six.binary_type):
             raise TypeError("key_prefix should be bytes.")
         self.key_prefix = key_prefix
         self.client_pool = pool.ObjectPool(
