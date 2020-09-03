@@ -1084,7 +1084,6 @@ class TestClientSocketConnect(unittest.TestCase):
 
         client = Client(server, socket_module=MockSocketModule())
         client._connect()
-        print(client.sock.connections)
         assert client.sock.connections == [server]
         assert client.sock.family == socket.AF_INET
 
