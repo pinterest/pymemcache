@@ -372,12 +372,21 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
             assert isinstance(c, MyClient)
 
     def test_mixed_inet_and_unix_sockets(self):
-        servers = [
+        expected = {
             '/tmp/pymemcache.{pid}'.format(pid=os.getpid()),
             ('127.0.0.1', 11211),
-        ]
-        client = HashClient(servers)
-        assert set(servers) == {c.server for c in client.clients.values()}
+            ('::1', 11211),
+        }
+        client = HashClient([
+            '/tmp/pymemcache.{pid}'.format(pid=os.getpid()),
+            '127.0.0.1',
+            '127.0.0.1:11211',
+            '[::1]',
+            '[::1]:11211',
+            ('127.0.0.1', 11211),
+            ('::1', 11211),
+        ])
+        assert expected == {c.server for c in client.clients.values()}
 
     def test_legacy_add_remove_server_signature(self):
         server = ('127.0.0.1', 11211)

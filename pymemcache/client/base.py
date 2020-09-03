@@ -109,6 +109,27 @@ def check_key_helper(key, allow_unicode_keys, key_prefix=b''):
     return key
 
 
+def normalize_server_spec(server):
+    if isinstance(server, tuple) or server is None:
+        return server
+    if isinstance(server, list):
+        return tuple(server)  # Assume [host, port] provided.
+    if not isinstance(server, six.string_types):
+        raise ValueError('Unknown server provided: %r' % server)
+    if server.startswith('unix:'):
+        return server[5:]
+    if server.startswith('/'):
+        return server
+    if ':' not in server or server.endswith(']'):
+        host, port = server, 11211
+    else:
+        host, port = server.rsplit(':', 1)
+        port = int(port)
+    if host.startswith('['):
+        host = host.strip('[]')
+    return (host, port)
+
+
 class Client(object):
     """
     A client for a single memcached server.
@@ -253,7 +274,7 @@ class Client(object):
           The constructor does not make a connection to memcached. The first
           call to a method on the object will do that.
         """
-        self.server = server
+        self.server = normalize_server_spec(server)
         self.serde = serde or LegacyWrappingSerde(serializer, deserializer)
         self.connect_timeout = connect_timeout
         self.timeout = timeout
@@ -279,25 +300,41 @@ class Client(object):
     def _connect(self):
         self.close()
 
-        if isinstance(self.server, (list, tuple)):
-            sock = self.socket_module.socket(self.socket_module.AF_INET,
-                                             self.socket_module.SOCK_STREAM)
+        s = self.socket_module
 
-            if self.tls_context:
-                sock = self.tls_context.wrap_socket(
-                    sock, server_hostname=self.server[0]
-                )
+        if not isinstance(self.server, tuple):
+            sockaddr = self.server
+            sock = s.socket(s.AF_UNIX, s.SOCK_STREAM)
+
         else:
-            sock = self.socket_module.socket(self.socket_module.AF_UNIX,
-                                             self.socket_module.SOCK_STREAM)
+            sock = None
+            error = None
+            host, port = self.server
+            info = s.getaddrinfo(host, port, s.AF_UNSPEC, s.SOCK_STREAM,
+                                 s.IPPROTO_TCP)
+            for family, socktype, proto, _, sockaddr in info:
+                try:
+                    sock = s.socket(family, socktype, proto)
+                    if self.no_delay:
+                        sock.setsockopt(s.IPPROTO_TCP, s.TCP_NODELAY, 1)
+                    if self.tls_context:
+                        context = self.tls_context
+                        sock = context.wrap_socket(sock, server_hostname=host)
+                except Exception as e:
+                    error = e
+                    if sock is not None:
+                        sock.close()
+                        sock = None
+                else:
+                    break
+
+            if error is not None:
+                raise error
+
         try:
             sock.settimeout(self.connect_timeout)
-            sock.connect(self.server)
+            sock.connect(sockaddr)
             sock.settimeout(self.timeout)
-            if self.no_delay and sock.family == self.socket_module.AF_INET:
-                sock.setsockopt(self.socket_module.IPPROTO_TCP,
-                                self.socket_module.TCP_NODELAY, 1)
-
         except Exception:
             sock.close()
             raise
@@ -1030,7 +1067,7 @@ class PooledClient(object):
                  allow_unicode_keys=False,
                  encoding='ascii',
                  tls_context=None):
-        self.server = server
+        self.server = normalize_server_spec(server)
         self.serde = serde or LegacyWrappingSerde(serializer, deserializer)
         self.connect_timeout = connect_timeout
         self.timeout = timeout
