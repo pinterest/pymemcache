@@ -1,6 +1,11 @@
 Changelog
 =========
 
+New in version 3.4.0
+--------------------
+* Added IPv6 support for TCP socket connections.
+* ``HashClient`` now supports UNIX sockets.
+
 New in version 3.3.0
 --------------------
 * ``HashClient`` can now be imported from the top-level ``pymemcache`` package
