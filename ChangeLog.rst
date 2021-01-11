@@ -3,7 +3,9 @@ Changelog
 
 New in version 3.4.0
 --------------------
-* Added IPv6 support for TCP socket connections.
+* Added IPv6 support for TCP socket connections. Note that IPv6 may be used in
+  preference to IPv4 when passing a domain name as the host if an IPv6 address
+  can be resolved for that domain.
 * ``HashClient`` now supports UNIX sockets.
 
 New in version 3.3.0
