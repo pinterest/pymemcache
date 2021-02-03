@@ -1039,6 +1039,8 @@ class PooledClient(object):
       max_pool_size: maximum pool size to use (going above this amount
                      triggers a runtime error), by default this is 2147483648L
                      when not provided (or none).
+      pool_idle_timeout: pooled connections are dropped if unused for this
+                         amount of time (default None)
       lock_generator: a callback/type that takes no arguments that will
                       be called to create a lock or semaphore that can
                       protect the pool from concurrent access (for example a
@@ -1065,6 +1067,7 @@ class PooledClient(object):
                  socket_module=socket,
                  key_prefix=b'',
                  max_pool_size=None,
+                 pool_idle_timeout=None,
                  lock_generator=None,
                  default_noreply=True,
                  allow_unicode_keys=False,
@@ -1088,6 +1091,7 @@ class PooledClient(object):
             self._create_client,
             after_remove=lambda client: client.close(),
             max_size=max_pool_size,
+            idle_timeout=pool_idle_timeout,
             lock_generator=lock_generator)
         self.encoding = encoding
         self.tls_context = tls_context

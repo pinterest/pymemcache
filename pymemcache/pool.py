@@ -16,6 +16,7 @@ import collections
 import contextlib
 import sys
 import threading
+import time
 
 import six
 
@@ -25,6 +26,7 @@ class ObjectPool(object):
 
     def __init__(self, obj_creator,
                  after_remove=None, max_size=None,
+                 idle_timeout=None,
                  lock_generator=None):
         self._used_objs = collections.deque()
         self._free_objs = collections.deque()
@@ -38,6 +40,8 @@ class ObjectPool(object):
         if not isinstance(max_size, six.integer_types) or max_size < 0:
             raise ValueError('"max_size" must be a positive integer')
         self.max_size = max_size
+        self.idle_timeout = idle_timeout or 0
+        self._idle_clock = time.time if idle_timeout else int
 
     @property
     def used(self):
@@ -63,19 +67,26 @@ class ObjectPool(object):
 
     def get(self):
         with self._lock:
-            if not self._free_objs:
+            # Find a free object, removing any that have idled for too long.
+            now = self._idle_clock()
+            while self._free_objs:
+                obj = self._free_objs.popleft()
+                if now - obj._last_used > self.idle_timeout:
+                    self._after_remove(obj)
+                else:
+                    break
+            else:
+                # No free objects, create a new one.
                 curr_count = len(self._used_objs)
                 if curr_count >= self.max_size:
                     raise RuntimeError("Too many objects,"
                                        " %s >= %s" % (curr_count,
                                                       self.max_size))
                 obj = self._obj_creator()
-                self._used_objs.append(obj)
-                return obj
-            else:
-                obj = self._free_objs.pop()
-                self._used_objs.append(obj)
-                return obj
+
+            self._used_objs.append(obj)
+            obj._last_used = now
+            return obj
 
     def destroy(self, obj, silent=True):
         was_dropped = False
@@ -94,6 +105,7 @@ class ObjectPool(object):
             try:
                 self._used_objs.remove(obj)
                 self._free_objs.append(obj)
+                obj._last_used = self._idle_clock()
             except ValueError:
                 if not silent:
                     raise
