@@ -32,6 +32,9 @@ jobs:
         codespell . --skip=./.*,./pymemcache/test/certs --quiet-level=2
         flake8 --max-complexity=18 .
         python setup.py check --restructuredtext
+    - name: Disable IPv6 localhost
+      run: |
+        sudo sed -i '/::1/d' /etc/hosts
     - name: Tests
       run: |
         pip install -r test-requirements.txt
