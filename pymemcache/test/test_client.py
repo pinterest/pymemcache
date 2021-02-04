@@ -486,6 +486,9 @@ class TestClient(ClientTestMixin, unittest.TestCase):
     def test_cas_malformed(self):
         client = self.make_client([b'STORED\r\n'])
         with pytest.raises(MemcacheIllegalInputError):
+            client.cas(b'key', b'value', None, noreply=False)
+
+        with pytest.raises(MemcacheIllegalInputError):
             client.cas(b'key', b'value', 'nonintegerstring', noreply=False)
 
         with pytest.raises(MemcacheIllegalInputError):
