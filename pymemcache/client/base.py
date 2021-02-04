@@ -517,6 +517,7 @@ class Client(object):
           the key didn't exist, False if it existed but had a different cas
           value and True if it existed and was changed.
         """
+        cas = self._check_cas(cas)
         return self._store_cmd(b'cas', {key: value}, expire, noreply,
                                flags=flags, cas=cas)[key]
 
@@ -933,7 +934,6 @@ class Client(object):
 
         extra = b''
         if cas is not None:
-            cas = self._check_cas(cas)
             extra += b' ' + cas
         if noreply:
             extra += b' noreply'
