@@ -1,6 +1,11 @@
 Changelog
 =========
 
+New in version 3.4.1
+--------------------
+* CAS operations will now raise ``MemcacheIllegalInputError`` when ``None`` is
+  given as the ``cas`` value.
+
 New in version 3.4.0
 --------------------
 * Added IPv6 support for TCP socket connections. Note that IPv6 may be used in
