@@ -1,6 +1,11 @@
 Changelog
 =========
 
+New in version 3.4.2
+--------------------
+* Remove trailing space for commands that don't take arguments, such as
+  ``stats``. This was a violation of the memcached protocol.
+
 New in version 3.4.1
 --------------------
 * CAS operations will now raise ``MemcacheIllegalInputError`` when ``None`` is
