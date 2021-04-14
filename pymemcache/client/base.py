@@ -893,8 +893,10 @@ class Client(object):
         remapped_keys = dict(zip(prefixed_keys, keys))
 
         # It is important for all keys to be listed in their original order.
-        # For Memcached Protocol correctness, if the list of prefixed_keys is empty, the name of the command will be immediately followed by the end of line.
-        cmd = name + b' ' + b' '.join(prefixed_keys) + b'\r\n' if prefixed_keys else name + b'\r\n'
+        cmd = name
+        if prefixed_keys:
+            cmd += b' ' + b' '.join(prefixed_keys)
+        cmd += b'\r\n'
 
         try:
             if self.sock is None:
