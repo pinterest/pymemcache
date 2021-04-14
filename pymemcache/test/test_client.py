@@ -889,7 +889,7 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         client = self.make_client([b'STAT fake_stats 1\r\n', b'END\r\n'])
         result = client.stats()
         assert client.sock.send_bufs == [
-            b'stats \r\n'
+            b'stats\r\n'
         ]
         assert result == {b'fake_stats': 1}
 
@@ -923,7 +923,7 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         ])
         result = client.stats()
         assert client.sock.send_bufs == [
-            b'stats \r\n'
+            b'stats\r\n'
         ]
         expected = {
             b'cmd_get': 2519,
