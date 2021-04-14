@@ -923,7 +923,7 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         ])
         result = client.stats()
         assert client.sock.send_bufs == [
-            b'stats \r\n'
+            b'stats\r\n'
         ]
         expected = {
             b'cmd_get': 2519,
