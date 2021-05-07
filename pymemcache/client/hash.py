@@ -112,6 +112,11 @@ class HashClient(object):
         self.encoding = encoding
         self.tls_context = tls_context
 
+    def _make_client_key(self, server):
+        if isinstance(server, (list, tuple)) and len(server) == 2:
+            return '%s:%s' % server
+        return server
+
     def add_server(self, server, port=None):
         # To maintain backward compatibility, if a port is provided, assume
         # that server wasn't provided as a (host, port) tuple.
@@ -120,16 +125,12 @@ class HashClient(object):
                 raise TypeError('Server must be a string when passing port.')
             server = (server, port)
 
-        if isinstance(server, six.string_types):
-            key = server
-        else:
-            key = '%s:%s' % server
-
         _class = PooledClient if self.use_pooling else self.client_class
         client = _class(server, **self.default_kwargs)
         if self.use_pooling:
             client.client_class = self.client_class
 
+        key = self._make_client_key(server)
         self.clients[key] = client
         self.hasher.add_node(key)
 
@@ -141,11 +142,7 @@ class HashClient(object):
                 raise TypeError('Server must be a string when passing port.')
             server = (server, port)
 
-        if isinstance(server, six.string_types):
-            key = server
-        else:
-            key = '%s:%s' % server
-
+        key = self._make_client_key(server)
         dead_time = time.time()
         self._failed_clients.pop(server)
         self._dead_clients[server] = dead_time
@@ -181,8 +178,7 @@ class HashClient(object):
                 return
             raise MemcacheError('All servers seem to be down right now')
 
-        client = self.clients[server]
-        return client
+        return self.clients[server]
 
     def _safely_run_func(self, client, func, default_val, *args, **kwargs):
         try:
@@ -383,8 +379,7 @@ class HashClient(object):
             client_batches[client.server][key] = value
 
         for server, values in client_batches.items():
-            client = self.clients['%s:%s' % server]
-
+            client = self.clients[self._make_client_key(server)]
             failed += self._safely_run_set_many(
                 client, values, *args, **kwargs
             )
@@ -406,7 +401,7 @@ class HashClient(object):
             client_batches[client.server].append(key)
 
         for server, keys in client_batches.items():
-            client = self.clients['%s:%s' % server]
+            client = self.clients[self._make_client_key(server)]
             new_args = list(args)
             new_args.insert(0, keys)
 
