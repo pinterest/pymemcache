@@ -39,6 +39,20 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
 
         return client
 
+    def make_unix_client(self, sockets, *mock_socket_values, **kwargs):
+        client = HashClient([], **kwargs)
+
+        for socket_, vals in zip(sockets, mock_socket_values):
+            c = self.make_client_pool(
+                socket_,
+                vals,
+                **kwargs
+            )
+            client.clients[socket_] = c
+            client.hasher.add_node(socket_)
+
+        return client
+
     def test_setup_client_without_pooling(self):
         client_class = 'pymemcache.client.hash.HashClient.client_class'
         with mock.patch(client_class) as internal_client:
@@ -49,6 +63,30 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         kwargs = internal_client.call_args[1]
         assert kwargs['timeout'] == 999
         assert kwargs['key_prefix'] == 'foo_bar_baz'
+
+    def test_get_many_unix(self):
+        pid = os.getpid()
+        sockets = [
+            '/tmp/pymemcache.1.%d' % pid,
+            '/tmp/pymemcache.2.%d' % pid,
+        ]
+        client = self.make_unix_client(sockets, *[
+            [b'STORED\r\n', b'VALUE key3 0 6\r\nvalue2\r\nEND\r\n', ],
+            [b'STORED\r\n', b'VALUE key1 0 6\r\nvalue1\r\nEND\r\n', ],
+        ])
+
+        def get_clients(key):
+            if key == b'key3':
+                return client.clients['/tmp/pymemcache.1.%d' % pid]
+            else:
+                return client.clients['/tmp/pymemcache.2.%d' % pid]
+
+        client._get_client = get_clients
+
+        result = client.set(b'key1', b'value1', noreply=False)
+        result = client.set(b'key3', b'value2', noreply=False)
+        result = client.get_many([b'key1', b'key3'])
+        assert result == {b'key1': b'value1', b'key3': b'value2'}
 
     def test_get_many_all_found(self):
         client = self.make_client(*[
@@ -283,6 +321,22 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         ])
         result = client.set_many(values, noreply=True)
         assert result == []
+
+    def test_set_many_unix(self):
+        values = {
+            'key1': 'value1',
+            'key2': 'value2',
+            'key3': 'value3'
+        }
+
+        pid = os.getpid()
+        sockets = ['/tmp/pymemcache.%d' % pid]
+        client = self.make_unix_client(sockets, *[
+            [b'STORED\r\n', b'NOT_STORED\r\n', b'STORED\r\n'],
+        ])
+
+        result = client.set_many(values, noreply=False)
+        assert result == ['key2']
 
     def test_server_encoding_pooled(self):
         """
