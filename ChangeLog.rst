@@ -1,6 +1,10 @@
 Changelog
 =========
 
+New in version 3.4.3
+--------------------
+* Fix ``HashClient.{get,set}_many()`` with UNIX sockets.
+
 New in version 3.4.2
 --------------------
 * Remove trailing space for commands that don't take arguments, such as
