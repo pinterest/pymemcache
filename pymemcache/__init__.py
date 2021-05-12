@@ -1,4 +1,4 @@
-__version__ = '3.4.2'
+__version__ = '3.4.3'
 
 from pymemcache.client.base import Client  # noqa
 from pymemcache.client.base import PooledClient  # noqa
