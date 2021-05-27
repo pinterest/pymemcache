@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from builtins import bytes as newbytes
-
 import collections
 import errno
 import functools
@@ -223,22 +221,6 @@ class ClientTestMixin:
         # unit test for set operation with parameter flags
         client = self.make_client([b'STORED\r\n'], encoding='utf-8')
         result = client.set(b'key', b'value', noreply=False, flags=0x00000030)
-        assert result is True
-
-    def test_set_future(self):
-        client = self.make_client([b'STORED\r\n'])
-        result = client.set(newbytes(b'key'), newbytes(b'value'), noreply=False)
-        assert result is True
-
-        # unit test for encoding passed in __init__()
-        client = self.make_client([b'STORED\r\n'], encoding='utf-8')
-        result = client.set(newbytes(b'key'), newbytes(b'value'), noreply=False)
-        assert result is True
-
-        # unit test for set operation with parameter flags
-        client = self.make_client([b'STORED\r\n'], encoding='utf-8')
-        result = client.set(newbytes(b'key'), newbytes(b'value'), noreply=False,
-                            flags=0x00000030)
         assert result is True
 
     def test_set_unicode_key(self):
