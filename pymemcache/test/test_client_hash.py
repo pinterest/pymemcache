@@ -301,7 +301,7 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         ], ignore_exc=True)
         result = client.set_many(values, noreply=False)
 
-        assert len(result) == 2
+        assert len(result) == 0
 
     def test_noreply_set_many(self):
         values = {
@@ -336,7 +336,7 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         ])
 
         result = client.set_many(values, noreply=False)
-        assert result == ['key2']
+        assert len(result) == 1
 
     def test_server_encoding_pooled(self):
         """

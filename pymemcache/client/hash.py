@@ -336,15 +336,12 @@ class HashClient(object):
         succeeded = []
 
         try:
-            for key, value in six.iteritems(values):
-                result = client.set(key, value, *args, **kwargs)
-                if result:
-                    succeeded.append(key)
-                else:
-                    failed.append(key)
+            failed = client.set_many(values, *args, **kwargs)
         except Exception as e:
-            return succeeded, failed, e
+            if not self.ignore_exc:
+                return succeeded, failed, e
 
+        succeeded = [key for key in six.iterkeys(values) if key not in failed]
         return succeeded, failed, None
 
     def close(self):
