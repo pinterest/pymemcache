@@ -15,8 +15,7 @@
 from functools import partial
 import logging
 from io import BytesIO
-import six
-from six.moves import cPickle as pickle
+import pickle
 
 try:
     long_type = long  # noqa
@@ -49,16 +48,12 @@ def _python_memcache_serializer(key, value, pickle_version=None):
     if value_type is bytes:
         pass
 
-    elif value_type is six.text_type:
+    elif value_type is str:
         flags |= FLAG_TEXT
         value = value.encode('utf8')
 
     elif value_type is int:
         flags |= FLAG_INTEGER
-        value = "%d" % value
-
-    elif six.PY2 and value_type is long_type:
-        flags |= FLAG_LONG
         value = "%d" % value
 
     else:
@@ -90,10 +85,7 @@ def python_memcache_deserializer(key, value, flags):
         return int(value)
 
     elif flags & FLAG_LONG:
-        if six.PY3:
-            return int(value)
-        else:
-            return long_type(value)
+        return int(value)
 
     elif flags & FLAG_PICKLE:
         try:
@@ -107,7 +99,7 @@ def python_memcache_deserializer(key, value, flags):
     return value
 
 
-class PickleSerde(object):
+class PickleSerde:
     """
     An object which implements the serialization/deserialization protocol for
     :py:class:`pymemcache.client.base.Client` and its descendants using the
@@ -134,7 +126,7 @@ class PickleSerde(object):
         return python_memcache_deserializer(key, value, flags)
 
 
-class LegacyWrappingSerde(object):
+class LegacyWrappingSerde:
     """
     This class defines how to wrap legacy de/serialization functions into a
     'serde' object which implements '.serialize' and '.deserialize' methods.

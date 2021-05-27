@@ -7,7 +7,6 @@ This module is considered public API.
 
 import time
 
-import six
 import socket
 
 from pymemcache.exceptions import MemcacheClientError, MemcacheIllegalInputError
@@ -15,7 +14,7 @@ from pymemcache.serde import LegacyWrappingSerde
 from pymemcache.client.base import check_key_helper
 
 
-class MockMemcacheClient(object):
+class MockMemcacheClient:
     """
     A (partial) in-memory mock for Clients.
 
@@ -85,8 +84,8 @@ class MockMemcacheClient(object):
 
     def set(self, key, value, expire=0, noreply=True, flags=None):
         key = self.check_key(key)
-        if (isinstance(value, six.string_types) and
-                not isinstance(value, six.binary_type)):
+        if (isinstance(value, str) and
+                not isinstance(value, bytes)):
             try:
                 value = value.encode(self.encoding)
             except (UnicodeEncodeError, UnicodeDecodeError):
@@ -102,7 +101,7 @@ class MockMemcacheClient(object):
 
     def set_many(self, values, expire=0, noreply=True, flags=None):
         result = []
-        for key, value in six.iteritems(values):
+        for key, value in values.items():
             ret = self.set(key, value, expire, noreply, flags=flags)
             if not ret:
                 result.append(key)
@@ -145,8 +144,8 @@ class MockMemcacheClient(object):
     def prepend(self, key, value, expire=0, noreply=True, flags=None):
         current = self.get(key)
         if current is not None:
-            if (isinstance(value, six.string_types) and
-                    not isinstance(value, six.binary_type)):
+            if (isinstance(value, str) and
+                    not isinstance(value, bytes)):
                 try:
                     value = value.encode(self.encoding)
                 except (UnicodeEncodeError, UnicodeDecodeError):
@@ -157,8 +156,8 @@ class MockMemcacheClient(object):
     def append(self, key, value, expire=0, noreply=True, flags=None):
         current = self.get(key)
         if current is not None:
-            if (isinstance(value, six.string_types) and
-                    not isinstance(value, six.binary_type)):
+            if (isinstance(value, str) and
+                    not isinstance(value, bytes)):
                 try:
                     value = value.encode(self.encoding)
                 except (UnicodeEncodeError, UnicodeDecodeError):

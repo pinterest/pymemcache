@@ -1,7 +1,7 @@
 from pymemcache.client.murmur3 import murmur3_32
 
 
-class RendezvousHash(object):
+class RendezvousHash:
     """
         Implements the Highest Random Weight (HRW) hashing algorithm most
         commonly referred to as rendezvous hashing.
@@ -36,7 +36,7 @@ class RendezvousHash(object):
 
         for node in self.nodes:
             score = self.hash_function(
-                "%s-%s" % (node, key))
+                f"{node}-{key}")
 
             if score > high_score:
                 (high_score, winner) = (score, node)

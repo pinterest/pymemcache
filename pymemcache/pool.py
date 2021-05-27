@@ -18,10 +18,8 @@ import sys
 import threading
 import time
 
-import six
 
-
-class ObjectPool(object):
+class ObjectPool:
     """A pool of objects that release/creates/destroys as needed."""
 
     def __init__(self, obj_creator,
@@ -37,7 +35,7 @@ class ObjectPool(object):
             self._lock = lock_generator()
         self._after_remove = after_remove
         max_size = max_size or 2 ** 31
-        if not isinstance(max_size, six.integer_types) or max_size < 0:
+        if not isinstance(max_size, int) or max_size < 0:
             raise ValueError('"max_size" must be a positive integer')
         self.max_size = max_size
         self.idle_timeout = idle_timeout
@@ -62,7 +60,7 @@ class ObjectPool(object):
                 self.release(obj)
             else:
                 self.destroy(obj)
-            six.reraise(exc_info[0], exc_info[1], exc_info[2])
+            raise exc_info[1].with_traceback(exc_info[2])
         self.release(obj)
 
     def get(self):

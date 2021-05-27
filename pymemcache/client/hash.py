@@ -2,7 +2,6 @@ import collections
 import socket
 import time
 import logging
-import six
 
 from pymemcache.client.base import (
     Client,
@@ -16,7 +15,7 @@ from pymemcache.exceptions import MemcacheError
 logger = logging.getLogger(__name__)
 
 
-class HashClient(object):
+class HashClient:
     """
     A client for communicating with a cluster of memcached servers
     """
@@ -125,7 +124,7 @@ class HashClient(object):
         # To maintain backward compatibility, if a port is provided, assume
         # that server wasn't provided as a (host, port) tuple.
         if port is not None:
-            if not isinstance(server, six.string_types):
+            if not isinstance(server, str):
                 raise TypeError('Server must be a string when passing port.')
             server = (server, port)
 
@@ -142,7 +141,7 @@ class HashClient(object):
         # To maintain backward compatibility, if a port is provided, assume
         # that server wasn't provided as a (host, port) tuple.
         if port is not None:
-            if not isinstance(server, six.string_types):
+            if not isinstance(server, str):
                 raise TypeError('Server must be a string when passing port.')
             server = (server, port)
 
@@ -216,7 +215,7 @@ class HashClient(object):
 
         # Connecting to the server fail, we should enter
         # retry mode
-        except socket.error:
+        except OSError:
             self._mark_failed_server(client.server)
 
             # if we haven't enabled ignore_exc, don't move on gracefully, just
@@ -275,7 +274,7 @@ class HashClient(object):
 
         # Connecting to the server fail, we should enter
         # retry mode
-        except socket.error:
+        except OSError:
             self._mark_failed_server(client.server)
 
             # if we haven't enabled ignore_exc, don't move on gracefully, just
@@ -370,7 +369,7 @@ class HashClient(object):
         client_batches = collections.defaultdict(dict)
         failed = []
 
-        for key, value in six.iteritems(values):
+        for key, value in values.items():
             client = self._get_client(key)
 
             if client is None:

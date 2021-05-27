@@ -1,5 +1,4 @@
 # Copyright 2012 Pinterest.com
-# -*- coding: utf-8 -*-
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,8 +19,8 @@ import errno
 import functools
 import json
 import os
-import mock
 import platform
+from unittest import mock
 import re
 import socket
 import sys
@@ -92,7 +91,7 @@ def test_check_key_helper():
     assert check_key_helper("", True) == b""
 
 
-class MockSocket(object):
+class MockSocket:
     def __init__(self, recv_bufs, connect_failure=None, close_failure=None):
         self.recv_bufs = collections.deque(recv_bufs)
         self.send_bufs = []
@@ -134,7 +133,7 @@ class MockSocket(object):
         self.socket_options.append((level, option, value))
 
 
-class MockUnixSocketServer(object):
+class MockUnixSocketServer:
     def __init__(self, socket_path):
         if os.path.exists(socket_path):
             os.remove(socket_path)
@@ -151,7 +150,7 @@ class MockUnixSocketServer(object):
         os.remove(self.socket_path)
 
 
-class MockSocketModule(object):
+class MockSocketModule:
     def __init__(self, connect_failure=None, close_failure=None):
         self.connect_failure = connect_failure
         self.close_failure = close_failure
@@ -190,7 +189,7 @@ class CustomizedClient(Client):
 
 
 @pytest.mark.unit()
-class ClientTestMixin(object):
+class ClientTestMixin:
     def make_client(self, mock_socket_values, **kwargs):
         client = Client(None, **kwargs)
         # mock out client._connect() rather than hard-settting client.sock to
@@ -246,7 +245,7 @@ class ClientTestMixin(object):
         client = self.make_client([b''])
 
         def _set():
-            client.set(u'\u0FFF', b'value', noreply=False)
+            client.set('\u0FFF', b'value', noreply=False)
 
         with pytest.raises(MemcacheIllegalInputError):
             _set()
@@ -254,7 +253,7 @@ class ClientTestMixin(object):
     def test_set_unicode_key_ok(self):
         client = self.make_client([b'STORED\r\n'], allow_unicode_keys=True)
 
-        result = client.set(u'\u0FFF', b'value', noreply=False)
+        result = client.set('\u0FFF', b'value', noreply=False)
         assert result is True
 
     def test_set_unicode_key_ok_snowman(self):
@@ -285,7 +284,7 @@ class ClientTestMixin(object):
         client = self.make_client([b''])
 
         def _set():
-            client.set(b'key', u'\u0FFF', noreply=False)
+            client.set(b'key', '\u0FFF', noreply=False)
 
         with pytest.raises(MemcacheIllegalInputError):
             _set()
@@ -434,7 +433,7 @@ class ClientTestMixin(object):
         client = self.make_client([b''])
 
         def _get():
-            client.get(u'\u0FFF')
+            client.get('\u0FFF')
 
         with pytest.raises(MemcacheIllegalInputError):
             _get()
@@ -560,7 +559,7 @@ class TestClient(ClientTestMixin, unittest.TestCase):
 
         with pytest.raises(MemcacheIllegalInputError):
             # non-ASCII digit
-            client.cas(b'key', b'value', u'⁰', noreply=False)
+            client.cas(b'key', b'value', '⁰', noreply=False)
 
     def test_cas_stored(self):
         client = self.make_client([b'STORED\r\n'])
@@ -769,7 +768,7 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         assert result is False
 
     def test_serialization(self):
-        class JsonSerde(object):
+        class JsonSerde:
             def serialize(self, key, value):
                 return json.dumps(value).encode('ascii'), 0
 
@@ -922,7 +921,7 @@ class TestClient(ClientTestMixin, unittest.TestCase):
     def test_set_key_with_noninteger_expire(self):
         client = self.make_client([b''])
 
-        class _OneLike(object):
+        class _OneLike:
             """object that looks similar to the int 1"""
             def __str__(self):
                 return "1"
@@ -1080,7 +1079,7 @@ class TestClient(ClientTestMixin, unittest.TestCase):
             client.get('my☃'*150)
 
         with pytest.raises(MemcacheClientError):
-            client.get(u'\u0FFF'*150)
+            client.get('\u0FFF'*150)
 
     def test_key_contains_space(self):
         client = self.make_client([b'END\r\n'])
@@ -1091,7 +1090,7 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         client = self.make_client([b'END\r\n'])
 
         with pytest.raises(MemcacheClientError):
-            client.get(u'\u3053\u3093\u306b\u3061\u306f')
+            client.get('\u3053\u3093\u306b\u3061\u306f')
 
     def _default_noreply_false(self, cmd, args, response):
         client = self.make_client(response, default_noreply=False)
@@ -1225,7 +1224,7 @@ class TestClientSocketConnect(unittest.TestCase):
                                                socket.TCP_NODELAY, 1)]
 
     def test_socket_connect_unix(self):
-        server = '/tmp/pymemcache.{pid}'.format(pid=os.getpid())
+        server = f'/tmp/pymemcache.{os.getpid()}'
 
         with MockUnixSocketServer(server):
             client = Client(server)
@@ -1434,7 +1433,7 @@ class TestMockClient(ClientTestMixin, unittest.TestCase):
         assert result == b'value'
 
     def test_deserialization(self):
-        class JsonSerde(object):
+        class JsonSerde:
             def serialize(self, key, value):
                 if isinstance(value, dict):
                     return json.dumps(value).encode('UTF-8'), 1
