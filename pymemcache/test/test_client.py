@@ -1265,6 +1265,7 @@ class TestPooledClientIdleTimeout(ClientTestMixin, unittest.TestCase):
 
     def test_free_idle(self):
         num_removed = 0
+
         def increment_removed(obj):
             nonlocal num_removed
             num_removed += 1
