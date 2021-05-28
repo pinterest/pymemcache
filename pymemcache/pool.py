@@ -26,7 +26,7 @@ class ObjectPool(object):
 
     def __init__(self, obj_creator,
                  after_remove=None, max_size=None,
-                 idle_timeout=None,
+                 idle_timeout=0,
                  lock_generator=None):
         self._used_objs = collections.deque()
         self._free_objs = collections.deque()
@@ -40,7 +40,7 @@ class ObjectPool(object):
         if not isinstance(max_size, six.integer_types) or max_size < 0:
             raise ValueError('"max_size" must be a positive integer')
         self.max_size = max_size
-        self.idle_timeout = idle_timeout or 0
+        self.idle_timeout = idle_timeout
         self._idle_clock = time.time if idle_timeout else int
 
     @property

@@ -36,7 +36,7 @@ class HashClient(object):
         socket_module=socket,
         key_prefix=b'',
         max_pool_size=None,
-        pool_idle_timeout=None,
+        pool_idle_timeout=0,
         lock_generator=None,
         retry_attempts=2,
         retry_timeout=1,
