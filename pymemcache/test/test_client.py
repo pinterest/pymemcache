@@ -1264,25 +1264,27 @@ class TestPooledClientIdleTimeout(ClientTestMixin, unittest.TestCase):
         return client
 
     def test_free_idle(self):
-        num_removed = 0
+        class Counter(object):
+            count = 0
 
-        def increment_removed(obj):
-            nonlocal num_removed
-            num_removed += 1
+            def increment(self, obj):
+                self.count += 1
+
+        removed = Counter()
 
         client = self.make_client([b'VALUE key 0 5\r\nvalue\r\nEND\r\n']*2)
-        client.client_pool._after_remove = increment_removed
+        client.client_pool._after_remove = removed.increment
         client.client_pool._idle_clock = lambda: 0
 
         client.set(b'key', b'value')
-        assert num_removed == 0
+        assert removed.count == 0
         client.get(b'key')
-        assert num_removed == 0
+        assert removed.count == 0
 
         # Advance clock to beyond the idle timeout.
         client.client_pool._idle_clock = lambda: 61
         client.get(b'key')
-        assert num_removed == 1
+        assert removed.count == 1
 
 
 class TestMockClient(ClientTestMixin, unittest.TestCase):
