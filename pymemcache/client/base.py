@@ -1040,8 +1040,8 @@ class PooledClient(object):
                      triggers a runtime error), by default this is 2147483648L
                      when not provided (or none).
       pool_idle_timeout: pooled connections are discarded if they have been
-                         unused for this many seconds. A value of 0 or None
-                         indicates that pooled connections are never discarded.
+                         unused for this many seconds. A value of 0 indicates
+                         that pooled connections are never discarded.
       lock_generator: a callback/type that takes no arguments that will
                       be called to create a lock or semaphore that can
                       protect the pool from concurrent access (for example a
@@ -1068,7 +1068,7 @@ class PooledClient(object):
                  socket_module=socket,
                  key_prefix=b'',
                  max_pool_size=None,
-                 pool_idle_timeout=None,
+                 pool_idle_timeout=0,
                  lock_generator=None,
                  default_noreply=True,
                  allow_unicode_keys=False,
