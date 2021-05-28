@@ -71,10 +71,11 @@ class ObjectPool(object):
             now = self._idle_clock()
             while self._free_objs:
                 obj = self._free_objs.popleft()
-                if now - obj._last_used > self.idle_timeout:
-                    self._after_remove(obj)
-                else:
+                if now - obj._last_used <= self.idle_timeout:
                     break
+
+                if self._after_remove is not None:
+                    self._after_remove(obj)
             else:
                 # No free objects, create a new one.
                 curr_count = len(self._used_objs)
