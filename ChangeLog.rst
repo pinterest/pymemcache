@@ -1,6 +1,10 @@
 Changelog
 =========
 
+New in version 3.4.4
+--------------------
+* Idle connections will be removed from the pool after ``pool_idle_timeout``.
+
 New in version 3.4.3
 --------------------
 * Fix ``HashClient.{get,set}_many()`` with UNIX sockets.
