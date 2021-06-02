@@ -36,6 +36,7 @@ class HashClient(object):
         socket_module=socket,
         key_prefix=b'',
         max_pool_size=None,
+        pool_idle_timeout=0,
         lock_generator=None,
         retry_attempts=2,
         retry_timeout=1,
@@ -104,6 +105,7 @@ class HashClient(object):
         if use_pooling is True:
             self.default_kwargs.update({
                 'max_pool_size': max_pool_size,
+                'pool_idle_timeout': pool_idle_timeout,
                 'lock_generator': lock_generator
             })
 

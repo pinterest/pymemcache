@@ -1255,6 +1255,38 @@ class TestPooledClient(ClientTestMixin, unittest.TestCase):
         assert isinstance(client.client_pool.get(), MyClient)
 
 
+class TestPooledClientIdleTimeout(ClientTestMixin, unittest.TestCase):
+    def make_client(self, mock_socket_values, **kwargs):
+        mock_client = Client(None, **kwargs)
+        mock_client.sock = MockSocket(list(mock_socket_values))
+        client = PooledClient(None, pool_idle_timeout=60, **kwargs)
+        client.client_pool = pool.ObjectPool(lambda: mock_client)
+        return client
+
+    def test_free_idle(self):
+        class Counter(object):
+            count = 0
+
+            def increment(self, obj):
+                self.count += 1
+
+        removed = Counter()
+
+        client = self.make_client([b'VALUE key 0 5\r\nvalue\r\nEND\r\n']*2)
+        client.client_pool._after_remove = removed.increment
+        client.client_pool._idle_clock = lambda: 0
+
+        client.set(b'key', b'value')
+        assert removed.count == 0
+        client.get(b'key')
+        assert removed.count == 0
+
+        # Advance clock to beyond the idle timeout.
+        client.client_pool._idle_clock = lambda: 61
+        client.get(b'key')
+        assert removed.count == 1
+
+
 class TestMockClient(ClientTestMixin, unittest.TestCase):
     def make_client(self, mock_socket_values, **kwargs):
         client = MockMemcacheClient(None, **kwargs)
