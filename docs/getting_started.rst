@@ -174,6 +174,84 @@ the `JsonSerde` from above which is more careful with encodings:
             raise Exception("Unknown serialization format")
 
 
+Interacting with pymemcache
+---------------------------
+
+For testing purpose pymemcache can be used in an interactive mode by using
+the python interpreter or again ipython and tools like tox.
+
+One main advantage of using `tox` to interact with `pymemcache` is that it
+comes with it's own virtual environments. It will automatically install
+pymemcache and fetch all the needed requirements at run. See the example below:
+
+.. code-block:: shell
+   $ podman run --publish 11211:11211 -it --rm --name memcached memcached
+   $ tox -e venv -- python
+   >>> from pymemcache.client.base import Client
+   >>> client = Client('127.0.0.1')
+   >>> client.set('some_key', 'some_value')
+   True
+   >>> client.get('some_key')
+   b'some_value'
+   >>> print(client.get.__doc__)
+        The memcached "get" command, but only for one key, as a convenience.
+        Args:
+          key: str, see class docs for details.
+          default: value that will be returned if the key was not found.
+        Returns:
+          The value for the key, or default if the key wasn't found.
+
+You can instantiate all the classes and clients offered by pymemcache.
+
+Your client will remain open until you decide to close it or until you decide
+to quit your interpreter. It can allow you to see what's happen if your server
+is abruptly closed. Below is an by example.
+
+Starting your server:
+
+.. code-block:: shell
+   $ podman run --publish 11211:11211 -it --name memcached memcached
+
+Starting your client and set some keys:
+
+.. code-block:: shell
+   $ tox -e venv -- python
+   >>> from pymemcache.client.base import Client
+   >>> client = Client('127.0.0.1')
+   >>> client.set('some_key', 'some_value')
+   True
+
+Restarting the server:
+
+.. code-block:: shell
+   $ podman restart memcached
+
+The previous client is still opened, now try to retrieve some keys:
+
+.. code-block:: shell
+   >>> print(client.get('some_key'))
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+     File "/home/user/pymemcache/pymemcache/client/base.py", line 535, in get
+       return self._fetch_cmd(b'get', [key], False).get(key, default)
+     File "/home/user/pymemcache/pymemcache/client/base.py", line 910, in _fetch_cmd
+       buf, line = _readline(self.sock, buf)
+     File "/home/user/pymemcache/pymemcache/client/base.py", line 1305, in _readline
+       raise MemcacheUnexpectedCloseError()
+   pymemcache.exceptions.MemcacheUnexpectedCloseError
+
+We can see that the connection has been closed.
+
+You can also pass a command directly from CLI parameters and get output
+directly:
+
+.. code-block:: shell
+   $ tox -e venv -- python -c "from pymemcache.client.base import Client; client = Client('127.0.01'); print(client.get('some_key'))"
+   b'some_value'
+
+This kind of usage is useful for debug sessions or to dig manually into your
+server.
+
 Key Constraints
 ---------------
 This client implements the ASCII protocol of memcached. This means keys should not
