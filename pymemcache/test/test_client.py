@@ -37,51 +37,11 @@ from pymemcache.exceptions import (
 )
 
 from pymemcache import pool
-from pymemcache.test.utils import MockMemcacheClient
-
-
-class MockSocket(object):
-    def __init__(self, recv_bufs, connect_failure=None, close_failure=None):
-        self.recv_bufs = collections.deque(recv_bufs)
-        self.send_bufs = []
-        self.closed = False
-        self.timeouts = []
-        self.connect_failure = connect_failure
-        self.close_failure = close_failure
-        self.connections = []
-        self.socket_options = []
-
-    @property
-    def family(self):
-        # TODO: Use ipaddress module when dropping support for Python < 3.3
-        ipv6_re = re.compile(r'^[0-9a-f:]+$')
-        is_ipv6 = any(ipv6_re.match(c[0]) for c in self.connections)
-        return socket.AF_INET6 if is_ipv6 else socket.AF_INET
-
-    def sendall(self, value):
-        self.send_bufs.append(value)
-
-    def close(self):
-        if isinstance(self.close_failure, Exception):
-            raise self.close_failure
-        self.closed = True
-
-    def recv(self, size):
-        value = self.recv_bufs.popleft()
-        if isinstance(value, Exception):
-            raise value
-        return value
-
-    def settimeout(self, timeout):
-        self.timeouts.append(timeout)
-
-    def connect(self, server):
-        if isinstance(self.connect_failure, Exception):
-            raise self.connect_failure
-        self.connections.append(server)
-
-    def setsockopt(self, level, option, value):
-        self.socket_options.append((level, option, value))
+from pymemcache.test.utils import (
+    MockMemcacheClient,
+    MockSocket,
+    MockSocketModule
+)
 
 
 class MockUnixSocketServer(object):
@@ -99,21 +59,6 @@ class MockUnixSocketServer(object):
     def __exit__(self, *args):
         self.socket.close()
         os.remove(self.socket_path)
-
-
-class MockSocketModule(object):
-    def __init__(self, connect_failure=None, close_failure=None):
-        self.connect_failure = connect_failure
-        self.close_failure = close_failure
-        self.sockets = []
-
-    def socket(self, family, type, proto=0, fileno=None):
-        socket = MockSocket(
-            [],
-            connect_failure=self.connect_failure,
-            close_failure=self.close_failure)
-        self.sockets.append(socket)
-        return socket
 
     def __getattr__(self, name):
         return getattr(socket, name)

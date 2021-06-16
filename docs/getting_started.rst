@@ -174,6 +174,55 @@ the `JsonSerde` from above which is more careful with encodings:
             raise Exception("Unknown serialization format")
 
 
+Retrying with pymemcache
+------------------------
+
+Pymemcache afford retrying mechanismes. The ``RetryingClient`` module simplify
+the task of adding retry behavior to just about anything in pymemcache.
+
+The simplest use case is retrying a flaky function whenever an Exception
+occurs until a value is returned.
+
+Example:
+
+.. code-block:: python
+
+     from pymemcache import Client, RetryingClient
+
+     rc = retrying.RetryingClient(Client("127.0.01"))
+     rc.set("foo", "bar")
+
+In the previous example if an exception occur it will retry until retry limit
+is reached. It will catch all type of exceptions.
+
+.. code-block:: python
+
+     from pymemcache import Client, RetryingClient
+     from pymemcache.client.retrying import wait_random
+
+     rc = retrying.RetryingClient(
+        Client("127.0.01"),
+        wait=wait_random(min=1, max=9))
+     rc.set("foo", "bar")
+
+You can define your waiting strategy to use as in the previous example.
+
+
+.. code-block:: python
+
+     from pymemcache import Client, RetryingClient
+     from pymemcache.exception import MemcacheUnexpectedCloseError
+     from pymemcache.client.retrying import retry_if_exception
+
+     rc = retrying.RetryingClient(
+        Client("127.0.01"),
+        retry=retry_if_exception(MemcacheUnexpectedCloseError))
+     rc.set("foo", "bar")
+
+You can define your retry strategy by only acting on specific kind
+of exception.
+
+
 Interacting with pymemcache
 ---------------------------
 
