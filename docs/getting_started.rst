@@ -185,6 +185,7 @@ comes with it's own virtual environments. It will automatically install
 pymemcache and fetch all the needed requirements at run. See the example below:
 
 .. code-block:: shell
+
    $ podman run --publish 11211:11211 -it --rm --name memcached memcached
    $ tox -e venv -- python
    >>> from pymemcache.client.base import Client
@@ -210,11 +211,13 @@ is abruptly closed. Below is an by example.
 Starting your server:
 
 .. code-block:: shell
+
    $ podman run --publish 11211:11211 -it --name memcached memcached
 
 Starting your client and set some keys:
 
 .. code-block:: shell
+
    $ tox -e venv -- python
    >>> from pymemcache.client.base import Client
    >>> client = Client('127.0.0.1')
@@ -224,11 +227,13 @@ Starting your client and set some keys:
 Restarting the server:
 
 .. code-block:: shell
+
    $ podman restart memcached
 
 The previous client is still opened, now try to retrieve some keys:
 
 .. code-block:: shell
+
    >>> print(client.get('some_key'))
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
@@ -246,6 +251,7 @@ You can also pass a command directly from CLI parameters and get output
 directly:
 
 .. code-block:: shell
+
    $ tox -e venv -- python -c "from pymemcache.client.base import Client; client = Client('127.0.01'); print(client.get('some_key'))"
    b'some_value'
 
