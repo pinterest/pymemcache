@@ -844,7 +844,9 @@ class Client(object):
         try:
             self._misc_cmd([cmd], b'shutdown', False)
         except MemcacheUnexpectedCloseError:
-            return True
+            pass
+
+        return True
 
     def _raise_errors(self, line, name):
         if line.startswith(b'ERROR'):
