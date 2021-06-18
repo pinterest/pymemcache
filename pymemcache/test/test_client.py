@@ -40,6 +40,11 @@ from pymemcache import pool
 from pymemcache.test.utils import MockMemcacheClient
 
 
+# TODO: Use ipaddress module when dropping support for Python < 3.3
+def is_ipv6(address):
+    return re.match(r'^[0-9a-f:]+$', address)
+
+
 class MockSocket(object):
     def __init__(self, recv_bufs, connect_failure=None, close_failure=None):
         self.recv_bufs = collections.deque(recv_bufs)
@@ -53,10 +58,8 @@ class MockSocket(object):
 
     @property
     def family(self):
-        # TODO: Use ipaddress module when dropping support for Python < 3.3
-        ipv6_re = re.compile(r'^[0-9a-f:]+$')
-        is_ipv6 = any(ipv6_re.match(c[0]) for c in self.connections)
-        return socket.AF_INET6 if is_ipv6 else socket.AF_INET
+        any_ipv6 = any(is_ipv6(c[0]) for c in self.connections)
+        return socket.AF_INET6 if any_ipv6 else socket.AF_INET
 
     def sendall(self, value):
         self.send_bufs.append(value)
@@ -114,6 +117,19 @@ class MockSocketModule(object):
             close_failure=self.close_failure)
         self.sockets.append(socket)
         return socket
+
+    def getaddrinfo(self, host, port, family=0, type=0, proto=0, flags=0):
+        family = family or (
+            socket.AF_INET6 if is_ipv6(host) else socket.AF_INET
+        )
+        type = type or socket.SOCK_STREAM
+        proto = proto or socket.IPPROTO_TCP
+        sockaddr = (
+            ('::1', 11211, 0, 0)
+            if family == socket.AF_INET6
+            else ('127.0.0.1', 11211)
+        )
+        return [(family, type, proto, '', sockaddr)]
 
     def __getattr__(self, name):
         return getattr(socket, name)
