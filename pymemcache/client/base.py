@@ -817,6 +817,35 @@ class Client(object):
         self._misc_cmd([cmd], b'quit', True)
         self.close()
 
+    def shutdown(self, graceful=False):
+        """
+        The memcached "shutdown" command.
+
+        This will request shutdown and eventual termination of the server,
+        optionally preceded by a graceful stop of memcached's internal state
+        machine. Note that the server needs to have been started with the
+        shutdown protocol command enabled with the --enable-shutdown flag.
+
+        Args:
+          graceful: optional bool, True to request a graceful shutdown with
+                    SIGUSR1 (defaults to False, i.e. SIGINT shutdown).
+
+        Returns:
+          True.
+        """
+        cmd = b'shutdown'
+        if graceful:
+            cmd += b' graceful'
+        cmd += b'\r\n'
+
+        # The shutdown command raises a server-side error if the shutdown
+        # protocol command is not enabled. Otherwise, a successful shutdown
+        # is expected to close the remote end of the transport.
+        try:
+            self._misc_cmd([cmd], b'shutdown', False)
+        except MemcacheUnexpectedCloseError:
+            return True
+
     def _raise_errors(self, line, name):
         if line.startswith(b'ERROR'):
             raise MemcacheUnknownCommandError(name)
@@ -1248,6 +1277,10 @@ class PooledClient(object):
                 client.quit()
             finally:
                 self.client_pool.destroy(client)
+
+    def shutdown(self, graceful=False):
+        with self.client_pool.get_and_release(destroy_on_fail=True) as client:
+            client.shutdown(graceful)
 
     def __setitem__(self, key, value):
         self.set(key, value, noreply=True)
