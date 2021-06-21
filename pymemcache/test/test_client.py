@@ -31,6 +31,7 @@ from pymemcache.client.base import PooledClient, Client, normalize_server_spec
 from pymemcache.exceptions import (
     MemcacheClientError,
     MemcacheServerError,
+    MemcacheUnexpectedCloseError,
     MemcacheUnknownCommandError,
     MemcacheUnknownError,
     MemcacheIllegalInputError
@@ -687,6 +688,19 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         result = client.quit()
         assert result is None
         assert client.sock is None
+
+    def test_shutdown(self):
+        client = self.make_client([MemcacheUnexpectedCloseError('shutdown')])
+        result = client.shutdown()
+        assert result is None
+
+    def test_shutdown_disabled(self):
+        def _shutdown():
+            client = self.make_client([b'ERROR: shutdown not enabled\r\n'])
+            client.shutdown()
+
+        with pytest.raises(MemcacheUnknownCommandError):
+            _shutdown()
 
     def test_replace_stored(self):
         client = self.make_client([b'STORED\r\n'])
