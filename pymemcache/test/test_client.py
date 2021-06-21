@@ -692,7 +692,7 @@ class TestClient(ClientTestMixin, unittest.TestCase):
     def test_shutdown(self):
         client = self.make_client([MemcacheUnexpectedCloseError('shutdown')])
         result = client.shutdown()
-        assert result is True
+        assert result is None
 
     def test_shutdown_disabled(self):
         def _shutdown():

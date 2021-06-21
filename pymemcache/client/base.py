@@ -829,9 +829,6 @@ class Client(object):
         Args:
           graceful: optional bool, True to request a graceful shutdown with
                     SIGUSR1 (defaults to False, i.e. SIGINT shutdown).
-
-        Returns:
-          True.
         """
         cmd = b'shutdown'
         if graceful:
@@ -845,8 +842,6 @@ class Client(object):
             self._misc_cmd([cmd], b'shutdown', False)
         except MemcacheUnexpectedCloseError:
             pass
-
-        return True
 
     def _raise_errors(self, line, name):
         if line.startswith(b'ERROR'):
