@@ -21,13 +21,19 @@ import functools
 import json
 import os
 import mock
+import platform
 import re
 import socket
 import unittest
 
 import pytest
 
-from pymemcache.client.base import PooledClient, Client, normalize_server_spec
+from pymemcache.client.base import (
+    PooledClient,
+    Client,
+    normalize_server_spec,
+    KeepaliveOpts
+)
 from pymemcache.exceptions import (
     MemcacheClientError,
     MemcacheServerError,
@@ -1172,6 +1178,47 @@ class TestClientSocketConnect(unittest.TestCase):
             client._connect()
             assert client.sock.family == socket.AF_UNIX
 
+    @unittest.skipIf('Linux' != platform.system(),
+                     'Socket keepalive only support Linux platforms.')
+    def test_linux_socket_keepalive(self):
+        server = ('::1', 11211)
+        try:
+            client = Client(
+                server,
+                socket_module=MockSocketModule(),
+                socket_keepalive=KeepaliveOpts())
+            client._connect()
+        except SystemError:
+            self.fail("SystemError unexpectedly raised")
+        with self.assertRaises(ValueError):
+            # A KeepaliveOpts object is expected, a ValueError will be raised
+            Client(
+                server,
+                socket_module=MockSocketModule(),
+                socket_keepalive=True)
+
+    @mock.patch('platform.system')
+    def test_osx_socket_keepalive(self, platform_mock):
+        platform_mock.return_value = 'Darwin'
+        server = ('::1', 11211)
+        # For the moment the socket keepalive is only implemented for Linux
+        with self.assertRaises(SystemError):
+            Client(
+                server,
+                socket_module=MockSocketModule(),
+                socket_keepalive=KeepaliveOpts())
+
+    @mock.patch('platform.system')
+    def test_windows_socket_keepalive(self, platform_mock):
+        platform_mock.return_value = 'Windows'
+        server = ('::1', 11211)
+        # For the moment the socket keepalive is only implemented for Linux
+        with self.assertRaises(SystemError):
+            Client(
+                server,
+                socket_module=MockSocketModule(),
+                socket_keepalive=KeepaliveOpts())
+
     def test_socket_connect_closes_on_failure(self):
         server = ("example.com", 11211)
 
@@ -1451,3 +1498,21 @@ class TestNormalizeServerSpec(unittest.TestCase):
         with pytest.raises(ValueError) as excinfo:
             f(12345)
         assert str(excinfo.value) == "Unknown server provided: 12345"
+
+
+@pytest.mark.unit()
+class TestKeepaliveopts(unittest.TestCase):
+    def test_keepalive_opts(self):
+        kao = KeepaliveOpts()
+        assert (kao.idle == 1 and kao.intvl == 1 and kao.cnt == 5)
+        kao = KeepaliveOpts(idle=1, intvl=4, cnt=2)
+        assert (kao.idle == 1 and kao.intvl == 4 and kao.cnt == 2)
+        kao = KeepaliveOpts(idle=8)
+        assert (kao.idle == 8 and kao.intvl == 1 and kao.cnt == 5)
+        kao = KeepaliveOpts(cnt=8)
+        assert (kao.idle == 1 and kao.intvl == 1 and kao.cnt == 8)
+
+        with self.assertRaises(ValueError):
+            KeepaliveOpts(cnt=0)
+        with self.assertRaises(ValueError):
+            KeepaliveOpts(idle=-1)
