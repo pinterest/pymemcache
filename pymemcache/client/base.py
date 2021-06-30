@@ -993,7 +993,12 @@ class Client(object):
             except Exception as e:
                 raise ValueError("Unable to parse line %s: %s" % (line, e))
 
-        buf, value = _readvalue(self.sock, buf, int(size))
+        value = None
+        try:
+            buf, value = _readvalue(self.sock, buf, int(size))
+        except MemcacheUnexpectedCloseError:
+            self.close()
+            raise
         key = remapped_keys[key]
         value = self.serde.deserialize(key, value, int(flags))
 
@@ -1019,9 +1024,14 @@ class Client(object):
             self.sock.sendall(cmd)
 
             buf = b''
+            line = None
             result = {}
             while True:
-                buf, line = _readline(self.sock, buf)
+                try:
+                    buf, line = _readline(self.sock, buf)
+                except MemcacheUnexpectedCloseError:
+                    self.close()
+                    raise
                 self._raise_errors(line, name)
                 if line == b'END' or line == b'OK':
                     return result
@@ -1091,8 +1101,13 @@ class Client(object):
 
             results = {}
             buf = b''
+            line = None
             for key in keys:
-                buf, line = _readline(self.sock, buf)
+                try:
+                    buf, line = _readline(self.sock, buf)
+                except MemcacheUnexpectedCloseError:
+                    self.close()
+                    raise
                 self._raise_errors(line, name)
 
                 if line in VALID_STORE_RESULTS[name]:
@@ -1116,8 +1131,13 @@ class Client(object):
 
             results = []
             buf = b''
+            line = None
             for cmd in cmds:
-                buf, line = _readline(self.sock, buf)
+                try:
+                    buf, line = _readline(self.sock, buf)
+                except MemcacheUnexpectedCloseError:
+                    self.close()
+                    raise
                 self._raise_errors(line, cmd_name)
                 results.append(line)
             return results
