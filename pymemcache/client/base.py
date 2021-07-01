@@ -43,6 +43,13 @@ SOCKET_KEEPALIVE_SUPPORTED_SYSTEM = {
     'Linux',
 }
 
+STORE_RESULTS_VALUE = {
+    b'STORED': True,
+    b'NOT_STORED': False,
+    b'NOT_FOUND':  None,
+    b'EXISTS': False
+}
+
 
 # Some of the values returned by the "stats" command
 # need mapping into native Python types
@@ -1089,14 +1096,7 @@ class Client(object):
                 self._raise_errors(line, name)
 
                 if line in VALID_STORE_RESULTS[name]:
-                    if line == b'STORED':
-                        results[key] = True
-                    if line == b'NOT_STORED':
-                        results[key] = False
-                    if line == b'NOT_FOUND':
-                        results[key] = None
-                    if line == b'EXISTS':
-                        results[key] = False
+                    results[key] = STORE_RESULTS_VALUE[line]
                 else:
                     raise MemcacheUnknownError(line[:32])
             return results
