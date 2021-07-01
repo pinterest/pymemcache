@@ -820,6 +820,20 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         with pytest.raises(MemcacheServerError):
             _set()
 
+    def test_closing_socket_on_unexpected_closed_error(self):
+        client = self.make_client([
+            b'VALUE ',
+            MemcacheUnexpectedCloseError("foo bar"),
+        ])
+
+        def _set():
+            client.set(b'key', b'value', noreply=False)
+
+        with pytest.raises(MemcacheUnexpectedCloseError):
+            _set()
+
+        assert client.sock is None
+
     def test_set_unknown_error(self):
         client = self.make_client([b'foobarbaz\r\n'])
 
