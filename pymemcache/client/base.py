@@ -348,7 +348,7 @@ class Client(object):
             if not isinstance(self.socket_keepalive, KeepaliveOpts):
                 raise ValueError(
                     "Unsupported keepalive options. If you see this message "
-                    "it mean that you passed an unsupported object within "
+                    "it means that you passed an unsupported object within "
                     "the param `socket_keepalive`. To fix it "
                     "please instantiate and pass to socket_keepalive a "
                     "KeepaliveOpts object. That's the only supported type "
