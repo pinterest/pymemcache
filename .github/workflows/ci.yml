@@ -28,9 +28,8 @@ jobs:
     - name: Lint
       if: matrix.python-version == '2.7' || matrix.python-version == '3.9'
       run: |
-        pip install codespell flake8
-        codespell . --skip=./.*,./pymemcache/test/certs --quiet-level=2
-        flake8 --max-complexity=18 .
+        pip install flake8
+        flake8
         python setup.py check --restructuredtext
     - name: Disable IPv6 localhost
       run: |
