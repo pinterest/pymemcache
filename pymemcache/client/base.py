@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import errno
+import platform
 import socket
 import six
 
@@ -36,6 +37,10 @@ VALID_STORE_RESULTS = {
     b'append':  (b'STORED', b'NOT_STORED'),
     b'prepend': (b'STORED', b'NOT_STORED'),
     b'cas':     (b'STORED', b'EXISTS', b'NOT_FOUND'),
+}
+
+SOCKET_KEEPALIVE_SUPPORTED_SYSTEM = {
+    'Linux',
 }
 
 
@@ -128,6 +133,44 @@ def normalize_server_spec(server):
     if host.startswith('['):
         host = host.strip('[]')
     return (host, port)
+
+
+class KeepaliveOpts(object):
+    """
+    A configuration structure to define the socket keepalive.
+
+    This structure must be passed to a client. The client will configure
+    its socket keepalive by using the elements of the structure.
+    """
+    __slots__ = ('idle', 'intvl', 'cnt')
+
+    def __init__(self, idle=1, intvl=1, cnt=5):
+        """
+        Constructor.
+
+        Args:
+          idle: The time (in seconds) the connection needs to remain idle
+            before TCP starts sending keepalive probes. Should be a positive
+            integer most greater than zero.
+          intvl: The time (in seconds) between individual keepalive probes.
+            Should be a positive integer most greater than zero.
+          cnt: The maximum number of keepalive probes TCP should send before
+            dropping the connection. Should be a positive integer most greater
+            than zero.
+        """
+
+        if idle < 1:
+            raise ValueError(
+                "The idle parameter must be greater or equal to 1.")
+        self.idle = idle
+        if intvl < 1:
+            raise ValueError(
+                "The intvl parameter must be greater or equal to 1.")
+        self.intvl = intvl
+        if cnt < 1:
+            raise ValueError(
+                "The cnt parameter must be greater or equal to 1.")
+        self.cnt = cnt
 
 
 class Client(object):
@@ -236,6 +279,7 @@ class Client(object):
                  no_delay=False,
                  ignore_exc=False,
                  socket_module=socket,
+                 socket_keepalive=None,
                  key_prefix=b'',
                  default_noreply=True,
                  allow_unicode_keys=False,
@@ -262,6 +306,9 @@ class Client(object):
             misses. Defaults to False.
           socket_module: socket module to use, e.g. gevent.socket. Defaults to
             the standard library's socket module.
+          socket_keepalive: Activate the socket keepalive feature by passing
+            a KeepaliveOpts structure in this parameter. Disabled by default
+            (None). This feature is only supported on Linux platforms.
           key_prefix: Prefix of key. You can use this as namespace. Defaults
             to b''.
           default_noreply: bool, the default value for 'noreply' as passed to
@@ -281,6 +328,32 @@ class Client(object):
         self.no_delay = no_delay
         self.ignore_exc = ignore_exc
         self.socket_module = socket_module
+        self.socket_keepalive = socket_keepalive
+        user_system = platform.system()
+        if self.socket_keepalive is not None:
+            if user_system not in SOCKET_KEEPALIVE_SUPPORTED_SYSTEM:
+                raise SystemError(
+                    "Pymemcache's socket keepalive mechaniss doesn't "
+                    "support your system ({user_system}). If "
+                    "you see this message it mean that you tried to "
+                    "configure your socket keepalive on an unsupported "
+                    "system. To fix the problem pass `socket_"
+                    "keepalive=False` or use a supported system. "
+                    "Supported systems are: {systems}".format(
+                        user_system=user_system,
+                        systems=", ".join(sorted(
+                            SOCKET_KEEPALIVE_SUPPORTED_SYSTEM))
+                    )
+                )
+            if not isinstance(self.socket_keepalive, KeepaliveOpts):
+                raise ValueError(
+                    "Unsupported keepalive options. If you see this message "
+                    "it means that you passed an unsupported object within "
+                    "the param `socket_keepalive`. To fix it "
+                    "please instantiate and pass to socket_keepalive a "
+                    "KeepaliveOpts object. That's the only supported type "
+                    "of structure."
+                )
         self.sock = None
         if isinstance(key_prefix, six.text_type):
             key_prefix = key_prefix.encode('ascii')
@@ -333,6 +406,14 @@ class Client(object):
 
         try:
             sock.settimeout(self.connect_timeout)
+            if self.socket_keepalive is not None:
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE,
+                                self.socket_keepalive.idle)
+                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL,
+                                self.socket_keepalive.intvl)
+                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT,
+                                self.socket_keepalive.cnt)
             sock.connect(sockaddr)
             sock.settimeout(self.timeout)
         except Exception:
