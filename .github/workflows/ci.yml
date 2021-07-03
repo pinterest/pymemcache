@@ -28,9 +28,8 @@ jobs:
     - name: Lint
       if: matrix.python-version == '2.7' || matrix.python-version == '3.9'
       run: |
-        pip install flake8
-        flake8
-        python setup.py check --restructuredtext
+        pip install tox tox-gh-actions
+        tox -e flake8
     - name: Disable IPv6 localhost
       run: |
         sudo sed -i '/::1/d' /etc/hosts
