@@ -1193,6 +1193,7 @@ class PooledClient(object):
                  no_delay=False,
                  ignore_exc=False,
                  socket_module=socket,
+                 socket_keepalive=None,
                  key_prefix=b'',
                  max_pool_size=None,
                  pool_idle_timeout=0,
@@ -1208,6 +1209,7 @@ class PooledClient(object):
         self.no_delay = no_delay
         self.ignore_exc = ignore_exc
         self.socket_module = socket_module
+        self.socket_keepalive = socket_keepalive
         self.default_noreply = default_noreply
         self.allow_unicode_keys = allow_unicode_keys
         if isinstance(key_prefix, six.text_type):
@@ -1240,6 +1242,7 @@ class PooledClient(object):
             # can remove/destroy it from the pool...
             ignore_exc=False,
             socket_module=self.socket_module,
+            socket_keepalive=self.socket_keepalive,
             key_prefix=self.key_prefix,
             default_noreply=self.default_noreply,
             allow_unicode_keys=self.allow_unicode_keys,
