@@ -148,24 +148,20 @@ class KeepaliveOpts(object):
 
     This structure must be passed to a client. The client will configure
     its socket keepalive by using the elements of the structure.
+
+    Args:
+      idle: The time (in seconds) the connection needs to remain idle
+        before TCP starts sending keepalive probes. Should be a positive
+        integer most greater than zero.
+      intvl: The time (in seconds) between individual keepalive probes.
+        Should be a positive integer most greater than zero.
+      cnt: The maximum number of keepalive probes TCP should send before
+        dropping the connection. Should be a positive integer most greater
+        than zero.
     """
     __slots__ = ('idle', 'intvl', 'cnt')
 
     def __init__(self, idle=1, intvl=1, cnt=5):
-        """
-        Constructor.
-
-        Args:
-          idle: The time (in seconds) the connection needs to remain idle
-            before TCP starts sending keepalive probes. Should be a positive
-            integer most greater than zero.
-          intvl: The time (in seconds) between individual keepalive probes.
-            Should be a positive integer most greater than zero.
-          cnt: The maximum number of keepalive probes TCP should send before
-            dropping the connection. Should be a positive integer most greater
-            than zero.
-        """
-
         if idle < 1:
             raise ValueError(
                 "The idle parameter must be greater or equal to 1.")
