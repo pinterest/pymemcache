@@ -24,6 +24,7 @@ import mock
 import platform
 import re
 import socket
+import sys
 import unittest
 
 import pytest
@@ -32,7 +33,8 @@ from pymemcache.client.base import (
     PooledClient,
     Client,
     normalize_server_spec,
-    KeepaliveOpts
+    KeepaliveOpts,
+    check_key_helper
 )
 from pymemcache.exceptions import (
     MemcacheClientError,
@@ -50,6 +52,44 @@ from pymemcache.test.utils import MockMemcacheClient
 # TODO: Use ipaddress module when dropping support for Python < 3.3
 def is_ipv6(address):
     return re.match(r'^[0-9a-f:]+$', address)
+
+
+@pytest.mark.parametrize(
+    'key,allow_unicode_keys,key_prefix,ex_exception,ex_excinfo,ignore_py27',
+    [
+        (u'b'*251, True, b'',
+         MemcacheIllegalInputError, 'Key is too long', False),
+        (u'foo bar', True, b'',
+         MemcacheIllegalInputError, 'Key contains whitespace', False),
+        (u'\00', True, b'',
+         MemcacheIllegalInputError, 'Key contains null', False),
+        (None, True, b'', TypeError, None, False),
+        # The following test won't fail with a TypeError with python 2.7
+        (b"", False, '', TypeError, None, True),
+    ])
+@pytest.mark.unit()
+def test_check_key_helper_failing_conditions(key, allow_unicode_keys,
+                                             key_prefix, ex_exception,
+                                             ex_excinfo, ignore_py27):
+
+    if ignore_py27 and sys.version_info < (3, 0, 0):
+        pytest.skip("skipping for Python 2.7")
+    with pytest.raises(ex_exception) as excinfo:
+        check_key_helper(key, allow_unicode_keys, key_prefix)
+
+    # Allow to ignore the excinfo value. Different implementation (2.7,
+    # pypy, 3.x) comes with various error messages for the same thing.
+    # We just check the kind of the exception.
+    if ex_excinfo:
+        assert ex_excinfo in str(excinfo.value)
+
+
+@pytest.mark.unit()
+def test_check_key_helper():
+    assert check_key_helper(b"key", True, b'') == b"key"
+    assert check_key_helper("key", True) == b"key"
+    assert isinstance(check_key_helper(b"key", True), bytes)
+    assert check_key_helper("", True) == b""
 
 
 class MockSocket(object):
