@@ -72,9 +72,8 @@ def test_check_key_helper_failing_conditions(key, allow_unicode_keys,
                                              key_prefix, ex_exception,
                                              ex_excinfo, ignore_py27):
 
-    if ignore_py27:
-        if sys.version_info < (3, 0, 0):
-            return
+    if ignore_py27 and sys.version_info < (3, 0, 0):
+        pytest.skip("skipping for Python 2.7")
     with pytest.raises(ex_exception) as excinfo:
         check_key_helper(key, allow_unicode_keys, key_prefix)
 
