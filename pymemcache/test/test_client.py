@@ -55,7 +55,7 @@ def is_ipv6(address):
 
 
 @pytest.mark.parametrize(
-    'key, allow_unicode_keys,key_prefix,ex_exception,ex_excinfo,ignore_py27',
+    'key,allow_unicode_keys,key_prefix,ex_exception,ex_excinfo,ignore_py27',
     [
         (u'b'*251, True, b'',
          MemcacheIllegalInputError, 'Key is too long', False),
