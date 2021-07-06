@@ -17,12 +17,6 @@ import logging
 from io import BytesIO
 import pickle
 
-try:
-    long_type = long  # noqa
-except NameError:
-    long_type = None
-
-
 FLAG_BYTES = 0
 FLAG_PICKLE = 1 << 0
 FLAG_INTEGER = 1 << 1

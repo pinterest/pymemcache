@@ -15,13 +15,12 @@
 import collections
 import errno
 import functools
+import ipaddress
 import json
 import os
 import platform
 from unittest import mock
-import re
 import socket
-import sys
 import unittest
 
 import pytest
@@ -46,31 +45,30 @@ from pymemcache import pool
 from pymemcache.test.utils import MockMemcacheClient
 
 
-# TODO: Use ipaddress module when dropping support for Python < 3.3
 def is_ipv6(address):
-    return re.match(r'^[0-9a-f:]+$', address)
+    try:
+        return ipaddress.ip_address(address).version == 6
+    except ValueError:
+        # Fail to parse as valid ip address
+        return False
 
 
 @pytest.mark.parametrize(
-    'key,allow_unicode_keys,key_prefix,ex_exception,ex_excinfo,ignore_py27',
+    'key,allow_unicode_keys,key_prefix,ex_exception,ex_excinfo',
     [
-        (u'b'*251, True, b'',
-         MemcacheIllegalInputError, 'Key is too long', False),
-        (u'foo bar', True, b'',
-         MemcacheIllegalInputError, 'Key contains whitespace', False),
-        (u'\00', True, b'',
-         MemcacheIllegalInputError, 'Key contains null', False),
-        (None, True, b'', TypeError, None, False),
-        # The following test won't fail with a TypeError with python 2.7
-        (b"", False, '', TypeError, None, True),
+        ('b'*251, True, b'',
+         MemcacheIllegalInputError, 'Key is too long'),
+        ('foo bar', True, b'',
+         MemcacheIllegalInputError, 'Key contains whitespace'),
+        ('\00', True, b'',
+         MemcacheIllegalInputError, 'Key contains null'),
+        (None, True, b'', TypeError, None),
     ])
 @pytest.mark.unit()
 def test_check_key_helper_failing_conditions(key, allow_unicode_keys,
                                              key_prefix, ex_exception,
-                                             ex_excinfo, ignore_py27):
+                                             ex_excinfo):
 
-    if ignore_py27 and sys.version_info < (3, 0, 0):
-        pytest.skip("skipping for Python 2.7")
     with pytest.raises(ex_exception) as excinfo:
         check_key_helper(key, allow_unicode_keys, key_prefix)
 
@@ -1376,7 +1374,7 @@ class TestPooledClientIdleTimeout(ClientTestMixin, unittest.TestCase):
         return client
 
     def test_free_idle(self):
-        class Counter(object):
+        class Counter:
             count = 0
 
             def increment(self, obj):

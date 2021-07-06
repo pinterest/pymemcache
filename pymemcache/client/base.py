@@ -99,10 +99,7 @@ def check_key_helper(key, allow_unicode_keys, key_prefix=b''):
             key = key.encode('utf8')
     elif isinstance(key, str):
         try:
-            if isinstance(key, bytes):
-                key = key.decode().encode('ascii')
-            else:
-                key = key.encode('ascii')
+            key = key.encode('ascii')
         except (UnicodeEncodeError, UnicodeDecodeError):
             raise MemcacheIllegalInputError("Non-ASCII key: %r" % key)
 

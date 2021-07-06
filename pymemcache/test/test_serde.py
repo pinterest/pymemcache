@@ -45,12 +45,6 @@ class TestSerde(TestCase):
     def test_int(self):
         self.check(1, FLAG_INTEGER)
 
-    def test_long(self):
-        # long only exists with Python 2, so we're just testing for another
-        # integer with Python 3
-        expected_flags = FLAG_INTEGER
-        self.check(123123123123123123123, expected_flags)
-
     def test_pickleable(self):
         self.check({'a': 'dict'}, FLAG_PICKLE)
 

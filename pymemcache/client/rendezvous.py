@@ -35,8 +35,7 @@ class RendezvousHash:
         winner = None
 
         for node in self.nodes:
-            score = self.hash_function(
-                f"{node}-{key}")
+            score = self.hash_function(f"{node}-{key}")
 
             if score > high_score:
                 (high_score, winner) = (score, node)

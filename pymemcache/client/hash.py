@@ -344,7 +344,7 @@ class HashClient:
             if not self.ignore_exc:
                 return succeeded, failed, e
 
-        succeeded = [key for key in six.iterkeys(values) if key not in failed]
+        succeeded = [key for key in values if key not in failed]
         return succeeded, failed, None
 
     def close(self):
