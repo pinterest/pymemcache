@@ -1,6 +1,12 @@
 Changelog
 =========
 
+New in version 3.5.0
+--------------------
+* Sockets are now closed on ``MemcacheUnexpectedCloseError``.
+* Added support for TCP keepalive for client sockets on Linux platforms.
+* Added retrying mechanisms by wrapping clients.
+
 New in version 3.4.4
 --------------------
 * Idle connections will be removed from the pool after ``pool_idle_timeout``.
