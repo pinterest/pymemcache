@@ -77,6 +77,34 @@ on if a server goes down.
     client.set('some_key', 'some value')
     result = client.get('some_key')
 
+Using the built-in retrying mechanism
+-------------------------------------
+The library comes with retry mechanisms that can be used to wrap all kind of
+pymemcache clients. The wrapper allow you to define the exceptions that you want
+to handle with retries, which exceptions to exclude, how many attempts to make
+and how long to wait between attemots.
+
+The ``RetryingClient`` wraps around any of the other included clients and will
+have the same methods. For this example we're just using the base ``Client``.
+
+.. code-block:: python
+
+    from pymemcache.client.base import Client
+    from pymemcache.client.retrying import RetryingClient
+    from pymemcache.exceptions import MemcacheUnexpectedCloseError
+
+    base_client = Client(("localhost", 11211))
+    client = RetryingClient(
+        base_client,
+        attempts=3,
+        retry_delay=0.01,
+        retry_for=[MemcacheUnexpectedCloseError]
+    )
+    client.set('some_key', 'some value')
+    result = client.get('some_key')
+
+The above client will attempt each call three times with a wait of 10ms between
+each attempt, as long as the exception is a ``MemcacheUnexpectedCloseError``.
 
 Using TLS
 ---------
