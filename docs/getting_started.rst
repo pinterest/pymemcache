@@ -82,7 +82,7 @@ Using the built-in retrying mechanism
 The library comes with retry mechanisms that can be used to wrap all kind of
 pymemcache clients. The wrapper allow you to define the exceptions that you want
 to handle with retries, which exceptions to exclude, how many attempts to make
-and how long to wait between attemots.
+and how long to wait between attempts.
 
 The ``RetryingClient`` wraps around any of the other included clients and will
 have the same methods. For this example we're just using the base ``Client``.
