@@ -1,4 +1,3 @@
-import six
 import pytest
 
 from pymemcache.test.utils import MockMemcacheClient
@@ -16,10 +15,10 @@ def test_get_set():
 @pytest.mark.unit()
 def test_get_set_unicide_key():
     client = MockMemcacheClient()
-    assert client.get(u"hello") is None
+    assert client.get("hello") is None
 
     client.set(b"hello", 12)
-    assert client.get(u"hello") == 12
+    assert client.get("hello") == 12
 
 
 @pytest.mark.unit()
@@ -42,8 +41,7 @@ def test_get_many_set_many():
     assert result == {b"h": 1}
 
     # Convert keys into bytes
-    d = dict((k.encode('ascii'), v)
-             for k, v in six.iteritems(dict(h=1, e=2, z=3)))
+    d = {k.encode('ascii'): v for k, v in dict(h=1, e=2, z=3).items()}
     client.set_many(d)
     assert client.get_many([b"h", b"e", b"z", b"o"]) == d
 
@@ -62,10 +60,8 @@ def test_get_many_set_many_non_ascii_values():
     assert result == {b"h": non_ascii_1}
 
     # Convert keys into bytes
-    d = dict((k.encode('ascii'), v)
-             for k, v in six.iteritems(
-                dict(h=non_ascii_1, e=non_ascii_2, z=non_ascii_3)
-             ))
+    d = {k.encode('ascii'): v
+         for k, v in dict(h=non_ascii_1, e=non_ascii_2, z=non_ascii_3).items()}
     client.set_many(d)
     assert client.get_many([b"h", b"e", b"z", b"o"]) == d
 

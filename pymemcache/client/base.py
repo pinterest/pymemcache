@@ -14,7 +14,6 @@
 import errno
 import platform
 import socket
-import six
 
 from pymemcache import pool
 
@@ -71,16 +70,16 @@ def _parse_hex(value):
 
 STAT_TYPES = {
     # General stats
-    b'version': six.binary_type,
+    b'version': bytes,
     b'rusage_user': _parse_float,
     b'rusage_system': _parse_float,
     b'hash_is_expanding': _parse_bool_int,
     b'slab_reassign_running': _parse_bool_int,
 
     # Settings stats
-    b'inter': six.binary_type,
+    b'inter': bytes,
     b'growth_factor': float,
-    b'stat_key_prefix': six.binary_type,
+    b'stat_key_prefix': bytes,
     b'umask': _parse_hex,
     b'detail_enabled': _parse_bool_int,
     b'cas_enabled': _parse_bool_int,
@@ -96,14 +95,11 @@ STAT_TYPES = {
 def check_key_helper(key, allow_unicode_keys, key_prefix=b''):
     """Checks key and add key_prefix."""
     if allow_unicode_keys:
-        if isinstance(key, six.text_type):
+        if isinstance(key, str):
             key = key.encode('utf8')
-    elif isinstance(key, six.string_types):
+    elif isinstance(key, str):
         try:
-            if isinstance(key, six.binary_type):
-                key = key.decode().encode('ascii')
-            else:
-                key = key.encode('ascii')
+            key = key.encode('ascii')
         except (UnicodeEncodeError, UnicodeDecodeError):
             raise MemcacheIllegalInputError("Non-ASCII key: %r" % key)
 
@@ -126,7 +122,7 @@ def normalize_server_spec(server):
         return server
     if isinstance(server, list):
         return tuple(server)  # Assume [host, port] provided.
-    if not isinstance(server, six.string_types):
+    if not isinstance(server, str):
         raise ValueError('Unknown server provided: %r' % server)
     if server.startswith('unix:'):
         return server[5:]
@@ -142,7 +138,7 @@ def normalize_server_spec(server):
     return (host, port)
 
 
-class KeepaliveOpts(object):
+class KeepaliveOpts:
     """
     A configuration structure to define the socket keepalive.
 
@@ -176,7 +172,7 @@ class KeepaliveOpts(object):
         self.cnt = cnt
 
 
-class Client(object):
+class Client:
     """
     A client for a single memcached server.
 
@@ -358,9 +354,9 @@ class Client(object):
                     "of structure."
                 )
         self.sock = None
-        if isinstance(key_prefix, six.text_type):
+        if isinstance(key_prefix, str):
             key_prefix = key_prefix.encode('ascii')
-        if not isinstance(key_prefix, six.binary_type):
+        if not isinstance(key_prefix, bytes):
             raise TypeError("key_prefix should be bytes.")
         self.key_prefix = key_prefix
         self.default_noreply = default_noreply
@@ -483,7 +479,7 @@ class Client(object):
         if noreply is None:
             noreply = self.default_noreply
         result = self._store_cmd(b'set', values, expire, noreply, flags=flags)
-        return [k for k, v in six.iteritems(result) if not v]
+        return [k for k, v in result.items() if not v]
 
     set_multi = set_many
 
@@ -824,7 +820,7 @@ class Client(object):
         """
         result = self._fetch_cmd(b'stats', args, False)
 
-        for key, value in six.iteritems(result):
+        for key, value in result.items():
             converter = STAT_TYPES.get(key, int)
             try:
                 result[key] = converter(value)
@@ -941,12 +937,12 @@ class Client(object):
 
     def _check_integer(self, value, name):
         """Check that a value is an integer and encode it as a binary string"""
-        if not isinstance(value, six.integer_types):
+        if not isinstance(value, int):
             raise MemcacheIllegalInputError(
-                '%s must be integer, got bad value: %r' % (name, value)
+                f'{name} must be integer, got bad value: {value!r}'
             )
 
-        return six.text_type(value).encode(self.encoding)
+        return str(value).encode(self.encoding)
 
     def _check_cas(self, cas):
         """Check that a value is a valid input for 'cas' -- either an int or a
@@ -955,13 +951,13 @@ class Client(object):
         The value will be (re)encoded so that we can accept strings or bytes.
         """
         # convert non-binary values to binary
-        if isinstance(cas, (six.integer_types, six.string_types)):
+        if isinstance(cas, (int, str)):
             try:
-                cas = six.text_type(cas).encode(self.encoding)
+                cas = str(cas).encode(self.encoding)
             except UnicodeEncodeError:
                 raise MemcacheIllegalInputError(
                     'non-ASCII cas value: %r' % cas)
-        elif not isinstance(cas, six.binary_type):
+        elif not isinstance(cas, bytes):
             raise MemcacheIllegalInputError(
                 'cas must be integer, string, or bytes, got bad value: %r' % cas
             )
@@ -987,7 +983,7 @@ class Client(object):
             try:
                 _, key, flags, size = line.split()
             except Exception as e:
-                raise ValueError("Unable to parse line %s: %s" % (line, e))
+                raise ValueError(f"Unable to parse line {line}: {e}")
 
         value = None
         try:
@@ -1062,7 +1058,7 @@ class Client(object):
             extra += b' noreply'
         expire = self._check_integer(expire, "expire")
 
-        for key, data in six.iteritems(values):
+        for key, data in values.items():
             # must be able to reliably map responses back to the original order
             keys.append(key)
 
@@ -1074,17 +1070,17 @@ class Client(object):
             if flags is not None:
                 data_flags = flags
 
-            if not isinstance(data, six.binary_type):
+            if not isinstance(data, bytes):
                 try:
-                    data = six.text_type(data).encode(self.encoding)
+                    data = str(data).encode(self.encoding)
                 except UnicodeEncodeError as e:
                     raise MemcacheIllegalInputError(
                             "Data values must be binary-safe: %s" % e)
 
             cmds.append(name + b' ' + key + b' ' +
-                        six.text_type(data_flags).encode(self.encoding) +
+                        str(data_flags).encode(self.encoding) +
                         b' ' + expire +
-                        b' ' + six.text_type(len(data)).encode(self.encoding) +
+                        b' ' + str(len(data)).encode(self.encoding) +
                         extra + b'\r\n' + data + b'\r\n')
 
         if self.sock is None:
@@ -1155,7 +1151,7 @@ class Client(object):
         self.delete(key, noreply=True)
 
 
-class PooledClient(object):
+class PooledClient:
     """A thread-safe pool of clients (with the same client api).
 
     Args:
@@ -1208,9 +1204,9 @@ class PooledClient(object):
         self.socket_keepalive = socket_keepalive
         self.default_noreply = default_noreply
         self.allow_unicode_keys = allow_unicode_keys
-        if isinstance(key_prefix, six.text_type):
+        if isinstance(key_prefix, str):
             key_prefix = key_prefix.encode('ascii')
-        if not isinstance(key_prefix, six.binary_type):
+        if not isinstance(key_prefix, bytes):
             raise TypeError("key_prefix should be bytes.")
         self.key_prefix = key_prefix
         self.client_pool = pool.ObjectPool(
@@ -1490,6 +1486,6 @@ def _recv(sock, size):
     while True:
         try:
             return sock.recv(size)
-        except IOError as e:
+        except OSError as e:
             if e.errno != errno.EINTR:
                 raise

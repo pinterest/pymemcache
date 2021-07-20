@@ -43,7 +43,7 @@ Best Practices:
 """
 
 
-class FallbackClient(object):
+class FallbackClient:
     def __init__(self, caches):
         assert len(caches) > 0
         self.caches = caches

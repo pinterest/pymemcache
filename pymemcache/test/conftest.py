@@ -92,7 +92,7 @@ def pytest_generate_tests(metafunc):
 
         class HashClientSingle(HashClient):
             def __init__(self, server, *args, **kwargs):
-                super(HashClientSingle, self).__init__(
+                super().__init__(
                     [server], *args, **kwargs
                 )
 

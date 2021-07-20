@@ -2,8 +2,8 @@
 
 import functools
 import unittest
+from unittest import mock
 
-import mock
 import pytest
 
 from .test_client import ClientTestMixin, MockSocket

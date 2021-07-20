@@ -1,5 +1,4 @@
 # Copyright 2012 Pinterest.com
-# -*- coding: utf-8 -*-
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,18 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from builtins import bytes as newbytes
-
 import collections
 import errno
 import functools
+import ipaddress
 import json
 import os
-import mock
 import platform
-import re
+from unittest import mock
 import socket
-import sys
 import unittest
 
 import pytest
@@ -49,31 +45,30 @@ from pymemcache import pool
 from pymemcache.test.utils import MockMemcacheClient
 
 
-# TODO: Use ipaddress module when dropping support for Python < 3.3
 def is_ipv6(address):
-    return re.match(r'^[0-9a-f:]+$', address)
+    try:
+        return ipaddress.ip_address(address).version == 6
+    except ValueError:
+        # Fail to parse as valid ip address
+        return False
 
 
 @pytest.mark.parametrize(
-    'key,allow_unicode_keys,key_prefix,ex_exception,ex_excinfo,ignore_py27',
+    'key,allow_unicode_keys,key_prefix,ex_exception,ex_excinfo',
     [
-        (u'b'*251, True, b'',
-         MemcacheIllegalInputError, 'Key is too long', False),
-        (u'foo bar', True, b'',
-         MemcacheIllegalInputError, 'Key contains whitespace', False),
-        (u'\00', True, b'',
-         MemcacheIllegalInputError, 'Key contains null', False),
-        (None, True, b'', TypeError, None, False),
-        # The following test won't fail with a TypeError with python 2.7
-        (b"", False, '', TypeError, None, True),
+        ('b'*251, True, b'',
+         MemcacheIllegalInputError, 'Key is too long'),
+        ('foo bar', True, b'',
+         MemcacheIllegalInputError, 'Key contains whitespace'),
+        ('\00', True, b'',
+         MemcacheIllegalInputError, 'Key contains null'),
+        (None, True, b'', TypeError, None),
     ])
 @pytest.mark.unit()
 def test_check_key_helper_failing_conditions(key, allow_unicode_keys,
                                              key_prefix, ex_exception,
-                                             ex_excinfo, ignore_py27):
+                                             ex_excinfo):
 
-    if ignore_py27 and sys.version_info < (3, 0, 0):
-        pytest.skip("skipping for Python 2.7")
     with pytest.raises(ex_exception) as excinfo:
         check_key_helper(key, allow_unicode_keys, key_prefix)
 
@@ -92,7 +87,7 @@ def test_check_key_helper():
     assert check_key_helper("", True) == b""
 
 
-class MockSocket(object):
+class MockSocket:
     def __init__(self, recv_bufs, connect_failure=None, close_failure=None):
         self.recv_bufs = collections.deque(recv_bufs)
         self.send_bufs = []
@@ -134,7 +129,7 @@ class MockSocket(object):
         self.socket_options.append((level, option, value))
 
 
-class MockUnixSocketServer(object):
+class MockUnixSocketServer:
     def __init__(self, socket_path):
         if os.path.exists(socket_path):
             os.remove(socket_path)
@@ -151,7 +146,7 @@ class MockUnixSocketServer(object):
         os.remove(self.socket_path)
 
 
-class MockSocketModule(object):
+class MockSocketModule:
     def __init__(self, connect_failure=None, close_failure=None):
         self.connect_failure = connect_failure
         self.close_failure = close_failure
@@ -190,7 +185,7 @@ class CustomizedClient(Client):
 
 
 @pytest.mark.unit()
-class ClientTestMixin(object):
+class ClientTestMixin:
     def make_client(self, mock_socket_values, **kwargs):
         client = Client(None, **kwargs)
         # mock out client._connect() rather than hard-settting client.sock to
@@ -226,27 +221,11 @@ class ClientTestMixin(object):
         result = client.set(b'key', b'value', noreply=False, flags=0x00000030)
         assert result is True
 
-    def test_set_future(self):
-        client = self.make_client([b'STORED\r\n'])
-        result = client.set(newbytes(b'key'), newbytes(b'value'), noreply=False)
-        assert result is True
-
-        # unit test for encoding passed in __init__()
-        client = self.make_client([b'STORED\r\n'], encoding='utf-8')
-        result = client.set(newbytes(b'key'), newbytes(b'value'), noreply=False)
-        assert result is True
-
-        # unit test for set operation with parameter flags
-        client = self.make_client([b'STORED\r\n'], encoding='utf-8')
-        result = client.set(newbytes(b'key'), newbytes(b'value'), noreply=False,
-                            flags=0x00000030)
-        assert result is True
-
     def test_set_unicode_key(self):
         client = self.make_client([b''])
 
         def _set():
-            client.set(u'\u0FFF', b'value', noreply=False)
+            client.set('\u0FFF', b'value', noreply=False)
 
         with pytest.raises(MemcacheIllegalInputError):
             _set()
@@ -254,7 +233,7 @@ class ClientTestMixin(object):
     def test_set_unicode_key_ok(self):
         client = self.make_client([b'STORED\r\n'], allow_unicode_keys=True)
 
-        result = client.set(u'\u0FFF', b'value', noreply=False)
+        result = client.set('\u0FFF', b'value', noreply=False)
         assert result is True
 
     def test_set_unicode_key_ok_snowman(self):
@@ -285,7 +264,7 @@ class ClientTestMixin(object):
         client = self.make_client([b''])
 
         def _set():
-            client.set(b'key', u'\u0FFF', noreply=False)
+            client.set(b'key', '\u0FFF', noreply=False)
 
         with pytest.raises(MemcacheIllegalInputError):
             _set()
@@ -434,7 +413,7 @@ class ClientTestMixin(object):
         client = self.make_client([b''])
 
         def _get():
-            client.get(u'\u0FFF')
+            client.get('\u0FFF')
 
         with pytest.raises(MemcacheIllegalInputError):
             _get()
@@ -560,7 +539,7 @@ class TestClient(ClientTestMixin, unittest.TestCase):
 
         with pytest.raises(MemcacheIllegalInputError):
             # non-ASCII digit
-            client.cas(b'key', b'value', u'⁰', noreply=False)
+            client.cas(b'key', b'value', '⁰', noreply=False)
 
     def test_cas_stored(self):
         client = self.make_client([b'STORED\r\n'])
@@ -769,7 +748,7 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         assert result is False
 
     def test_serialization(self):
-        class JsonSerde(object):
+        class JsonSerde:
             def serialize(self, key, value):
                 return json.dumps(value).encode('ascii'), 0
 
@@ -922,7 +901,7 @@ class TestClient(ClientTestMixin, unittest.TestCase):
     def test_set_key_with_noninteger_expire(self):
         client = self.make_client([b''])
 
-        class _OneLike(object):
+        class _OneLike:
             """object that looks similar to the int 1"""
             def __str__(self):
                 return "1"
@@ -1080,7 +1059,7 @@ class TestClient(ClientTestMixin, unittest.TestCase):
             client.get('my☃'*150)
 
         with pytest.raises(MemcacheClientError):
-            client.get(u'\u0FFF'*150)
+            client.get('\u0FFF'*150)
 
     def test_key_contains_space(self):
         client = self.make_client([b'END\r\n'])
@@ -1091,7 +1070,7 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         client = self.make_client([b'END\r\n'])
 
         with pytest.raises(MemcacheClientError):
-            client.get(u'\u3053\u3093\u306b\u3061\u306f')
+            client.get('\u3053\u3093\u306b\u3061\u306f')
 
     def _default_noreply_false(self, cmd, args, response):
         client = self.make_client(response, default_noreply=False)
@@ -1225,7 +1204,7 @@ class TestClientSocketConnect(unittest.TestCase):
                                                socket.TCP_NODELAY, 1)]
 
     def test_socket_connect_unix(self):
-        server = '/tmp/pymemcache.{pid}'.format(pid=os.getpid())
+        server = f'/tmp/pymemcache.{os.getpid()}'
 
         with MockUnixSocketServer(server):
             client = Client(server)
@@ -1395,7 +1374,7 @@ class TestPooledClientIdleTimeout(ClientTestMixin, unittest.TestCase):
         return client
 
     def test_free_idle(self):
-        class Counter(object):
+        class Counter:
             count = 0
 
             def increment(self, obj):
@@ -1434,7 +1413,7 @@ class TestMockClient(ClientTestMixin, unittest.TestCase):
         assert result == b'value'
 
     def test_deserialization(self):
-        class JsonSerde(object):
+        class JsonSerde:
             def serialize(self, key, value):
                 if isinstance(value, dict):
                     return json.dumps(value).encode('UTF-8'), 1

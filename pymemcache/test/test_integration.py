@@ -1,5 +1,4 @@
 # Copyright 2012 Pinterest.com
-# -*- coding: utf-8 -*-
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,12 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from builtins import bytes as newbytes
-
 from collections import defaultdict
 import json
 import pytest
-import six
 
 from pymemcache.client.base import Client
 from pymemcache.exceptions import (
@@ -63,24 +59,12 @@ def test_get_set(client_class, host, port, socket_module):
 
 
 @pytest.mark.integration()
-def test_get_set_newbytes(client_class, host, port, socket_module):
-    client = client_class((host, port), socket_module=socket_module)
-    client.flush_all()
-
-    key = newbytes(b'key3')
-    value = b'value3'
-    key2 = newbytes(b'key4')
-    value2 = b'value4'
-    get_set_helper(client, key, value, key2, value2)
-
-
-@pytest.mark.integration()
 def test_get_set_unicode_key(client_class, host, port, socket_module):
     client = client_class((host, port), socket_module=socket_module,
                           allow_unicode_keys=True)
     client.flush_all()
 
-    key = u"こんにちは"
+    key = "こんにちは"
     value = b'hello'
     key2 = 'my☃'
     value2 = b'value2'
@@ -255,7 +239,7 @@ def test_misc(client_class, host, port, socket_module):
 
 @pytest.mark.integration()
 def test_serialization_deserialization(host, port, socket_module):
-    class JsonSerde(object):
+    class JsonSerde:
         def serialize(self, key, value):
             return json.dumps(value).encode('ascii'), 1
 
@@ -287,15 +271,15 @@ def serde_serialization_helper(client_class, host, port,
     client.flush_all()
 
     check(b'byte string')
-    check(u'unicode string')
+    check('unicode string')
     check('olé')
-    check(u'olé')
+    check('olé')
     check(1)
     check(123123123123123123123)
     check({'a': 'pickle'})
-    check([u'one pickle', u'two pickle'])
+    check(['one pickle', 'two pickle'])
     testdict = defaultdict(int)
-    testdict[u'one pickle']
+    testdict['one pickle']
     testdict[b'two pickle']
     check(testdict)
 
@@ -346,19 +330,19 @@ def test_errors(client_class, host, port, socket_module):
         _key_too_long()
 
     def _unicode_key_in_set():
-        client.set(six.u('\u0FFF'), b'value', noreply=False)
+        client.set('\u0FFF', b'value', noreply=False)
 
     with pytest.raises(MemcacheClientError):
         _unicode_key_in_set()
 
     def _unicode_key_in_get():
-        client.get(six.u('\u0FFF'))
+        client.get('\u0FFF')
 
     with pytest.raises(MemcacheClientError):
         _unicode_key_in_get()
 
     def _unicode_value_in_set():
-        client.set(b'key', six.u('\u0FFF'), noreply=False)
+        client.set(b'key', '\u0FFF', noreply=False)
 
     with pytest.raises(MemcacheClientError):
         _unicode_value_in_set()
