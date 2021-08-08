@@ -127,7 +127,7 @@ Credits
 * `Stephen Rosen <https://github.com/sirosen>`_
 * `Feras Alazzeh <https://github.com/FerasAlazzeh>`_
 * `Moisés Guimarães de Medeiros <https://github.com/moisesguimaraes>`_
-* `Nick Pope <https://github.com/pope1ni>`_
+* `Nick Pope <https://github.com/ngnpope>`_
 * `Hervé Beraud <https://github.com/4383>`_
 
 We're Hiring!
