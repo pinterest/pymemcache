@@ -17,7 +17,7 @@ class TestRetryingClientPassthrough(ClientTestMixin, unittest.TestCase):
 
     def make_base_client(self, mock_socket_values, **kwargs):
         base_client = Client(None, **kwargs)
-        # mock out client._connect() rather than hard-settting client.sock to
+        # mock out client._connect() rather than hard-setting client.sock to
         # ensure methods are checking whether self.sock is None before
         # attempting to use it
         sock = MockSocket(list(mock_socket_values))
@@ -43,7 +43,7 @@ class TestRetryingClient(object):
     def make_base_client(self, mock_socket_values, **kwargs):
         """ Creates a regular mock client to wrap in the RetryClient. """
         base_client = Client(None, **kwargs)
-        # mock out client._connect() rather than hard-settting client.sock to
+        # mock out client._connect() rather than hard-setting client.sock to
         # ensure methods are checking whether self.sock is None before
         # attempting to use it
         sock = MockSocket(list(mock_socket_values))
@@ -104,7 +104,7 @@ class TestRetryingClient(object):
         with pytest.raises(ValueError):
             RetryingClient(base_client, retry_for="haha!")
 
-        # With collectino of string and exceptions?
+        # With collection of string and exceptions?
         with pytest.raises(ValueError):
             RetryingClient(base_client, retry_for=[Exception, str])
 
@@ -131,7 +131,7 @@ class TestRetryingClient(object):
         with pytest.raises(ValueError):
             RetryingClient(base_client, do_not_retry_for="haha!")
 
-        # With collectino of string and exceptions?
+        # With collection of string and exceptions?
         with pytest.raises(ValueError):
             RetryingClient(base_client, do_not_retry_for=[Exception, str])
 
@@ -294,7 +294,7 @@ class TestRetryingClient(object):
             client.get("key")
 
     def test_both_exception_filters(self):
-        # Test interacction between both exception filters.
+        # Test interaction between both exception filters.
         client = self.make_client(
             [
                 MemcacheClientError("Whoops."),
