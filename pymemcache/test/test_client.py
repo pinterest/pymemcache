@@ -193,7 +193,7 @@ class CustomizedClient(Client):
 class ClientTestMixin(object):
     def make_client(self, mock_socket_values, **kwargs):
         client = Client(None, **kwargs)
-        # mock out client._connect() rather than hard-settting client.sock to
+        # mock out client._connect() rather than hard-setting client.sock to
         # ensure methods are checking whether self.sock is None before
         # attempting to use it
         sock = MockSocket(list(mock_socket_values))
@@ -203,7 +203,7 @@ class ClientTestMixin(object):
 
     def make_customized_client(self, mock_socket_values, **kwargs):
         client = CustomizedClient(None, **kwargs)
-        # mock out client._connect() rather than hard-settting client.sock to
+        # mock out client._connect() rather than hard-setting client.sock to
         # ensure methods are checking whether self.sock is None before
         # attempting to use it
         sock = MockSocket(list(mock_socket_values))

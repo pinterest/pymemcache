@@ -293,7 +293,7 @@ class Client(object):
 
         Args:
           server: tuple(hostname, port) or string containing a UNIX socket path.
-          serde: optional seralizer object, see notes in the class docs.
+          serde: optional serializer object, see notes in the class docs.
           serializer: deprecated serialization function
           deserializer: deprecated deserialization function
           connect_timeout: optional float, seconds to wait for a connection to
