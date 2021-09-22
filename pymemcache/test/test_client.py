@@ -360,6 +360,16 @@ class ClientTestMixin:
         result = client.get(b'key', default='foobar')
         assert result == 'foobar'
 
+    def test_get_ignore_exc_default(self):
+        client = self.make_client([b'INVALID DATA\r\n'], ignore_exc=True)
+        result = client.get(b'key', default='foobar')
+        assert result == 'foobar'
+
+        # Unit test for customized client (override _extract_value)
+        client = self.make_client([b'INVALID DATA\r\n'], ignore_exc=True)
+        result = client.get(b'key', default='foobar')
+        assert result == 'foobar'
+
     def test_get_found(self):
         client = self.make_client([
             b'STORED\r\n',
