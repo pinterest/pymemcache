@@ -1287,7 +1287,7 @@ class PooledClient(object):
                 return client.get(key, default)
             except Exception:
                 if self.ignore_exc:
-                    return None
+                    return default
                 else:
                     raise
 
