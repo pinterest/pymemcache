@@ -257,6 +257,8 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
 
         result = client.get('foo')
         assert result is None
+        result = client.get('foo', default='default')
+        assert result == 'default'
         result = client.set('foo', 'bar')
         assert result is False
 
