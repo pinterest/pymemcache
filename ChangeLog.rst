@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Unreleased
+----------
+* ``Client.get`` returns the default when using ``ignore_exc`` and if memcached
+  is unavailable
+
 New in version 3.5.0
 --------------------
 * Sockets are now closed on ``MemcacheUnexpectedCloseError``.
