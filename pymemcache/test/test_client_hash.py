@@ -262,6 +262,19 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         result = client.set('foo', 'bar')
         assert result is False
 
+    def test_no_servers_left_return_positional_default(self):
+        from pymemcache.client.hash import HashClient
+        client = HashClient(
+            [], use_pooling=True,
+            ignore_exc=True,
+            timeout=1, connect_timeout=1
+        )
+
+        # Ensure compatibility with clients that pass the default as a
+        # positional argument
+        result = client.get('foo', 'default')
+        assert result == 'default'
+
     def test_no_servers_left_with_set_many(self):
         from pymemcache.client.hash import HashClient
         client = HashClient(
@@ -381,7 +394,7 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         # Client gets removed because of socket timeout
         assert ("127.0.0.1", 11211) in client._dead_clients
 
-        test_client.get.side_effect = lambda *_: "Some value"
+        test_client.get.side_effect = lambda *_, **_kw: "Some value"
         # Client should be retried and brought back
         assert client.get(b"key") == "Some value"
         assert ("127.0.0.1", 11211) not in client._dead_clients
@@ -400,7 +413,7 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         with pytest.raises(socket.timeout):
             client.get(b"key", noreply=False)
 
-        test_client.get.side_effect = lambda *_: "Some value"
+        test_client.get.side_effect = lambda *_, **_kw: "Some value"
         assert client.get(b"key") == "Some value"
 
         assert client_patch.call_count == 1

@@ -357,9 +357,8 @@ class HashClient(object):
     def set(self, key, *args, **kwargs):
         return self._run_cmd('set', key, False, *args, **kwargs)
 
-    def get(self, key, *args, **kwargs):
-        default = kwargs.get('default', None)
-        return self._run_cmd('get', key, default, *args, **kwargs)
+    def get(self, key, default=None, **kwargs):
+        return self._run_cmd('get', key, default, default=default, **kwargs)
 
     def incr(self, key, *args, **kwargs):
         return self._run_cmd('incr', key, False, *args, **kwargs)
