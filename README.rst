@@ -100,6 +100,9 @@ Mixpanel's Blog post about their memcached client for Python:
 
 Mixpanel's pure Python memcached client:
   https://github.com/mixpanel/memcache_client
+  
+Bye-bye python-memcached, hello pymemcache (migration guide)
+  https://jugmac00.github.io/blog/bye-bye-python-memcached-hello-pymemcache/
 
 Credits
 =======
