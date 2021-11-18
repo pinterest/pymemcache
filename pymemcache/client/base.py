@@ -332,7 +332,7 @@ class Client:
         if self.socket_keepalive is not None:
             if user_system not in SOCKET_KEEPALIVE_SUPPORTED_SYSTEM:
                 raise SystemError(
-                    "Pymemcache's socket keepalive mechaniss doesn't "
+                    "Pymemcache's socket keepalive mechanism doesn't "
                     "support your system ({user_system}). If "
                     "you see this message it mean that you tried to "
                     "configure your socket keepalive on an unsupported "
