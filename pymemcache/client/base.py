@@ -24,29 +24,29 @@ from pymemcache.exceptions import (
     MemcacheIllegalInputError,
     MemcacheServerError,
     MemcacheUnknownError,
-    MemcacheUnexpectedCloseError
+    MemcacheUnexpectedCloseError,
 )
 
 
 RECV_SIZE = 4096
 VALID_STORE_RESULTS = {
-    b'set':     (b'STORED', b'NOT_STORED'),
-    b'add':     (b'STORED', b'NOT_STORED'),
-    b'replace': (b'STORED', b'NOT_STORED'),
-    b'append':  (b'STORED', b'NOT_STORED'),
-    b'prepend': (b'STORED', b'NOT_STORED'),
-    b'cas':     (b'STORED', b'EXISTS', b'NOT_FOUND'),
+    b"set": (b"STORED", b"NOT_STORED"),
+    b"add": (b"STORED", b"NOT_STORED"),
+    b"replace": (b"STORED", b"NOT_STORED"),
+    b"append": (b"STORED", b"NOT_STORED"),
+    b"prepend": (b"STORED", b"NOT_STORED"),
+    b"cas": (b"STORED", b"EXISTS", b"NOT_FOUND"),
 }
 
 SOCKET_KEEPALIVE_SUPPORTED_SYSTEM = {
-    'Linux',
+    "Linux",
 }
 
 STORE_RESULTS_VALUE = {
-    b'STORED': True,
-    b'NOT_STORED': False,
-    b'NOT_FOUND':  None,
-    b'EXISTS': False
+    b"STORED": True,
+    b"NOT_STORED": False,
+    b"NOT_FOUND": None,
+    b"EXISTS": False,
 }
 
 
@@ -57,11 +57,11 @@ def _parse_bool_int(value):
 
 
 def _parse_bool_string_is_yes(value):
-    return value == b'yes'
+    return value == b"yes"
 
 
 def _parse_float(value):
-    return float(value.replace(b':', b'.'))
+    return float(value.replace(b":", b"."))
 
 
 def _parse_hex(value):
@@ -70,36 +70,35 @@ def _parse_hex(value):
 
 STAT_TYPES = {
     # General stats
-    b'version': bytes,
-    b'rusage_user': _parse_float,
-    b'rusage_system': _parse_float,
-    b'hash_is_expanding': _parse_bool_int,
-    b'slab_reassign_running': _parse_bool_int,
-
+    b"version": bytes,
+    b"rusage_user": _parse_float,
+    b"rusage_system": _parse_float,
+    b"hash_is_expanding": _parse_bool_int,
+    b"slab_reassign_running": _parse_bool_int,
     # Settings stats
-    b'inter': bytes,
-    b'growth_factor': float,
-    b'stat_key_prefix': bytes,
-    b'umask': _parse_hex,
-    b'detail_enabled': _parse_bool_int,
-    b'cas_enabled': _parse_bool_int,
-    b'auth_enabled_sasl': _parse_bool_string_is_yes,
-    b'maxconns_fast': _parse_bool_int,
-    b'slab_reassign': _parse_bool_int,
-    b'slab_automove': _parse_bool_int,
+    b"inter": bytes,
+    b"growth_factor": float,
+    b"stat_key_prefix": bytes,
+    b"umask": _parse_hex,
+    b"detail_enabled": _parse_bool_int,
+    b"cas_enabled": _parse_bool_int,
+    b"auth_enabled_sasl": _parse_bool_string_is_yes,
+    b"maxconns_fast": _parse_bool_int,
+    b"slab_reassign": _parse_bool_int,
+    b"slab_automove": _parse_bool_int,
 }
 
 # Common helper functions.
 
 
-def check_key_helper(key, allow_unicode_keys, key_prefix=b''):
+def check_key_helper(key, allow_unicode_keys, key_prefix=b""):
     """Checks key and add key_prefix."""
     if allow_unicode_keys:
         if isinstance(key, str):
-            key = key.encode('utf8')
+            key = key.encode("utf8")
     elif isinstance(key, str):
         try:
-            key = key.encode('ascii')
+            key = key.encode("ascii")
         except (UnicodeEncodeError, UnicodeDecodeError):
             raise MemcacheIllegalInputError("Non-ASCII key: %r" % key)
 
@@ -111,7 +110,7 @@ def check_key_helper(key, allow_unicode_keys, key_prefix=b''):
     # second statement catches leading or trailing whitespace
     elif len(parts) > 1 or (parts and parts[0] != key):
         raise MemcacheIllegalInputError("Key contains whitespace: %r" % key)
-    elif b'\00' in key:
+    elif b"\00" in key:
         raise MemcacheIllegalInputError("Key contains null: %r" % key)
 
     return key
@@ -123,18 +122,18 @@ def normalize_server_spec(server):
     if isinstance(server, list):
         return tuple(server)  # Assume [host, port] provided.
     if not isinstance(server, str):
-        raise ValueError('Unknown server provided: %r' % server)
-    if server.startswith('unix:'):
+        raise ValueError("Unknown server provided: %r" % server)
+    if server.startswith("unix:"):
         return server[5:]
-    if server.startswith('/'):
+    if server.startswith("/"):
         return server
-    if ':' not in server or server.endswith(']'):
+    if ":" not in server or server.endswith("]"):
         host, port = server, 11211
     else:
-        host, port = server.rsplit(':', 1)
+        host, port = server.rsplit(":", 1)
         port = int(port)
-    if host.startswith('['):
-        host = host.strip('[]')
+    if host.startswith("["):
+        host = host.strip("[]")
     return (host, port)
 
 
@@ -155,20 +154,18 @@ class KeepaliveOpts:
         dropping the connection. Should be a positive integer most greater
         than zero.
     """
-    __slots__ = ('idle', 'intvl', 'cnt')
+
+    __slots__ = ("idle", "intvl", "cnt")
 
     def __init__(self, idle=1, intvl=1, cnt=5):
         if idle < 1:
-            raise ValueError(
-                "The idle parameter must be greater or equal to 1.")
+            raise ValueError("The idle parameter must be greater or equal to 1.")
         self.idle = idle
         if intvl < 1:
-            raise ValueError(
-                "The intvl parameter must be greater or equal to 1.")
+            raise ValueError("The intvl parameter must be greater or equal to 1.")
         self.intvl = intvl
         if cnt < 1:
-            raise ValueError(
-                "The cnt parameter must be greater or equal to 1.")
+            raise ValueError("The cnt parameter must be greater or equal to 1.")
         self.cnt = cnt
 
 
@@ -268,22 +265,24 @@ class Client:
      to memcached.
     """
 
-    def __init__(self,
-                 server,
-                 serde=None,
-                 serializer=None,
-                 deserializer=None,
-                 connect_timeout=None,
-                 timeout=None,
-                 no_delay=False,
-                 ignore_exc=False,
-                 socket_module=socket,
-                 socket_keepalive=None,
-                 key_prefix=b'',
-                 default_noreply=True,
-                 allow_unicode_keys=False,
-                 encoding='ascii',
-                 tls_context=None):
+    def __init__(
+        self,
+        server,
+        serde=None,
+        serializer=None,
+        deserializer=None,
+        connect_timeout=None,
+        timeout=None,
+        no_delay=False,
+        ignore_exc=False,
+        socket_module=socket,
+        socket_keepalive=None,
+        key_prefix=b"",
+        default_noreply=True,
+        allow_unicode_keys=False,
+        encoding="ascii",
+        tls_context=None,
+    ):
         """
         Constructor.
 
@@ -340,8 +339,7 @@ class Client:
                     "keepalive=False` or use a supported system. "
                     "Supported systems are: {systems}".format(
                         user_system=user_system,
-                        systems=", ".join(sorted(
-                            SOCKET_KEEPALIVE_SUPPORTED_SYSTEM))
+                        systems=", ".join(sorted(SOCKET_KEEPALIVE_SUPPORTED_SYSTEM)),
                     )
                 )
             if not isinstance(self.socket_keepalive, KeepaliveOpts):
@@ -355,7 +353,7 @@ class Client:
                 )
         self.sock = None
         if isinstance(key_prefix, str):
-            key_prefix = key_prefix.encode('ascii')
+            key_prefix = key_prefix.encode("ascii")
         if not isinstance(key_prefix, bytes):
             raise TypeError("key_prefix should be bytes.")
         self.key_prefix = key_prefix
@@ -366,8 +364,9 @@ class Client:
 
     def check_key(self, key):
         """Checks key and add key_prefix."""
-        return check_key_helper(key, allow_unicode_keys=self.allow_unicode_keys,
-                                key_prefix=self.key_prefix)
+        return check_key_helper(
+            key, allow_unicode_keys=self.allow_unicode_keys, key_prefix=self.key_prefix
+        )
 
     def _connect(self):
         self.close()
@@ -382,8 +381,7 @@ class Client:
             sock = None
             error = None
             host, port = self.server
-            info = s.getaddrinfo(host, port, s.AF_UNSPEC, s.SOCK_STREAM,
-                                 s.IPPROTO_TCP)
+            info = s.getaddrinfo(host, port, s.AF_UNSPEC, s.SOCK_STREAM, s.IPPROTO_TCP)
             for family, socktype, proto, _, sockaddr in info:
                 try:
                     sock = s.socket(family, socktype, proto)
@@ -407,12 +405,17 @@ class Client:
             sock.settimeout(self.connect_timeout)
             if self.socket_keepalive is not None:
                 sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE,
-                                self.socket_keepalive.idle)
-                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL,
-                                self.socket_keepalive.intvl)
-                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT,
-                                self.socket_keepalive.cnt)
+                sock.setsockopt(
+                    socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, self.socket_keepalive.idle
+                )
+                sock.setsockopt(
+                    socket.IPPROTO_TCP,
+                    socket.TCP_KEEPINTVL,
+                    self.socket_keepalive.intvl,
+                )
+                sock.setsockopt(
+                    socket.IPPROTO_TCP, socket.TCP_KEEPCNT, self.socket_keepalive.cnt
+                )
             sock.connect(sockaddr)
             sock.settimeout(self.timeout)
         except Exception:
@@ -455,8 +458,7 @@ class Client:
         """
         if noreply is None:
             noreply = self.default_noreply
-        return self._store_cmd(b'set', {key: value}, expire, noreply,
-                               flags=flags)[key]
+        return self._store_cmd(b"set", {key: value}, expire, noreply, flags=flags)[key]
 
     def set_many(self, values, expire=0, noreply=None, flags=None):
         """
@@ -478,7 +480,7 @@ class Client:
         """
         if noreply is None:
             noreply = self.default_noreply
-        result = self._store_cmd(b'set', values, expire, noreply, flags=flags)
+        result = self._store_cmd(b"set", values, expire, noreply, flags=flags)
         return [k for k, v in result.items() if not v]
 
     set_multi = set_many
@@ -505,8 +507,7 @@ class Client:
         """
         if noreply is None:
             noreply = self.default_noreply
-        return self._store_cmd(b'add', {key: value}, expire, noreply,
-                               flags=flags)[key]
+        return self._store_cmd(b"add", {key: value}, expire, noreply, flags=flags)[key]
 
     def replace(self, key, value, expire=0, noreply=None, flags=None):
         """
@@ -530,8 +531,9 @@ class Client:
         """
         if noreply is None:
             noreply = self.default_noreply
-        return self._store_cmd(b'replace', {key: value}, expire, noreply,
-                               flags=flags)[key]
+        return self._store_cmd(b"replace", {key: value}, expire, noreply, flags=flags)[
+            key
+        ]
 
     def append(self, key, value, expire=0, noreply=None, flags=None):
         """
@@ -552,8 +554,9 @@ class Client:
         """
         if noreply is None:
             noreply = self.default_noreply
-        return self._store_cmd(b'append', {key: value}, expire, noreply,
-                               flags=flags)[key]
+        return self._store_cmd(b"append", {key: value}, expire, noreply, flags=flags)[
+            key
+        ]
 
     def prepend(self, key, value, expire=0, noreply=None, flags=None):
         """
@@ -574,8 +577,9 @@ class Client:
         """
         if noreply is None:
             noreply = self.default_noreply
-        return self._store_cmd(b'prepend', {key: value}, expire, noreply,
-                               flags=flags)[key]
+        return self._store_cmd(b"prepend", {key: value}, expire, noreply, flags=flags)[
+            key
+        ]
 
     def cas(self, key, value, cas, expire=0, noreply=False, flags=None):
         """
@@ -598,8 +602,9 @@ class Client:
           value and True if it existed and was changed.
         """
         cas = self._check_cas(cas)
-        return self._store_cmd(b'cas', {key: value}, expire, noreply,
-                               flags=flags, cas=cas)[key]
+        return self._store_cmd(
+            b"cas", {key: value}, expire, noreply, flags=flags, cas=cas
+        )[key]
 
     def get(self, key, default=None):
         """
@@ -612,7 +617,7 @@ class Client:
         Returns:
           The value for the key, or default if the key wasn't found.
         """
-        return self._fetch_cmd(b'get', [key], False).get(key, default)
+        return self._fetch_cmd(b"get", [key], False).get(key, default)
 
     def get_many(self, keys):
         """
@@ -629,7 +634,7 @@ class Client:
         if not keys:
             return {}
 
-        return self._fetch_cmd(b'get', keys, False)
+        return self._fetch_cmd(b"get", keys, False)
 
     get_multi = get_many
 
@@ -647,7 +652,7 @@ class Client:
           or (default, cas_defaults) if the key was not found.
         """
         defaults = (default, cas_default)
-        return self._fetch_cmd(b'gets', [key], True).get(key, defaults)
+        return self._fetch_cmd(b"gets", [key], True).get(key, defaults)
 
     def gets_many(self, keys):
         """
@@ -664,7 +669,7 @@ class Client:
         if not keys:
             return {}
 
-        return self._fetch_cmd(b'gets', keys, True)
+        return self._fetch_cmd(b"gets", keys, True)
 
     def delete(self, key, noreply=None):
         """
@@ -682,14 +687,14 @@ class Client:
         """
         if noreply is None:
             noreply = self.default_noreply
-        cmd = b'delete ' + self.check_key(key)
+        cmd = b"delete " + self.check_key(key)
         if noreply:
-            cmd += b' noreply'
-        cmd += b'\r\n'
-        results = self._misc_cmd([cmd], b'delete', noreply)
+            cmd += b" noreply"
+        cmd += b"\r\n"
+        results = self._misc_cmd([cmd], b"delete", noreply)
         if noreply:
             return True
-        return results[0] == b'DELETED'
+        return results[0] == b"DELETED"
 
     def delete_many(self, keys, noreply=None):
         """
@@ -715,10 +720,12 @@ class Client:
         cmds = []
         for key in keys:
             cmds.append(
-                b'delete ' + self.check_key(key) +
-                (b' noreply' if noreply else b'') +
-                b'\r\n')
-        self._misc_cmd(cmds, b'delete', noreply)
+                b"delete "
+                + self.check_key(key)
+                + (b" noreply" if noreply else b"")
+                + b"\r\n"
+            )
+        self._misc_cmd(cmds, b"delete", noreply)
         return True
 
     delete_multi = delete_many
@@ -738,14 +745,14 @@ class Client:
         """
         key = self.check_key(key)
         value = self._check_integer(value, "value")
-        cmd = b'incr ' + key + b' ' + value
+        cmd = b"incr " + key + b" " + value
         if noreply:
-            cmd += b' noreply'
-        cmd += b'\r\n'
-        results = self._misc_cmd([cmd], b'incr', noreply)
+            cmd += b" noreply"
+        cmd += b"\r\n"
+        results = self._misc_cmd([cmd], b"incr", noreply)
         if noreply:
             return None
-        if results[0] == b'NOT_FOUND':
+        if results[0] == b"NOT_FOUND":
             return None
         return int(results[0])
 
@@ -764,14 +771,14 @@ class Client:
         """
         key = self.check_key(key)
         value = self._check_integer(value, "value")
-        cmd = b'decr ' + key + b' ' + value
+        cmd = b"decr " + key + b" " + value
         if noreply:
-            cmd += b' noreply'
-        cmd += b'\r\n'
-        results = self._misc_cmd([cmd], b'decr', noreply)
+            cmd += b" noreply"
+        cmd += b"\r\n"
+        results = self._misc_cmd([cmd], b"decr", noreply)
         if noreply:
             return None
-        if results[0] == b'NOT_FOUND':
+        if results[0] == b"NOT_FOUND":
             return None
         return int(results[0])
 
@@ -794,14 +801,14 @@ class Client:
             noreply = self.default_noreply
         key = self.check_key(key)
         expire = self._check_integer(expire, "expire")
-        cmd = b'touch ' + key + b' ' + expire
+        cmd = b"touch " + key + b" " + expire
         if noreply:
-            cmd += b' noreply'
-        cmd += b'\r\n'
-        results = self._misc_cmd([cmd], b'touch', noreply)
+            cmd += b" noreply"
+        cmd += b"\r\n"
+        results = self._misc_cmd([cmd], b"touch", noreply)
         if noreply:
             return True
-        return results[0] == b'TOUCHED'
+        return results[0] == b"TOUCHED"
 
     def stats(self, *args):
         """
@@ -818,7 +825,7 @@ class Client:
         Returns:
           A dict of the returned stats.
         """
-        result = self._fetch_cmd(b'stats', args, False)
+        result = self._fetch_cmd(b"stats", args, False)
 
         for key, value in result.items():
             converter = STAT_TYPES.get(key, int)
@@ -841,7 +848,7 @@ class Client:
           If no exception is raised, always returns True.
         """
         memlimit = self._check_integer(memlimit, "memlimit")
-        self._fetch_cmd(b'cache_memlimit', [memlimit], False)
+        self._fetch_cmd(b"cache_memlimit", [memlimit], False)
         return True
 
     def version(self):
@@ -852,12 +859,11 @@ class Client:
             A string of the memcached version.
         """
         cmd = b"version\r\n"
-        results = self._misc_cmd([cmd], b'version', False)
-        before, _, after = results[0].partition(b' ')
+        results = self._misc_cmd([cmd], b"version", False)
+        before, _, after = results[0].partition(b" ")
 
-        if before != b'VERSION':
-            raise MemcacheUnknownError(
-                "Received unexpected response: %s" % results[0])
+        if before != b"VERSION":
+            raise MemcacheUnknownError("Received unexpected response: %s" % results[0])
         return after
 
     def flush_all(self, delay=0, noreply=None):
@@ -876,14 +882,14 @@ class Client:
         if noreply is None:
             noreply = self.default_noreply
         delay = self._check_integer(delay, "delay")
-        cmd = b'flush_all ' + delay
+        cmd = b"flush_all " + delay
         if noreply:
-            cmd += b' noreply'
-        cmd += b'\r\n'
-        results = self._misc_cmd([cmd], b'flush_all', noreply)
+            cmd += b" noreply"
+        cmd += b"\r\n"
+        results = self._misc_cmd([cmd], b"flush_all", noreply)
         if noreply:
             return True
-        return results[0] == b'OK'
+        return results[0] == b"OK"
 
     def quit(self):
         """
@@ -894,7 +900,7 @@ class Client:
         be re-used after quit.
         """
         cmd = b"quit\r\n"
-        self._misc_cmd([cmd], b'quit', True)
+        self._misc_cmd([cmd], b"quit", True)
         self.close()
 
     def shutdown(self, graceful=False):
@@ -910,36 +916,36 @@ class Client:
           graceful: optional bool, True to request a graceful shutdown with
                     SIGUSR1 (defaults to False, i.e. SIGINT shutdown).
         """
-        cmd = b'shutdown'
+        cmd = b"shutdown"
         if graceful:
-            cmd += b' graceful'
-        cmd += b'\r\n'
+            cmd += b" graceful"
+        cmd += b"\r\n"
 
         # The shutdown command raises a server-side error if the shutdown
         # protocol command is not enabled. Otherwise, a successful shutdown
         # is expected to close the remote end of the transport.
         try:
-            self._misc_cmd([cmd], b'shutdown', False)
+            self._misc_cmd([cmd], b"shutdown", False)
         except MemcacheUnexpectedCloseError:
             pass
 
     def _raise_errors(self, line, name):
-        if line.startswith(b'ERROR'):
+        if line.startswith(b"ERROR"):
             raise MemcacheUnknownCommandError(name)
 
-        if line.startswith(b'CLIENT_ERROR'):
-            error = line[line.find(b' ') + 1:]
+        if line.startswith(b"CLIENT_ERROR"):
+            error = line[line.find(b" ") + 1 :]
             raise MemcacheClientError(error)
 
-        if line.startswith(b'SERVER_ERROR'):
-            error = line[line.find(b' ') + 1:]
+        if line.startswith(b"SERVER_ERROR"):
+            error = line[line.find(b" ") + 1 :]
             raise MemcacheServerError(error)
 
     def _check_integer(self, value, name):
         """Check that a value is an integer and encode it as a binary string"""
         if not isinstance(value, int):
             raise MemcacheIllegalInputError(
-                f'{name} must be integer, got bad value: {value!r}'
+                f"{name} must be integer, got bad value: {value!r}"
             )
 
         return str(value).encode(self.encoding)
@@ -955,23 +961,20 @@ class Client:
             try:
                 cas = str(cas).encode(self.encoding)
             except UnicodeEncodeError:
-                raise MemcacheIllegalInputError(
-                    'non-ASCII cas value: %r' % cas)
+                raise MemcacheIllegalInputError("non-ASCII cas value: %r" % cas)
         elif not isinstance(cas, bytes):
             raise MemcacheIllegalInputError(
-                'cas must be integer, string, or bytes, got bad value: %r' % cas
+                "cas must be integer, string, or bytes, got bad value: %r" % cas
             )
 
         if not cas.isdigit():
             raise MemcacheIllegalInputError(
-                'cas must only contain values in 0-9, got bad value: %r'
-                % cas
+                "cas must only contain values in 0-9, got bad value: %r" % cas
             )
 
         return cas
 
-    def _extract_value(self, expect_cas, line, buf, remapped_keys,
-                       prefixed_keys):
+    def _extract_value(self, expect_cas, line, buf, remapped_keys, prefixed_keys):
         """
         This function is abstracted from _fetch_cmd to support different ways
         of value extraction. In order to use this feature, _extract_value needs
@@ -1006,8 +1009,8 @@ class Client:
         # It is important for all keys to be listed in their original order.
         cmd = name
         if prefixed_keys:
-            cmd += b' ' + b' '.join(prefixed_keys)
-        cmd += b'\r\n'
+            cmd += b" " + b" ".join(prefixed_keys)
+        cmd += b"\r\n"
 
         try:
             if self.sock is None:
@@ -1015,7 +1018,7 @@ class Client:
 
             self.sock.sendall(cmd)
 
-            buf = b''
+            buf = b""
             line = None
             result = {}
             while True:
@@ -1025,20 +1028,20 @@ class Client:
                     self.close()
                     raise
                 self._raise_errors(line, name)
-                if line == b'END' or line == b'OK':
+                if line == b"END" or line == b"OK":
                     return result
-                elif line.startswith(b'VALUE'):
-                    key, value, buf = self._extract_value(expect_cas, line, buf,
-                                                          remapped_keys,
-                                                          prefixed_keys)
+                elif line.startswith(b"VALUE"):
+                    key, value, buf = self._extract_value(
+                        expect_cas, line, buf, remapped_keys, prefixed_keys
+                    )
                     result[key] = value
-                elif name == b'stats' and line.startswith(b'STAT'):
+                elif name == b"stats" and line.startswith(b"STAT"):
                     key_value = line.split()
                     result[key_value[1]] = key_value[2]
-                elif name == b'stats' and line.startswith(b'ITEM'):
+                elif name == b"stats" and line.startswith(b"ITEM"):
                     # For 'stats cachedump' commands
                     key_value = line.split()
-                    result[key_value[1]] = b' '.join(key_value[2:])
+                    result[key_value[1]] = b" ".join(key_value[2:])
                 else:
                     raise MemcacheUnknownError(line[:32])
         except Exception:
@@ -1051,11 +1054,11 @@ class Client:
         cmds = []
         keys = []
 
-        extra = b''
+        extra = b""
         if cas is not None:
-            extra += b' ' + cas
+            extra += b" " + cas
         if noreply:
-            extra += b' noreply'
+            extra += b" noreply"
         expire = self._check_integer(expire, "expire")
 
         for key, data in values.items():
@@ -1075,24 +1078,35 @@ class Client:
                     data = str(data).encode(self.encoding)
                 except UnicodeEncodeError as e:
                     raise MemcacheIllegalInputError(
-                            "Data values must be binary-safe: %s" % e)
+                        "Data values must be binary-safe: %s" % e
+                    )
 
-            cmds.append(name + b' ' + key + b' ' +
-                        str(data_flags).encode(self.encoding) +
-                        b' ' + expire +
-                        b' ' + str(len(data)).encode(self.encoding) +
-                        extra + b'\r\n' + data + b'\r\n')
+            cmds.append(
+                name
+                + b" "
+                + key
+                + b" "
+                + str(data_flags).encode(self.encoding)
+                + b" "
+                + expire
+                + b" "
+                + str(len(data)).encode(self.encoding)
+                + extra
+                + b"\r\n"
+                + data
+                + b"\r\n"
+            )
 
         if self.sock is None:
             self._connect()
 
         try:
-            self.sock.sendall(b''.join(cmds))
+            self.sock.sendall(b"".join(cmds))
             if noreply:
                 return {k: True for k in keys}
 
             results = {}
-            buf = b''
+            buf = b""
             line = None
             for key in keys:
                 try:
@@ -1116,13 +1130,13 @@ class Client:
             self._connect()
 
         try:
-            self.sock.sendall(b''.join(cmds))
+            self.sock.sendall(b"".join(cmds))
 
             if noreply:
                 return []
 
             results = []
-            buf = b''
+            buf = b""
             line = None
             for cmd in cmds:
                 try:
@@ -1175,25 +1189,27 @@ class PooledClient:
     #: :class:`Client` class used to create new clients
     client_class = Client
 
-    def __init__(self,
-                 server,
-                 serde=None,
-                 serializer=None,
-                 deserializer=None,
-                 connect_timeout=None,
-                 timeout=None,
-                 no_delay=False,
-                 ignore_exc=False,
-                 socket_module=socket,
-                 socket_keepalive=None,
-                 key_prefix=b'',
-                 max_pool_size=None,
-                 pool_idle_timeout=0,
-                 lock_generator=None,
-                 default_noreply=True,
-                 allow_unicode_keys=False,
-                 encoding='ascii',
-                 tls_context=None):
+    def __init__(
+        self,
+        server,
+        serde=None,
+        serializer=None,
+        deserializer=None,
+        connect_timeout=None,
+        timeout=None,
+        no_delay=False,
+        ignore_exc=False,
+        socket_module=socket,
+        socket_keepalive=None,
+        key_prefix=b"",
+        max_pool_size=None,
+        pool_idle_timeout=0,
+        lock_generator=None,
+        default_noreply=True,
+        allow_unicode_keys=False,
+        encoding="ascii",
+        tls_context=None,
+    ):
         self.server = normalize_server_spec(server)
         self.serde = serde or LegacyWrappingSerde(serializer, deserializer)
         self.connect_timeout = connect_timeout
@@ -1205,7 +1221,7 @@ class PooledClient:
         self.default_noreply = default_noreply
         self.allow_unicode_keys = allow_unicode_keys
         if isinstance(key_prefix, str):
-            key_prefix = key_prefix.encode('ascii')
+            key_prefix = key_prefix.encode("ascii")
         if not isinstance(key_prefix, bytes):
             raise TypeError("key_prefix should be bytes.")
         self.key_prefix = key_prefix
@@ -1214,14 +1230,16 @@ class PooledClient:
             after_remove=lambda client: client.close(),
             max_size=max_pool_size,
             idle_timeout=pool_idle_timeout,
-            lock_generator=lock_generator)
+            lock_generator=lock_generator,
+        )
         self.encoding = encoding
         self.tls_context = tls_context
 
     def check_key(self, key):
         """Checks key and add key_prefix."""
-        return check_key_helper(key, allow_unicode_keys=self.allow_unicode_keys,
-                                key_prefix=self.key_prefix)
+        return check_key_helper(
+            key, allow_unicode_keys=self.allow_unicode_keys, key_prefix=self.key_prefix
+        )
 
     def _create_client(self):
         return self.client_class(
@@ -1238,7 +1256,8 @@ class PooledClient:
             key_prefix=self.key_prefix,
             default_noreply=self.default_noreply,
             allow_unicode_keys=self.allow_unicode_keys,
-            tls_context=self.tls_context)
+            tls_context=self.tls_context,
+        )
 
     def close(self):
         self.client_pool.clear()
@@ -1247,35 +1266,37 @@ class PooledClient:
 
     def set(self, key, value, expire=0, noreply=None, flags=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
-            return client.set(key, value, expire=expire, noreply=noreply,
-                              flags=flags)
+            return client.set(key, value, expire=expire, noreply=noreply, flags=flags)
 
     def set_many(self, values, expire=0, noreply=None, flags=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
-            return client.set_many(values, expire=expire, noreply=noreply,
-                                   flags=flags)
+            return client.set_many(values, expire=expire, noreply=noreply, flags=flags)
 
     set_multi = set_many
 
     def replace(self, key, value, expire=0, noreply=None, flags=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
-            return client.replace(key, value, expire=expire, noreply=noreply,
-                                  flags=flags)
+            return client.replace(
+                key, value, expire=expire, noreply=noreply, flags=flags
+            )
 
     def append(self, key, value, expire=0, noreply=None, flags=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
-            return client.append(key, value, expire=expire, noreply=noreply,
-                                 flags=flags)
+            return client.append(
+                key, value, expire=expire, noreply=noreply, flags=flags
+            )
 
     def prepend(self, key, value, expire=0, noreply=None, flags=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
-            return client.prepend(key, value, expire=expire, noreply=noreply,
-                                  flags=flags)
+            return client.prepend(
+                key, value, expire=expire, noreply=noreply, flags=flags
+            )
 
     def cas(self, key, value, cas, expire=0, noreply=False, flags=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
-            return client.cas(key, value, cas,
-                              expire=expire, noreply=noreply, flags=flags)
+            return client.cas(
+                key, value, cas, expire=expire, noreply=noreply, flags=flags
+            )
 
     def get(self, key, default=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
@@ -1331,8 +1352,7 @@ class PooledClient:
 
     def add(self, key, value, expire=0, noreply=None, flags=None):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
-            return client.add(key, value, expire=expire, noreply=noreply,
-                              flags=flags)
+            return client.add(key, value, expire=expire, noreply=noreply, flags=flags)
 
     def incr(self, key, value, noreply=False):
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
@@ -1409,7 +1429,7 @@ def _readline(sock, buf):
 
     """
     chunks = []
-    last_char = b''
+    last_char = b""
 
     while True:
         # We're reading in chunks, so "\r\n" could appear in one chunk,
@@ -1418,14 +1438,14 @@ def _readline(sock, buf):
 
         # This case must appear first, since the buffer could have
         # later \r\n characters in it and we want to get the first \r\n.
-        if last_char == b'\r' and buf[0:1] == b'\n':
+        if last_char == b"\r" and buf[0:1] == b"\n":
             # Strip the last character from the last chunk.
             chunks[-1] = chunks[-1][:-1]
-            return buf[1:], b''.join(chunks)
-        elif buf.find(b'\r\n') != -1:
+            return buf[1:], b"".join(chunks)
+        elif buf.find(b"\r\n") != -1:
             before, sep, after = buf.partition(b"\r\n")
             chunks.append(before)
-            return after, b''.join(chunks)
+            return after, b"".join(chunks)
 
         if buf:
             chunks.append(buf)
@@ -1476,9 +1496,9 @@ def _readvalue(sock, buf, size):
         chunks[-1] = chunks[-1][:-1]
     else:
         # Just remove the "\r\n" from the latest chunk
-        chunks.append(buf[:rlen - 2])
+        chunks.append(buf[: rlen - 2])
 
-    return buf[rlen:], b''.join(chunks)
+    return buf[rlen:], b"".join(chunks)
 
 
 def _recv(sock, size):

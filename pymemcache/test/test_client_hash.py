@@ -12,9 +12,7 @@ import socket
 
 
 class TestHashClient(ClientTestMixin, unittest.TestCase):
-
-    def make_client_pool(self, hostname, mock_socket_values,
-                         serializer=None, **kwargs):
+    def make_client_pool(self, hostname, mock_socket_values, serializer=None, **kwargs):
         mock_client = Client(hostname, serializer=serializer, **kwargs)
         mock_client.sock = MockSocket(mock_socket_values)
         client = PooledClient(hostname, serializer=serializer)
@@ -24,15 +22,11 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
     def make_client(self, *mock_socket_values, **kwargs):
         current_port = 11012
         client = HashClient([], **kwargs)
-        ip = '127.0.0.1'
+        ip = "127.0.0.1"
 
         for vals in mock_socket_values:
-            s = f'{ip}:{current_port}'
-            c = self.make_client_pool(
-                (ip, current_port),
-                vals,
-                **kwargs
-            )
+            s = f"{ip}:{current_port}"
+            c = self.make_client_pool((ip, current_port), vals, **kwargs)
             client.clients[s] = c
             client.hasher.add_node(s)
             current_port += 1
@@ -43,159 +37,203 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         client = HashClient([], **kwargs)
 
         for socket_, vals in zip(sockets, mock_socket_values):
-            c = self.make_client_pool(
-                socket_,
-                vals,
-                **kwargs
-            )
+            c = self.make_client_pool(socket_, vals, **kwargs)
             client.clients[socket_] = c
             client.hasher.add_node(socket_)
 
         return client
 
     def test_setup_client_without_pooling(self):
-        client_class = 'pymemcache.client.hash.HashClient.client_class'
+        client_class = "pymemcache.client.hash.HashClient.client_class"
         with mock.patch(client_class) as internal_client:
-            client = HashClient([], timeout=999, key_prefix='foo_bar_baz')
-            client.add_server(('127.0.0.1', '11211'))
+            client = HashClient([], timeout=999, key_prefix="foo_bar_baz")
+            client.add_server(("127.0.0.1", "11211"))
 
-        assert internal_client.call_args[0][0] == ('127.0.0.1', '11211')
+        assert internal_client.call_args[0][0] == ("127.0.0.1", "11211")
         kwargs = internal_client.call_args[1]
-        assert kwargs['timeout'] == 999
-        assert kwargs['key_prefix'] == 'foo_bar_baz'
+        assert kwargs["timeout"] == 999
+        assert kwargs["key_prefix"] == "foo_bar_baz"
 
     def test_get_many_unix(self):
         pid = os.getpid()
         sockets = [
-            '/tmp/pymemcache.1.%d' % pid,
-            '/tmp/pymemcache.2.%d' % pid,
+            "/tmp/pymemcache.1.%d" % pid,
+            "/tmp/pymemcache.2.%d" % pid,
         ]
-        client = self.make_unix_client(sockets, *[
-            [b'STORED\r\n', b'VALUE key3 0 6\r\nvalue2\r\nEND\r\n', ],
-            [b'STORED\r\n', b'VALUE key1 0 6\r\nvalue1\r\nEND\r\n', ],
-        ])
+        client = self.make_unix_client(
+            sockets,
+            *[
+                [
+                    b"STORED\r\n",
+                    b"VALUE key3 0 6\r\nvalue2\r\nEND\r\n",
+                ],
+                [
+                    b"STORED\r\n",
+                    b"VALUE key1 0 6\r\nvalue1\r\nEND\r\n",
+                ],
+            ],
+        )
 
         def get_clients(key):
-            if key == b'key3':
-                return client.clients['/tmp/pymemcache.1.%d' % pid]
+            if key == b"key3":
+                return client.clients["/tmp/pymemcache.1.%d" % pid]
             else:
-                return client.clients['/tmp/pymemcache.2.%d' % pid]
+                return client.clients["/tmp/pymemcache.2.%d" % pid]
 
         client._get_client = get_clients
 
-        result = client.set(b'key1', b'value1', noreply=False)
-        result = client.set(b'key3', b'value2', noreply=False)
-        result = client.get_many([b'key1', b'key3'])
-        assert result == {b'key1': b'value1', b'key3': b'value2'}
+        result = client.set(b"key1", b"value1", noreply=False)
+        result = client.set(b"key3", b"value2", noreply=False)
+        result = client.get_many([b"key1", b"key3"])
+        assert result == {b"key1": b"value1", b"key3": b"value2"}
 
     def test_get_many_all_found(self):
-        client = self.make_client(*[
-            [b'STORED\r\n', b'VALUE key3 0 6\r\nvalue2\r\nEND\r\n', ],
-            [b'STORED\r\n', b'VALUE key1 0 6\r\nvalue1\r\nEND\r\n', ],
-        ])
+        client = self.make_client(
+            *[
+                [
+                    b"STORED\r\n",
+                    b"VALUE key3 0 6\r\nvalue2\r\nEND\r\n",
+                ],
+                [
+                    b"STORED\r\n",
+                    b"VALUE key1 0 6\r\nvalue1\r\nEND\r\n",
+                ],
+            ]
+        )
 
         def get_clients(key):
-            if key == b'key3':
-                return client.clients['127.0.0.1:11012']
+            if key == b"key3":
+                return client.clients["127.0.0.1:11012"]
             else:
-                return client.clients['127.0.0.1:11013']
+                return client.clients["127.0.0.1:11013"]
 
         client._get_client = get_clients
 
-        result = client.set(b'key1', b'value1', noreply=False)
-        result = client.set(b'key3', b'value2', noreply=False)
-        result = client.get_many([b'key1', b'key3'])
-        assert result == {b'key1': b'value1', b'key3': b'value2'}
+        result = client.set(b"key1", b"value1", noreply=False)
+        result = client.set(b"key3", b"value2", noreply=False)
+        result = client.get_many([b"key1", b"key3"])
+        assert result == {b"key1": b"value1", b"key3": b"value2"}
 
     def test_get_many_some_found(self):
-        client = self.make_client(*[
-            [b'END\r\n', ],
-            [b'STORED\r\n', b'VALUE key1 0 6\r\nvalue1\r\nEND\r\n', ],
-        ])
+        client = self.make_client(
+            *[
+                [
+                    b"END\r\n",
+                ],
+                [
+                    b"STORED\r\n",
+                    b"VALUE key1 0 6\r\nvalue1\r\nEND\r\n",
+                ],
+            ]
+        )
 
         def get_clients(key):
-            if key == b'key3':
-                return client.clients['127.0.0.1:11012']
+            if key == b"key3":
+                return client.clients["127.0.0.1:11012"]
             else:
-                return client.clients['127.0.0.1:11013']
+                return client.clients["127.0.0.1:11013"]
 
         client._get_client = get_clients
-        result = client.set(b'key1', b'value1', noreply=False)
-        result = client.get_many([b'key1', b'key3'])
+        result = client.set(b"key1", b"value1", noreply=False)
+        result = client.get_many([b"key1", b"key3"])
 
-        assert result == {b'key1': b'value1'}
+        assert result == {b"key1": b"value1"}
 
     def test_get_many_bad_server_data(self):
-        client = self.make_client(*[
-            [b'STORED\r\n', b'VAXLUE key3 0 6\r\nvalue2\r\nEND\r\n', ],
-            [b'STORED\r\n', b'VAXLUE key1 0 6\r\nvalue1\r\nEND\r\n', ],
-        ])
+        client = self.make_client(
+            *[
+                [
+                    b"STORED\r\n",
+                    b"VAXLUE key3 0 6\r\nvalue2\r\nEND\r\n",
+                ],
+                [
+                    b"STORED\r\n",
+                    b"VAXLUE key1 0 6\r\nvalue1\r\nEND\r\n",
+                ],
+            ]
+        )
 
         def get_clients(key):
-            if key == b'key3':
-                return client.clients['127.0.0.1:11012']
+            if key == b"key3":
+                return client.clients["127.0.0.1:11012"]
             else:
-                return client.clients['127.0.0.1:11013']
+                return client.clients["127.0.0.1:11013"]
 
         client._get_client = get_clients
 
         with pytest.raises(MemcacheUnknownError):
-            client.set(b'key1', b'value1', noreply=False)
-            client.set(b'key3', b'value2', noreply=False)
-            client.get_many([b'key1', b'key3'])
+            client.set(b"key1", b"value1", noreply=False)
+            client.set(b"key3", b"value2", noreply=False)
+            client.get_many([b"key1", b"key3"])
 
     def test_get_many_bad_server_data_ignore(self):
-        client = self.make_client(*[
-            [b'STORED\r\n', b'VAXLUE key3 0 6\r\nvalue2\r\nEND\r\n', ],
-            [b'STORED\r\n', b'VAXLUE key1 0 6\r\nvalue1\r\nEND\r\n', ],
-        ], ignore_exc=True)
+        client = self.make_client(
+            *[
+                [
+                    b"STORED\r\n",
+                    b"VAXLUE key3 0 6\r\nvalue2\r\nEND\r\n",
+                ],
+                [
+                    b"STORED\r\n",
+                    b"VAXLUE key1 0 6\r\nvalue1\r\nEND\r\n",
+                ],
+            ],
+            ignore_exc=True,
+        )
 
         def get_clients(key):
-            if key == b'key3':
-                return client.clients['127.0.0.1:11012']
+            if key == b"key3":
+                return client.clients["127.0.0.1:11012"]
             else:
-                return client.clients['127.0.0.1:11013']
+                return client.clients["127.0.0.1:11013"]
 
         client._get_client = get_clients
 
-        client.set(b'key1', b'value1', noreply=False)
-        client.set(b'key3', b'value2', noreply=False)
-        result = client.get_many([b'key1', b'key3'])
+        client.set(b"key1", b"value1", noreply=False)
+        client.set(b"key3", b"value2", noreply=False)
+        result = client.get_many([b"key1", b"key3"])
         assert result == {}
 
     def test_gets_many(self):
-        client = self.make_client(*[
-            [b'STORED\r\n', b'VALUE key3 0 6 1\r\nvalue2\r\nEND\r\n', ],
-            [b'STORED\r\n', b'VALUE key1 0 6 1\r\nvalue1\r\nEND\r\n', ],
-        ])
+        client = self.make_client(
+            *[
+                [
+                    b"STORED\r\n",
+                    b"VALUE key3 0 6 1\r\nvalue2\r\nEND\r\n",
+                ],
+                [
+                    b"STORED\r\n",
+                    b"VALUE key1 0 6 1\r\nvalue1\r\nEND\r\n",
+                ],
+            ]
+        )
 
         def get_clients(key):
-            if key == b'key3':
-                return client.clients['127.0.0.1:11012']
+            if key == b"key3":
+                return client.clients["127.0.0.1:11012"]
             else:
-                return client.clients['127.0.0.1:11013']
+                return client.clients["127.0.0.1:11013"]
 
         client._get_client = get_clients
 
-        assert client.set(b'key1', b'value1', noreply=False) is True
-        assert client.set(b'key3', b'value2', noreply=False) is True
-        result = client.gets_many([b'key1', b'key3'])
-        assert (result ==
-                {b'key1': (b'value1', b'1'), b'key3': (b'value2', b'1')})
+        assert client.set(b"key1", b"value1", noreply=False) is True
+        assert client.set(b"key3", b"value2", noreply=False) is True
+        result = client.gets_many([b"key1", b"key3"])
+        assert result == {b"key1": (b"value1", b"1"), b"key3": (b"value2", b"1")}
 
     def test_touch_not_found(self):
-        client = self.make_client([b'NOT_FOUND\r\n'])
-        result = client.touch(b'key', noreply=False)
+        client = self.make_client([b"NOT_FOUND\r\n"])
+        result = client.touch(b"key", noreply=False)
         assert result is False
 
     def test_touch_no_expiry_found(self):
-        client = self.make_client([b'TOUCHED\r\n'])
-        result = client.touch(b'key', noreply=False)
+        client = self.make_client([b"TOUCHED\r\n"])
+        result = client.touch(b"key", noreply=False)
         assert result is True
 
     def test_touch_with_expiry_found(self):
-        client = self.make_client([b'TOUCHED\r\n'])
-        result = client.touch(b'key', 1, noreply=False)
+        client = self.make_client([b"TOUCHED\r\n"])
+        result = client.touch(b"key", 1, noreply=False)
         assert result is True
 
     def test_close(self):
@@ -214,141 +252,139 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
 
     def test_no_servers_left(self):
         from pymemcache.client.hash import HashClient
+
         client = HashClient(
-            [], use_pooling=True,
-            ignore_exc=True,
-            timeout=1, connect_timeout=1
+            [], use_pooling=True, ignore_exc=True, timeout=1, connect_timeout=1
         )
 
-        hashed_client = client._get_client('foo')
+        hashed_client = client._get_client("foo")
         assert hashed_client is None
 
     def test_no_servers_left_raise_exception(self):
         from pymemcache.client.hash import HashClient
+
         client = HashClient(
-            [], use_pooling=True,
-            ignore_exc=False,
-            timeout=1, connect_timeout=1
+            [], use_pooling=True, ignore_exc=False, timeout=1, connect_timeout=1
         )
 
         with pytest.raises(MemcacheError) as e:
-            client._get_client('foo')
+            client._get_client("foo")
 
-        assert str(e.value) == 'All servers seem to be down right now'
+        assert str(e.value) == "All servers seem to be down right now"
 
     def test_unavailable_servers_zero_retry_raise_exception(self):
         from pymemcache.client.hash import HashClient
+
         client = HashClient(
-            [('example.com', 11211)], use_pooling=True,
+            [("example.com", 11211)],
+            use_pooling=True,
             ignore_exc=False,
-            retry_attempts=0, timeout=1, connect_timeout=1
+            retry_attempts=0,
+            timeout=1,
+            connect_timeout=1,
         )
 
         with pytest.raises(socket.error):
-            client.get('foo')
+            client.get("foo")
 
     def test_no_servers_left_with_commands_return_default_value(self):
         from pymemcache.client.hash import HashClient
+
         client = HashClient(
-            [], use_pooling=True,
-            ignore_exc=True,
-            timeout=1, connect_timeout=1
+            [], use_pooling=True, ignore_exc=True, timeout=1, connect_timeout=1
         )
 
-        result = client.get('foo')
+        result = client.get("foo")
         assert result is None
-        result = client.get('foo', default='default')
-        assert result == 'default'
-        result = client.set('foo', 'bar')
+        result = client.get("foo", default="default")
+        assert result == "default"
+        result = client.set("foo", "bar")
         assert result is False
 
     def test_no_servers_left_return_positional_default(self):
         from pymemcache.client.hash import HashClient
+
         client = HashClient(
-            [], use_pooling=True,
-            ignore_exc=True,
-            timeout=1, connect_timeout=1
+            [], use_pooling=True, ignore_exc=True, timeout=1, connect_timeout=1
         )
 
         # Ensure compatibility with clients that pass the default as a
         # positional argument
-        result = client.get('foo', 'default')
-        assert result == 'default'
+        result = client.get("foo", "default")
+        assert result == "default"
 
     def test_no_servers_left_with_set_many(self):
         from pymemcache.client.hash import HashClient
+
         client = HashClient(
-            [], use_pooling=True,
-            ignore_exc=True,
-            timeout=1, connect_timeout=1
+            [], use_pooling=True, ignore_exc=True, timeout=1, connect_timeout=1
         )
 
-        result = client.set_many({'foo': 'bar'})
-        assert result == ['foo']
+        result = client.set_many({"foo": "bar"})
+        assert result == ["foo"]
 
     def test_no_servers_left_with_get_many(self):
         from pymemcache.client.hash import HashClient
+
         client = HashClient(
-            [], use_pooling=True,
-            ignore_exc=True,
-            timeout=1, connect_timeout=1
+            [], use_pooling=True, ignore_exc=True, timeout=1, connect_timeout=1
         )
 
-        result = client.get_many(['foo', 'bar'])
+        result = client.get_many(["foo", "bar"])
         assert result == {}
 
     def test_ignore_exec_set_many(self):
-        values = {
-            'key1': 'value1',
-            'key2': 'value2',
-            'key3': 'value3'
-        }
+        values = {"key1": "value1", "key2": "value2", "key3": "value3"}
 
         with pytest.raises(MemcacheUnknownError):
-            client = self.make_client(*[
-                [b'STORED\r\n', b'UNKNOWN\r\n', b'STORED\r\n'],
-                [b'STORED\r\n', b'UNKNOWN\r\n', b'STORED\r\n'],
-            ])
+            client = self.make_client(
+                *[
+                    [b"STORED\r\n", b"UNKNOWN\r\n", b"STORED\r\n"],
+                    [b"STORED\r\n", b"UNKNOWN\r\n", b"STORED\r\n"],
+                ]
+            )
             client.set_many(values, noreply=False)
 
-        client = self.make_client(*[
-            [b'STORED\r\n', b'UNKNOWN\r\n', b'STORED\r\n'],
-        ], ignore_exc=True)
+        client = self.make_client(
+            *[
+                [b"STORED\r\n", b"UNKNOWN\r\n", b"STORED\r\n"],
+            ],
+            ignore_exc=True,
+        )
         result = client.set_many(values, noreply=False)
 
         assert len(result) == 0
 
     def test_noreply_set_many(self):
-        values = {
-            'key1': 'value1',
-            'key2': 'value2',
-            'key3': 'value3'
-        }
+        values = {"key1": "value1", "key2": "value2", "key3": "value3"}
 
-        client = self.make_client(*[
-            [b'STORED\r\n', b'NOT_STORED\r\n', b'STORED\r\n'],
-        ])
+        client = self.make_client(
+            *[
+                [b"STORED\r\n", b"NOT_STORED\r\n", b"STORED\r\n"],
+            ]
+        )
         result = client.set_many(values, noreply=False)
         assert len(result) == 1
 
-        client = self.make_client(*[
-            [b'STORED\r\n', b'NOT_STORED\r\n', b'STORED\r\n'],
-        ])
+        client = self.make_client(
+            *[
+                [b"STORED\r\n", b"NOT_STORED\r\n", b"STORED\r\n"],
+            ]
+        )
         result = client.set_many(values, noreply=True)
         assert result == []
 
     def test_set_many_unix(self):
-        values = {
-            'key1': 'value1',
-            'key2': 'value2',
-            'key3': 'value3'
-        }
+        values = {"key1": "value1", "key2": "value2", "key3": "value3"}
 
         pid = os.getpid()
-        sockets = ['/tmp/pymemcache.%d' % pid]
-        client = self.make_unix_client(sockets, *[
-            [b'STORED\r\n', b'NOT_STORED\r\n', b'STORED\r\n'],
-        ])
+        sockets = ["/tmp/pymemcache.%d" % pid]
+        client = self.make_unix_client(
+            sockets,
+            *[
+                [b"STORED\r\n", b"NOT_STORED\r\n", b"STORED\r\n"],
+            ],
+        )
 
         result = client.set_many(values, noreply=False)
         assert len(result) == 1
@@ -357,11 +393,11 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         """
         test passed encoding from hash client to pooled clients
         """
-        encoding = 'utf8'
+        encoding = "utf8"
         from pymemcache.client.hash import HashClient
+
         hash_client = HashClient(
-            [('example.com', 11211)], use_pooling=True,
-            encoding=encoding
+            [("example.com", 11211)], use_pooling=True, encoding=encoding
         )
 
         for client in hash_client.clients.values():
@@ -371,11 +407,10 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         """
         test passed encoding from hash client to clients
         """
-        encoding = 'utf8'
+        encoding = "utf8"
         from pymemcache.client.hash import HashClient
-        hash_client = HashClient(
-            [('example.com', 11211)], encoding=encoding
-        )
+
+        hash_client = HashClient([("example.com", 11211)], encoding=encoding)
 
         for client in hash_client.clients.values():
             assert client.encoding == encoding
@@ -424,8 +459,8 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
 
         client = HashClient([])
         client.client_class = MyClient
-        client.add_server(('host', 11211))
-        assert isinstance(client.clients['host:11211'], MyClient)
+        client.add_server(("host", 11211))
+        assert isinstance(client.clients["host:11211"], MyClient)
 
     def test_custom_client_with_pooling(self):
         class MyClient(Client):
@@ -433,36 +468,38 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
 
         client = HashClient([], use_pooling=True)
         client.client_class = MyClient
-        client.add_server(('host', 11211))
-        assert isinstance(client.clients['host:11211'], PooledClient)
+        client.add_server(("host", 11211))
+        assert isinstance(client.clients["host:11211"], PooledClient)
 
-        pool = client.clients['host:11211'].client_pool
+        pool = client.clients["host:11211"].client_pool
         with pool.get_and_release(destroy_on_fail=True) as c:
             assert isinstance(c, MyClient)
 
     def test_mixed_inet_and_unix_sockets(self):
         expected = {
-            f'/tmp/pymemcache.{os.getpid()}',
-            ('127.0.0.1', 11211),
-            ('::1', 11211),
+            f"/tmp/pymemcache.{os.getpid()}",
+            ("127.0.0.1", 11211),
+            ("::1", 11211),
         }
-        client = HashClient([
-            f'/tmp/pymemcache.{os.getpid()}',
-            '127.0.0.1',
-            '127.0.0.1:11211',
-            '[::1]',
-            '[::1]:11211',
-            ('127.0.0.1', 11211),
-            ('::1', 11211),
-        ])
+        client = HashClient(
+            [
+                f"/tmp/pymemcache.{os.getpid()}",
+                "127.0.0.1",
+                "127.0.0.1:11211",
+                "[::1]",
+                "[::1]:11211",
+                ("127.0.0.1", 11211),
+                ("::1", 11211),
+            ]
+        )
         assert expected == {c.server for c in client.clients.values()}
 
     def test_legacy_add_remove_server_signature(self):
-        server = ('127.0.0.1', 11211)
+        server = ("127.0.0.1", 11211)
         client = HashClient([])
         assert client.clients == {}
         client.add_server(*server)  # Unpack (host, port) tuple.
-        assert ('%s:%s' % server) in client.clients
+        assert ("%s:%s" % server) in client.clients
         client._mark_failed_server(server)
         assert server in client._failed_clients
         client.remove_server(*server)  # Unpack (host, port) tuple.

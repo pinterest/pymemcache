@@ -22,10 +22,14 @@ import time
 class ObjectPool:
     """A pool of objects that release/creates/destroys as needed."""
 
-    def __init__(self, obj_creator,
-                 after_remove=None, max_size=None,
-                 idle_timeout=0,
-                 lock_generator=None):
+    def __init__(
+        self,
+        obj_creator,
+        after_remove=None,
+        max_size=None,
+        idle_timeout=0,
+        lock_generator=None,
+    ):
         self._used_objs = collections.deque()
         self._free_objs = collections.deque()
         self._obj_creator = obj_creator
@@ -78,9 +82,9 @@ class ObjectPool:
                 # No free objects, create a new one.
                 curr_count = len(self._used_objs)
                 if curr_count >= self.max_size:
-                    raise RuntimeError("Too many objects,"
-                                       " %s >= %s" % (curr_count,
-                                                      self.max_size))
+                    raise RuntimeError(
+                        "Too many objects," " %s >= %s" % (curr_count, self.max_size)
+                    )
                 obj = self._obj_creator()
 
             self._used_objs.append(obj)
