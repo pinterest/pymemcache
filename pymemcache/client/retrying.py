@@ -27,9 +27,7 @@ def _ensure_tuple_argument(argument_name, argument_value):
     if argument_value is None:
         return tuple()
     elif not isinstance(argument_value, (tuple, set, list)):
-        raise ValueError(
-            "%s must be either a tuple, a set or a list." % argument_name
-        )
+        raise ValueError("%s must be either a tuple, a set or a list." % argument_name)
 
     # Convert the argument before checking contents.
     argument_tuple = tuple(argument_value)
@@ -51,12 +49,7 @@ class RetryingClient(object):
     """
 
     def __init__(
-        self,
-        client,
-        attempts=2,
-        retry_delay=0,
-        retry_for=None,
-        do_not_retry_for=None
+        self, client, attempts=2, retry_delay=0, retry_for=None, do_not_retry_for=None
     ):
         """
         Constructor for RetryingClient.
@@ -113,7 +106,7 @@ class RetryingClient(object):
         for exc_class in self._retry_for:
             if exc_class in self._do_not_retry_for:
                 raise ValueError(
-                    "Exception class \"%s\" was present in both `retry_for` "
+                    'Exception class "%s" was present in both `retry_for` '
                     "and `do_not_retry_for`. Any exception class is only "
                     "allowed in a single argument." % repr(exc_class)
                 )
@@ -142,12 +135,15 @@ class RetryingClient(object):
                 # - self._retry_for is set, and we do not match.
                 # - self._do_not_retry_for is set, and we do match.
                 # - name is not actually a member of the client class.
-                if attempt >= self._attempts - 1 \
-                   or (self._retry_for
-                       and not isinstance(exc, self._retry_for)) \
-                   or (self._do_not_retry_for
-                       and isinstance(exc, self._do_not_retry_for)) \
-                   or name not in self._client_dir:
+                if (
+                    attempt >= self._attempts - 1
+                    or (self._retry_for and not isinstance(exc, self._retry_for))
+                    or (
+                        self._do_not_retry_for
+                        and isinstance(exc, self._do_not_retry_for)
+                    )
+                    or name not in self._client_dir
+                ):
                     raise exc
 
                 # Sleep and try again.
@@ -159,10 +155,7 @@ class RetryingClient(object):
     def __getattr__(self, name):
 
         return lambda *args, **kwargs: self._retry(
-            name,
-            self._client.__getattribute__(name),
-            *args,
-            **kwargs
+            name, self._client.__getattribute__(name), *args, **kwargs
         )
 
     # We implement these explicitly because they're "magic" functions and won't

@@ -17,12 +17,14 @@ import pytest
 
 try:
     import pylibmc
+
     HAS_PYLIBMC = True
 except Exception:
     HAS_PYLIBMC = False
 
 try:
     import memcache
+
     HAS_MEMCACHE = True
 except Exception:
     HAS_MEMCACHE = False
@@ -30,27 +32,30 @@ except Exception:
 
 try:
     import pymemcache.client
+
     HAS_PYMEMCACHE = True
 except Exception:
     HAS_PYMEMCACHE = False
 
 
-@pytest.fixture(params=[
-    "pylibmc",
-    "memcache",
-    "pymemcache",
-])
+@pytest.fixture(
+    params=[
+        "pylibmc",
+        "memcache",
+        "pymemcache",
+    ]
+)
 def client(request, host, port):
     if request.param == "pylibmc":
         if not HAS_PYLIBMC:
             pytest.skip("requires pylibmc")
-        client = pylibmc.Client([f'{host}:{port}'])
+        client = pylibmc.Client([f"{host}:{port}"])
         client.behaviors = {"tcp_nodelay": True}
 
     elif request.param == "memcache":
         if not HAS_MEMCACHE:
             pytest.skip("requires python-memcached")
-        client = memcache.Client([f'{host}:{port}'])
+        client = memcache.Client([f"{host}:{port}"])
 
     elif request.param == "pymemcache":
         if not HAS_PYMEMCACHE:

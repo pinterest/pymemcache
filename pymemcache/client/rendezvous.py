@@ -3,13 +3,14 @@ from pymemcache.client.murmur3 import murmur3_32
 
 class RendezvousHash:
     """
-        Implements the Highest Random Weight (HRW) hashing algorithm most
-        commonly referred to as rendezvous hashing.
+    Implements the Highest Random Weight (HRW) hashing algorithm most
+    commonly referred to as rendezvous hashing.
 
-        Originally developed as part of python-clandestined.
+    Originally developed as part of python-clandestined.
 
-        Copyright (c) 2014 Ernest W. Durbin III
+    Copyright (c) 2014 Ernest W. Durbin III
     """
+
     def __init__(self, nodes=None, seed=0, hash_function=murmur3_32):
         """
         Constructor.

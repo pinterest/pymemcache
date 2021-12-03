@@ -27,7 +27,7 @@ def test_get_set_non_ascii_value():
     assert client.get(b"hello") is None
 
     # This is the value of msgpack.packb('non_ascii')
-    non_ascii_str = b'\xa9non_ascii'
+    non_ascii_str = b"\xa9non_ascii"
     client.set(b"hello", non_ascii_str)
     assert client.get(b"hello") == non_ascii_str
 
@@ -41,7 +41,7 @@ def test_get_many_set_many():
     assert result == {b"h": 1}
 
     # Convert keys into bytes
-    d = {k.encode('ascii'): v for k, v in dict(h=1, e=2, z=3).items()}
+    d = {k.encode("ascii"): v for k, v in dict(h=1, e=2, z=3).items()}
     client.set_many(d)
     assert client.get_many([b"h", b"e", b"z", b"o"]) == d
 
@@ -51,17 +51,19 @@ def test_get_many_set_many_non_ascii_values():
     client = MockMemcacheClient()
 
     # These are the values of calling msgpack.packb() on '1', '2', and '3'
-    non_ascii_1 = b'\xa11'
-    non_ascii_2 = b'\xa12'
-    non_ascii_3 = b'\xa13'
+    non_ascii_1 = b"\xa11"
+    non_ascii_2 = b"\xa12"
+    non_ascii_3 = b"\xa13"
     client.set(b"h", non_ascii_1)
 
     result = client.get_many([b"h", b"e", b"l", b"o"])
     assert result == {b"h": non_ascii_1}
 
     # Convert keys into bytes
-    d = {k.encode('ascii'): v
-         for k, v in dict(h=non_ascii_1, e=non_ascii_2, z=non_ascii_3).items()}
+    d = {
+        k.encode("ascii"): v
+        for k, v in dict(h=non_ascii_1, e=non_ascii_2, z=non_ascii_3).items()
+    }
     client.set_many(d)
     assert client.get_many([b"h", b"e", b"z", b"o"]) == d
 
@@ -105,7 +107,7 @@ def test_incr_decr():
 def test_prepand_append():
     client = MockMemcacheClient()
 
-    client.set(b"k", '1')
-    client.append(b"k", 'a')
-    client.prepend(b"k", 'p')
-    assert client.get(b"k") == b'p1a'
+    client.set(b"k", "1")
+    client.append(b"k", "a")
+    client.prepend(b"k", "p")
+    assert client.get(b"k") == b"p1a"

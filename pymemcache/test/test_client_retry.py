@@ -14,15 +14,15 @@ from pymemcache.exceptions import MemcacheUnknownError, MemcacheClientError
 
 # Test pure passthroughs with no retry action.
 class TestRetryingClientPassthrough(ClientTestMixin, unittest.TestCase):
-
     def make_base_client(self, mock_socket_values, **kwargs):
         base_client = Client(None, **kwargs)
         # mock out client._connect() rather than hard-setting client.sock to
         # ensure methods are checking whether self.sock is None before
         # attempting to use it
         sock = MockSocket(list(mock_socket_values))
-        base_client._connect = mock.Mock(side_effect=functools.partial(
-            setattr, base_client, "sock", sock))
+        base_client._connect = mock.Mock(
+            side_effect=functools.partial(setattr, base_client, "sock", sock)
+        )
         return base_client
 
     def make_client(self, mock_socket_values, **kwargs):
@@ -39,16 +39,16 @@ class TestRetryingClientPassthrough(ClientTestMixin, unittest.TestCase):
 # Retry specific tests.
 @pytest.mark.unit()
 class TestRetryingClient(object):
-
     def make_base_client(self, mock_socket_values, **kwargs):
-        """ Creates a regular mock client to wrap in the RetryClient. """
+        """Creates a regular mock client to wrap in the RetryClient."""
         base_client = Client(None, **kwargs)
         # mock out client._connect() rather than hard-setting client.sock to
         # ensure methods are checking whether self.sock is None before
         # attempting to use it
         sock = MockSocket(list(mock_socket_values))
-        base_client._connect = mock.Mock(side_effect=functools.partial(
-            setattr, base_client, "sock", sock))
+        base_client._connect = mock.Mock(
+            side_effect=functools.partial(setattr, base_client, "sock", sock)
+        )
         return base_client
 
     def make_client(self, mock_socket_values, **kwargs):
@@ -57,9 +57,7 @@ class TestRetryingClient(object):
         configured using kwargs.
         """
         # Create a base client to wrap.
-        base_client = self.make_base_client(
-            mock_socket_values=mock_socket_values
-        )
+        base_client = self.make_base_client(mock_socket_values=mock_socket_values)
 
         # Wrap the client in the retrying class, and pass kwargs on.
         client = RetryingClient(base_client, **kwargs)
@@ -147,7 +145,7 @@ class TestRetryingClient(object):
         rc = RetryingClient(
             base_client,
             retry_for=[Exception, IOError],
-            do_not_retry_for=[ValueError, MemcacheUnknownError]
+            do_not_retry_for=[ValueError, MemcacheUnknownError],
         )
         assert rc._retry_for == (Exception, IOError)
         assert rc._do_not_retry_for == (ValueError, MemcacheUnknownError)
@@ -157,7 +155,7 @@ class TestRetryingClient(object):
             rc = RetryingClient(
                 base_client,
                 retry_for=[Exception, IOError, MemcacheUnknownError],
-                do_not_retry_for=[ValueError, MemcacheUnknownError]
+                do_not_retry_for=[ValueError, MemcacheUnknownError],
             )
 
     def test_dir_passthrough(self):
@@ -167,74 +165,58 @@ class TestRetryingClient(object):
         assert dir(base) == dir(client)
 
     def test_retry_dict_set_is_supported(self):
-        client = self.make_client([b'UNKNOWN\r\n', b'STORED\r\n'])
-        client[b'key'] = b'value'
+        client = self.make_client([b"UNKNOWN\r\n", b"STORED\r\n"])
+        client[b"key"] = b"value"
 
     def test_retry_dict_get_is_supported(self):
         client = self.make_client(
-            [
-                b'UNKNOWN\r\n',
-                b'VALUE key 0 5\r\nvalue\r\nEND\r\n'
-            ]
+            [b"UNKNOWN\r\n", b"VALUE key 0 5\r\nvalue\r\nEND\r\n"]
         )
-        assert client[b'key'] == b'value'
+        assert client[b"key"] == b"value"
 
     def test_retry_dict_get_not_found_is_supported(self):
-        client = self.make_client([b'UNKNOWN\r\n', b'END\r\n'])
+        client = self.make_client([b"UNKNOWN\r\n", b"END\r\n"])
 
         with pytest.raises(KeyError):
-            client[b'key']
+            client[b"key"]
 
     def test_retry_dict_del_is_supported(self):
-        client = self.make_client([b'UNKNOWN\r\n', b'DELETED\r\n'])
-        del client[b'key']
+        client = self.make_client([b"UNKNOWN\r\n", b"DELETED\r\n"])
+        del client[b"key"]
 
     def test_retry_get_found(self):
-        client = self.make_client([
-            b'UNKNOWN\r\n',
-            b'VALUE key 0 5\r\nvalue\r\nEND\r\n'
-        ], attempts=2)
+        client = self.make_client(
+            [b"UNKNOWN\r\n", b"VALUE key 0 5\r\nvalue\r\nEND\r\n"], attempts=2
+        )
         result = client.get("key")
-        assert result == b'value'
+        assert result == b"value"
 
     def test_retry_get_not_found(self):
-        client = self.make_client([
-            b'UNKNOWN\r\n',
-            b'END\r\n'
-        ], attempts=2)
+        client = self.make_client([b"UNKNOWN\r\n", b"END\r\n"], attempts=2)
         result = client.get("key")
         assert result is None
 
     def test_retry_get_exception(self):
-        client = self.make_client([
-            b'UNKNOWN\r\n',
-            b'UNKNOWN\r\n'
-        ], attempts=2)
+        client = self.make_client([b"UNKNOWN\r\n", b"UNKNOWN\r\n"], attempts=2)
         with pytest.raises(MemcacheUnknownError):
             client.get("key")
 
     def test_retry_set_success(self):
-        client = self.make_client([
-            b'UNKNOWN\r\n',
-            b'STORED\r\n'
-        ], attempts=2)
+        client = self.make_client([b"UNKNOWN\r\n", b"STORED\r\n"], attempts=2)
         result = client.set("key", "value", noreply=False)
         assert result is True
 
     def test_retry_set_fail(self):
-        client = self.make_client([
-            b'UNKNOWN\r\n',
-            b'UNKNOWN\r\n',
-            b'STORED\r\n'
-        ], attempts=2)
+        client = self.make_client(
+            [b"UNKNOWN\r\n", b"UNKNOWN\r\n", b"STORED\r\n"], attempts=2
+        )
         with pytest.raises(MemcacheUnknownError):
             client.set("key", "value", noreply=False)
 
     def test_no_retry(self):
-        client = self.make_client([
-            b'UNKNOWN\r\n',
-            b'VALUE key 0 5\r\nvalue\r\nEND\r\n'
-        ], attempts=1)
+        client = self.make_client(
+            [b"UNKNOWN\r\n", b"VALUE key 0 5\r\nvalue\r\nEND\r\n"], attempts=1
+        )
 
         with pytest.raises(MemcacheUnknownError):
             client.get("key")
@@ -242,25 +224,19 @@ class TestRetryingClient(object):
     def test_retry_for_exception_success(self):
         # Test that we retry for the exception specified.
         client = self.make_client(
-            [
-                MemcacheClientError("Whoops."),
-                b'VALUE key 0 5\r\nvalue\r\nEND\r\n'
-            ],
+            [MemcacheClientError("Whoops."), b"VALUE key 0 5\r\nvalue\r\nEND\r\n"],
             attempts=2,
-            retry_for=tuple([MemcacheClientError])
+            retry_for=tuple([MemcacheClientError]),
         )
         result = client.get("key")
-        assert result == b'value'
+        assert result == b"value"
 
     def test_retry_for_exception_fail(self):
         # Test that we do not retry for unapproved exception.
         client = self.make_client(
-            [
-                MemcacheUnknownError("Whoops."),
-                b'VALUE key 0 5\r\nvalue\r\nEND\r\n'
-            ],
+            [MemcacheUnknownError("Whoops."), b"VALUE key 0 5\r\nvalue\r\nEND\r\n"],
             attempts=2,
-            retry_for=tuple([MemcacheClientError])
+            retry_for=tuple([MemcacheClientError]),
         )
 
         with pytest.raises(MemcacheUnknownError):
@@ -269,25 +245,19 @@ class TestRetryingClient(object):
     def test_do_not_retry_for_exception_success(self):
         # Test that we retry for exceptions not specified.
         client = self.make_client(
-            [
-                MemcacheClientError("Whoops."),
-                b'VALUE key 0 5\r\nvalue\r\nEND\r\n'
-            ],
+            [MemcacheClientError("Whoops."), b"VALUE key 0 5\r\nvalue\r\nEND\r\n"],
             attempts=2,
-            do_not_retry_for=tuple([MemcacheUnknownError])
+            do_not_retry_for=tuple([MemcacheUnknownError]),
         )
         result = client.get("key")
-        assert result == b'value'
+        assert result == b"value"
 
     def test_do_not_retry_for_exception_fail(self):
         # Test that we do not retry for the exception specified.
         client = self.make_client(
-            [
-                MemcacheClientError("Whoops."),
-                b'VALUE key 0 5\r\nvalue\r\nEND\r\n'
-            ],
+            [MemcacheClientError("Whoops."), b"VALUE key 0 5\r\nvalue\r\nEND\r\n"],
             attempts=2,
-            do_not_retry_for=tuple([MemcacheClientError])
+            do_not_retry_for=tuple([MemcacheClientError]),
         )
 
         with pytest.raises(MemcacheClientError):
@@ -298,18 +268,18 @@ class TestRetryingClient(object):
         client = self.make_client(
             [
                 MemcacheClientError("Whoops."),
-                b'VALUE key 0 5\r\nvalue\r\nEND\r\n',
+                b"VALUE key 0 5\r\nvalue\r\nEND\r\n",
                 MemcacheUnknownError("Whoops."),
-                b'VALUE key 0 5\r\nvalue\r\nEND\r\n',
+                b"VALUE key 0 5\r\nvalue\r\nEND\r\n",
             ],
             attempts=2,
             retry_for=tuple([MemcacheClientError]),
-            do_not_retry_for=tuple([MemcacheUnknownError])
+            do_not_retry_for=tuple([MemcacheUnknownError]),
         )
 
         # Check that we succeed where allowed.
         result = client.get("key")
-        assert result == b'value'
+        assert result == b"value"
 
         # Check that no retries are attempted for the banned exception.
         with pytest.raises(MemcacheUnknownError):

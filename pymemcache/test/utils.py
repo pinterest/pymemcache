@@ -20,20 +20,22 @@ class MockMemcacheClient:
 
     """
 
-    def __init__(self,
-                 server=None,
-                 serde=None,
-                 serializer=None,
-                 deserializer=None,
-                 connect_timeout=None,
-                 timeout=None,
-                 no_delay=False,
-                 ignore_exc=False,
-                 socket_module=None,
-                 default_noreply=True,
-                 allow_unicode_keys=False,
-                 encoding='ascii',
-                 tls_context=None):
+    def __init__(
+        self,
+        server=None,
+        serde=None,
+        serializer=None,
+        deserializer=None,
+        connect_timeout=None,
+        timeout=None,
+        no_delay=False,
+        ignore_exc=False,
+        socket_module=None,
+        default_noreply=True,
+        allow_unicode_keys=False,
+        encoding="ascii",
+        tls_context=None,
+    ):
 
         self._contents = {}
 
@@ -84,8 +86,7 @@ class MockMemcacheClient:
 
     def set(self, key, value, expire=0, noreply=True, flags=None):
         key = self.check_key(key)
-        if (isinstance(value, str) and
-                not isinstance(value, bytes)):
+        if isinstance(value, str) and not isinstance(value, bytes):
             try:
                 value = value.encode(self.encoding)
             except (UnicodeEncodeError, UnicodeDecodeError):
@@ -144,8 +145,7 @@ class MockMemcacheClient:
     def prepend(self, key, value, expire=0, noreply=True, flags=None):
         current = self.get(key)
         if current is not None:
-            if (isinstance(value, str) and
-                    not isinstance(value, bytes)):
+            if isinstance(value, str) and not isinstance(value, bytes):
                 try:
                     value = value.encode(self.encoding)
                 except (UnicodeEncodeError, UnicodeDecodeError):
@@ -156,8 +156,7 @@ class MockMemcacheClient:
     def append(self, key, value, expire=0, noreply=True, flags=None):
         current = self.get(key)
         if current is not None:
-            if (isinstance(value, str) and
-                    not isinstance(value, bytes)):
+            if isinstance(value, str) and not isinstance(value, bytes):
                 try:
                     value = value.encode(self.encoding)
                 except (UnicodeEncodeError, UnicodeDecodeError):
@@ -197,7 +196,7 @@ class MockMemcacheClient:
         return noreply or present
 
     def cas(self, key, value, cas, expire=0, noreply=False, flags=None):
-        raise MemcacheClientError('CAS is not enabled for this instance')
+        raise MemcacheClientError("CAS is not enabled for this instance")
 
     def touch(self, key, expire=0, noreply=True):
         current = self.get(key)
@@ -210,7 +209,7 @@ class MockMemcacheClient:
         return True
 
     def version(self):
-        return 'MockMemcacheClient'
+        return "MockMemcacheClient"
 
     def flush_all(self, delay=0, noreply=True):
         self.clear()

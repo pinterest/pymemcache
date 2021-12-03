@@ -44,7 +44,7 @@ def _python_memcache_serializer(key, value, pickle_version=None):
 
     elif value_type is str:
         flags |= FLAG_TEXT
-        value = value.encode('utf8')
+        value = value.encode("utf8")
 
     elif value_type is int:
         flags |= FLAG_INTEGER
@@ -73,7 +73,7 @@ def python_memcache_deserializer(key, value, flags):
         return value
 
     elif flags & FLAG_TEXT:
-        return value.decode('utf8')
+        return value.decode("utf8")
 
     elif flags & FLAG_INTEGER:
         return int(value)
@@ -87,7 +87,7 @@ def python_memcache_deserializer(key, value, flags):
             unpickler = pickle.Unpickler(buf)
             return unpickler.load()
         except Exception:
-            logging.info('Pickle error', exc_info=True)
+            logging.info("Pickle error", exc_info=True)
             return None
 
     return value
@@ -110,6 +110,7 @@ class PickleSerde:
     For more details on the serialization protocol, see the class documentation
     for :py:class:`pymemcache.client.base.Client`
     """
+
     def __init__(self, pickle_version=DEFAULT_PICKLE_VERSION):
         self._serialize_func = get_python_memcache_serializer(pickle_version)
 
@@ -130,6 +131,7 @@ class LegacyWrappingSerde:
     The serializer_func and deserializer_func are expected to be None in the
     case that they are missing.
     """
+
     def __init__(self, serializer_func, deserializer_func):
         self.serialize = serializer_func or self._default_serialize
         self.deserialize = deserializer_func or self._default_deserialize
