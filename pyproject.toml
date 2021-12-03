@@ -1,0 +1,2 @@
+[tool.black]
+target-version = ['py36', 'py37', 'py38', 'py39']

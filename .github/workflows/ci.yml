@@ -29,7 +29,7 @@ jobs:
       if: matrix.python-version == '3.9'
       run: |
         pip install tox tox-gh-actions
-        tox -e flake8
+        tox -e flake8,black
     - name: Disable IPv6 localhost
       run: |
         sudo sed -i '/::1/d' /etc/hosts
