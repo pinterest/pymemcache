@@ -374,6 +374,10 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         result = client.set_many(values, noreply=True)
         assert result == []
 
+    def test_noreply_flush(self):
+        client = self.make_client()
+        client.flush_all(noreply=True)
+
     def test_set_many_unix(self):
         values = {"key1": "value1", "key2": "value2", "key3": "value3"}
 
