@@ -457,9 +457,9 @@ class HashClient(object):
     def touch(self, key, *args, **kwargs):
         return self._run_cmd('touch', key, False, *args, **kwargs)
 
-    def flush_all(self):
+    def flush_all(self, *args, **kwargs):
         for client in self.clients.values():
-            self._safely_run_func(client, client.flush_all, False)
+            self._safely_run_func(client, client.flush_all, False, *args, **kwargs)
 
     def quit(self):
         for client in self.clients.values():
