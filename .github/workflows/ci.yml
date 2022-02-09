@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7, 3.8, 3.9, pypy-3.7]
+        python-version: ['3.7', '3.8', '3.9', '3.10', 'pypy-3.7']
 
     steps:
     - uses: actions/checkout@v2
@@ -26,7 +26,7 @@ jobs:
         python -m pip install --upgrade pip
         sudo apt-get install libmemcached-dev
     - name: Lint
-      if: matrix.python-version == '3.9'
+      if: matrix.python-version == '3.10'
       run: |
         pip install tox tox-gh-actions
         tox -e flake8,black
