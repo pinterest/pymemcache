@@ -1,6 +1,6 @@
 black==21.11b1
 pytest
 pytest-cov
-gevent==20.9.0; "PyPy" not in platform_python_implementation
+gevent==21.12.0; "PyPy" not in platform_python_implementation
 pylibmc; sys.platform != 'win32'
 python-memcached
