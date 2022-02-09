@@ -1,4 +1,4 @@
-black==21.11b1
+black==22.1.0
 pytest
 pytest-cov
 gevent==20.9.0; "PyPy" not in platform_python_implementation
