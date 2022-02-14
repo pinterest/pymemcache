@@ -91,7 +91,7 @@ def pytest_generate_tests(metafunc):
     if "socket_module" in metafunc.fixturenames:
         socket_modules = [socket]
         try:
-            from gevent import socket as gevent_socket
+            from gevent import socket as gevent_socket  # type: ignore
         except ImportError:
             print("Skipping gevent (not installed)")
         else:

@@ -34,7 +34,7 @@ jobs:
     - name: Lint
       if: matrix.python-version == '3.10'
       run: |
-        tox -e lint
+        tox -e lint,mypy
     - name: Disable IPv6 localhost
       run: |
         sudo sed -i '/::1/d' /etc/hosts
