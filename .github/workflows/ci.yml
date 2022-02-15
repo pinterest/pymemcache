@@ -33,15 +33,17 @@ jobs:
     - name: Lint
       if: matrix.python-version == '3.10'
       run: |
-        pip install tox tox-gh-actions
-        tox -e flake8,black
+        pip install -r lint-requirements.txt
+        python setup.py check --restructuredtext --strict
+        flake8
+        black --check .
     - name: Disable IPv6 localhost
       run: |
         sudo sed -i '/::1/d' /etc/hosts
     - name: Tests
       run: |
         pip install -r test-requirements.txt
-        py.test pymemcache/test/ \
+        pytest pymemcache/test/ \
             -m 'unit or integration' \
             --port ${{ job.services.memcached.ports[11211] }} \
             --tls-port ${{ job.services.tls_memcached.ports[11211] }}

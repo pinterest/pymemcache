@@ -1,5 +1,5 @@
 include README.* ChangeLog.* setup.py setup.cfg LICENSE.txt
-include *-requirements.txt tox.ini
+include *-requirements.txt
 recursive-include pymemcache *.py
 recursive-include pymemcache/test *.crt
 recursive-include pymemcache/test *.key

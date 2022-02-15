@@ -39,7 +39,7 @@ Run the tests (make sure you have a local memcached server running):
 
 .. code-block:: bash
 
-    tox
+   python -m pytest
 
 Usage
 =====

@@ -36,12 +36,11 @@ conventions and is linted using [flake8](http://flake8.pycqa.org/).
 
 ## Testing
 
-The tests use [pytest](https://docs.pytest.org/) and can be run using `tox` or
-directly via:
+The tests use [pytest](https://docs.pytest.org/) and can be run using:
 
-    py.test pymemcache/test/
+    python -m pytest
 
-Note that the tests require a local memcached instance.
+Note that the full integration tests require a local memcached instance.
 
 ## License
 
