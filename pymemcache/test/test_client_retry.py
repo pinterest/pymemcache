@@ -15,7 +15,7 @@ from pymemcache.exceptions import MemcacheUnknownError, MemcacheClientError
 # Test pure passthroughs with no retry action.
 class TestRetryingClientPassthrough(ClientTestMixin, unittest.TestCase):
     def make_base_client(self, mock_socket_values, **kwargs):
-        base_client = Client(None, **kwargs)
+        base_client = Client("localhost", **kwargs)
         # mock out client._connect() rather than hard-setting client.sock to
         # ensure methods are checking whether self.sock is None before
         # attempting to use it
@@ -41,7 +41,7 @@ class TestRetryingClientPassthrough(ClientTestMixin, unittest.TestCase):
 class TestRetryingClient(object):
     def make_base_client(self, mock_socket_values, **kwargs):
         """Creates a regular mock client to wrap in the RetryClient."""
-        base_client = Client(None, **kwargs)
+        base_client = Client("localhost", **kwargs)
         # mock out client._connect() rather than hard-setting client.sock to
         # ensure methods are checking whether self.sock is None before
         # attempting to use it

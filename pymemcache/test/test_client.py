@@ -178,7 +178,7 @@ class CustomizedClient(Client):
 @pytest.mark.unit()
 class ClientTestMixin:
     def make_client(self, mock_socket_values, **kwargs):
-        client = Client(None, **kwargs)
+        client = Client("localhost", **kwargs)
         # mock out client._connect() rather than hard-setting client.sock to
         # ensure methods are checking whether self.sock is None before
         # attempting to use it
@@ -189,7 +189,7 @@ class ClientTestMixin:
         return client
 
     def make_customized_client(self, mock_socket_values, **kwargs):
-        client = CustomizedClient(None, **kwargs)
+        client = CustomizedClient("localhost", **kwargs)
         # mock out client._connect() rather than hard-setting client.sock to
         # ensure methods are checking whether self.sock is None before
         # attempting to use it
@@ -1290,9 +1290,9 @@ class TestClientSocketConnect(unittest.TestCase):
 
 class TestPooledClient(ClientTestMixin, unittest.TestCase):
     def make_client(self, mock_socket_values, **kwargs):
-        mock_client = Client(None, **kwargs)
+        mock_client = Client("localhost", **kwargs)
         mock_client.sock = MockSocket(list(mock_socket_values))
-        client = PooledClient(None, **kwargs)
+        client = PooledClient("localhost", **kwargs)
         client.client_pool = pool.ObjectPool(lambda: mock_client)
         return client
 
@@ -1360,9 +1360,9 @@ class TestPooledClient(ClientTestMixin, unittest.TestCase):
 
 class TestPooledClientIdleTimeout(ClientTestMixin, unittest.TestCase):
     def make_client(self, mock_socket_values, **kwargs):
-        mock_client = Client(None, **kwargs)
+        mock_client = Client("localhost", **kwargs)
         mock_client.sock = MockSocket(list(mock_socket_values))
-        client = PooledClient(None, pool_idle_timeout=60, **kwargs)
+        client = PooledClient("localhost", pool_idle_timeout=60, **kwargs)
         client.client_pool = pool.ObjectPool(lambda: mock_client)
         return client
 
@@ -1392,7 +1392,7 @@ class TestPooledClientIdleTimeout(ClientTestMixin, unittest.TestCase):
 
 class TestMockClient(ClientTestMixin, unittest.TestCase):
     def make_client(self, mock_socket_values, **kwargs):
-        client = MockMemcacheClient(None, **kwargs)
+        client = MockMemcacheClient("localhost", **kwargs)
         client.sock = MockSocket(list(mock_socket_values))
         return client
 
@@ -1440,7 +1440,7 @@ class TestMockClient(ClientTestMixin, unittest.TestCase):
 
 class TestPrefixedClient(ClientTestMixin, unittest.TestCase):
     def make_client(self, mock_socket_values, **kwargs):
-        client = Client(None, key_prefix=b"xyz:", **kwargs)
+        client = Client("localhost", key_prefix=b"xyz:", **kwargs)
         client.sock = MockSocket(list(mock_socket_values))
         return client
 
@@ -1487,9 +1487,9 @@ class TestPrefixedClient(ClientTestMixin, unittest.TestCase):
 
 class TestPrefixedPooledClient(TestPrefixedClient):
     def make_client(self, mock_socket_values, **kwargs):
-        mock_client = Client(None, key_prefix=b"xyz:", **kwargs)
+        mock_client = Client("localhost", key_prefix=b"xyz:", **kwargs)
         mock_client.sock = MockSocket(list(mock_socket_values))
-        client = PooledClient(None, key_prefix=b"xyz:", **kwargs)
+        client = PooledClient("localhost", key_prefix=b"xyz:", **kwargs)
         client.client_pool = pool.ObjectPool(lambda: mock_client)
         return client
 
@@ -1497,7 +1497,7 @@ class TestPrefixedPooledClient(TestPrefixedClient):
 @pytest.mark.unit()
 class TestRetryOnEINTR(unittest.TestCase):
     def make_client(self, values):
-        client = Client(None)
+        client = Client("localhost")
         client.sock = MockSocket(list(values))
         return client
 
@@ -1518,9 +1518,7 @@ class TestRetryOnEINTR(unittest.TestCase):
 class TestNormalizeServerSpec(unittest.TestCase):
     def test_normalize_server_spec(self):
         f = normalize_server_spec
-        assert f(None) is None
         assert f(("127.0.0.1", 12345)) == ("127.0.0.1", 12345)
-        assert f(["127.0.0.1", 12345]) == ("127.0.0.1", 12345)
         assert f("unix:/run/memcached/socket") == "/run/memcached/socket"
         assert f("/run/memcached/socket") == "/run/memcached/socket"
         assert f("localhost") == ("localhost", 11211)
@@ -1530,13 +1528,14 @@ class TestNormalizeServerSpec(unittest.TestCase):
         assert f("127.0.0.1") == ("127.0.0.1", 11211)
         assert f("127.0.0.1:12345") == ("127.0.0.1", 12345)
 
-        with pytest.raises(ValueError) as excinfo:
-            f({"host": 12345})
-        assert str(excinfo.value) == "Unknown server provided: {'host': 12345}"
+        with pytest.raises(ValueError, match="Unsupported server specification"):
+            f(None)  # type: ignore
 
-        with pytest.raises(ValueError) as excinfo:
-            f(12345)
-        assert str(excinfo.value) == "Unknown server provided: 12345"
+        with pytest.raises(ValueError, match="Unsupported server specification"):
+            f({"host": 12345})  # type: ignore
+
+        with pytest.raises(ValueError, match="Unsupported server specification"):
+            f(12345)  # type: ignore
 
 
 @pytest.mark.unit()
