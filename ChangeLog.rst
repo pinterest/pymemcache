@@ -1,10 +1,11 @@
 Changelog
 =========
 
-Unreleased
-----------
+New in version 3.5.1
+--------------------
 * ``Client.get`` returns the default when using ``ignore_exc`` and if memcached
   is unavailable
+* Added ``noreply`` support to ``HashClient.flush_all``.
 
 New in version 3.5.0
 --------------------
