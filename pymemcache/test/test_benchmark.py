@@ -16,14 +16,14 @@ import time
 import pytest
 
 try:
-    import pylibmc
+    import pylibmc  # type: ignore
 
     HAS_PYLIBMC = True
 except Exception:
     HAS_PYLIBMC = False
 
 try:
-    import memcache
+    import memcache  # type: ignore
 
     HAS_MEMCACHE = True
 except Exception:
