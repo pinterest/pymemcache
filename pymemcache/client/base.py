@@ -11,9 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 import errno
 import platform
 import socket
+from typing import Tuple, Union
 
 from pymemcache import pool
 
@@ -48,6 +50,8 @@ STORE_RESULTS_VALUE = {
     b"NOT_FOUND": None,
     b"EXISTS": False,
 }
+
+ServerSpec = Union[Tuple[str, int], str]
 
 
 # Some of the values returned by the "stats" command
@@ -116,13 +120,11 @@ def check_key_helper(key, allow_unicode_keys, key_prefix=b""):
     return key
 
 
-def normalize_server_spec(server):
-    if isinstance(server, tuple) or server is None:
+def normalize_server_spec(server: ServerSpec) -> ServerSpec:
+    if isinstance(server, tuple):
         return server
-    if isinstance(server, list):
-        return tuple(server)  # Assume [host, port] provided.
     if not isinstance(server, str):
-        raise ValueError("Unknown server provided: %r" % server)
+        raise ValueError(f"Unsupported server specification: {server!r}")
     if server.startswith("unix:"):
         return server[5:]
     if server.startswith("/"):
@@ -130,8 +132,8 @@ def normalize_server_spec(server):
     if ":" not in server or server.endswith("]"):
         host, port = server, 11211
     else:
-        host, port = server.rsplit(":", 1)
-        port = int(port)
+        parts = server.rsplit(":", 1)
+        host, port = parts[0], int(parts[1])
     if host.startswith("["):
         host = host.strip("[]")
     return (host, port)
@@ -267,7 +269,7 @@ class Client:
 
     def __init__(
         self,
-        server,
+        server: ServerSpec,
         serde=None,
         serializer=None,
         deserializer=None,
@@ -376,7 +378,6 @@ class Client:
         if not isinstance(self.server, tuple):
             sockaddr = self.server
             sock = s.socket(s.AF_UNIX, s.SOCK_STREAM)
-
         else:
             sock = None
             error = None
@@ -1191,7 +1192,7 @@ class PooledClient:
 
     def __init__(
         self,
-        server,
+        server: ServerSpec,
         serde=None,
         serializer=None,
         deserializer=None,
