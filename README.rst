@@ -49,9 +49,12 @@ See the documentation here: https://pymemcache.readthedocs.io/en/latest/
 Django
 ------
 
-If you're planning on using pymemcache with Django, you might be interested in
+Since version 3.2, Django has included a pymemcache-based cache backend.
+See `its documentation 
+<https://docs.djangoproject.com/en/stable/topics/cache/#memcached>`__.
+
+On older Django versions, you can use
 `django-pymemcache <https://github.com/django-pymemcache/django-pymemcache>`_.
-It provides a Django cache backend that is built on pymemcache.
 
 Comparison with Other Libraries
 ===============================
