@@ -85,7 +85,7 @@ used to change how keys are distributed. Changing the hashing algorithm can be
 done by setting the ``hash_function`` argument in the ``RendezvousHash``
 constructor.
 
-Rebalancing in the :class:`pymemcache.client.hash.HashClient` functions as'
+Rebalancing in the :class:`pymemcache.client.hash.HashClient` functions as
 follows:
 
 1. A :class:`pymemcache.client.hash.HashClient` is created with 3 nodes,
