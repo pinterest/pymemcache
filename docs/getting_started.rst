@@ -77,6 +77,47 @@ on if a server goes down.
     client.set('some_key', 'some value')
     result = client.get('some_key')
 
+Key distribution is handled by the ``hasher`` argument in the constructor. The
+default is the built-in :class:`pymemcache.client.rendezvous.RendezvousHash`
+hasher. It uses the built-in :class:`pymemcache.client.murmur3.murmur3_32`
+implementation to distribute keys on servers. Overriding these two parts can be
+used to change how keys are distributed. Changing the hashing algorithm can be
+done by setting the ``hash_function`` argument in the ``RendezvousHash``
+constructor.
+
+Rebalancing in the :class:`pymemcache.client.hash.HashClient` functions as
+follows:
+
+1. A :class:`pymemcache.client.hash.HashClient` is created with 3 nodes,
+   ``node1``, ``node2`` and ``node3``.
+2. A number of values is set in the client using ``set`` and ``set_many``.
+   Example:
+
+   - ``key1`` -> ``node2``
+   - ``key2`` -> ``node3``
+   - ``key3`` -> ``node3``
+   - ``key4`` -> ``node1``
+   - ``key5`` -> ``node2``
+
+3. Subsequent ``get``s will hash to the correct server and requests are routed
+   accordingly.
+4. ``node3`` goes down.
+5. The hashclient tries to ``get("key2")`` but detects the node as down. This
+   causes it to mark the node as down. Removing it from the hasher.
+   The hasclient can attempt to retry the operation based on the
+   ``retry_attempts`` and ``retry_timeout`` arguments.
+   If ``ignore_exc`` is set, this is treated as a miss, if not, an exception
+   will be raised.
+6. Any ``get``/``set`` for ``key2`` and ``key3`` will now hash differently,
+   example:
+
+   - ``key2`` -> ``node2``
+   - ``key3`` -> ``node1``
+
+7. After the amount of time specified in the ``dead_timeout`` argument,
+   ``node3`` is added back into the hasher and will be retried for any future
+   operations.
+
 Using the built-in retrying mechanism
 -------------------------------------
 The library comes with retry mechanisms that can be used to wrap all kind of

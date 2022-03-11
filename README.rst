@@ -135,6 +135,7 @@ Credits
 * `Moisés Guimarães de Medeiros <https://github.com/moisesguimaraes>`_
 * `Nick Pope <https://github.com/ngnpope>`_
 * `Hervé Beraud <https://github.com/4383>`_
+* `Martin Jørgensen <https://github.com/martinnj>`_
 
 We're Hiring!
 =============
