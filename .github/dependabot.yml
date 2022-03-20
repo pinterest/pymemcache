@@ -9,3 +9,7 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    ignore:
+      - dependency-name: "mypy"
+      - dependency-name: "pytest"
+        update-types: ["version-update:semver-patch"]
