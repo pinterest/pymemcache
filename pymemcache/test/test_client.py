@@ -1001,6 +1001,11 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         ]
         assert result == {b'fake_stats': 1}
 
+    def test_stats_with_blank_value(self):
+        client = self.make_client([b"STAT fake_stats \r\n", b"END\r\n"])
+        result = client.stats()
+        assert result == {b"fake_stats": b""}
+
     def test_stats_conversions(self):
         client = self.make_client([
             # Most stats are converted to int
