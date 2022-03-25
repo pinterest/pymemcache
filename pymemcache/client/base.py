@@ -1038,7 +1038,7 @@ class Client:
                     result[key] = value
                 elif name == b"stats" and line.startswith(b"STAT"):
                     key_value = line.split()
-                    result[key_value[1]] = key_value[2] if len(key_value) > 2 else b''
+                    result[key_value[1]] = key_value[2] if len(key_value) > 2 else b""
                 elif name == b"stats" and line.startswith(b"ITEM"):
                     # For 'stats cachedump' commands
                     key_value = line.split()
