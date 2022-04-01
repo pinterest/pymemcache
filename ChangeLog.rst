@@ -1,6 +1,10 @@
 Changelog
 =========
 
+New in version 3.5.2
+--------------------
+* Handle blank ``STAT`` values.
+
 New in version 3.5.1
 --------------------
 * ``Client.get`` returns the default when using ``ignore_exc`` and if memcached
