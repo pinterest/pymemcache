@@ -337,6 +337,7 @@ def test_errors(client_class, host, port, socket_module):
         _unicode_value_in_set()
 
 
+@pytest.mark.skip("https://github.com/pinterest/pymemcache/issues/39")
 @pytest.mark.integration()
 def test_tls(client_class, tls_host, tls_port, socket_module, tls_context):
     client = client_class(
