@@ -1443,10 +1443,13 @@ def _readline(sock, buf):
             # Strip the last character from the last chunk.
             chunks[-1] = chunks[-1][:-1]
             return buf[1:], b"".join(chunks)
-        elif buf.find(b"\r\n") != -1:
-            before, sep, after = buf.partition(b"\r\n")
-            chunks.append(before)
-            return after, b"".join(chunks)
+        else:
+            token_pos = buf.find(b"\r\n")
+            if token_pos != -1:
+                # Note: 2 == len(b"\r\n")
+                before, after = buf[:token_pos], buf[token_pos + 2 :]
+                chunks.append(before)
+                return after, b"".join(chunks)
 
         if buf:
             chunks.append(buf)
