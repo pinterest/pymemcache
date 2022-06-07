@@ -1446,7 +1446,7 @@ def _readline(sock, buf):
         else:
             token_pos = buf.find(b"\r\n")
             if token_pos != -1:
-                # Note, magic constant: Two/2 is the length of the token in find.
+                # Note: 2 == len(b"\r\n")
                 before, after = buf[:token_pos], buf[token_pos + 2 :]
                 chunks.append(before)
                 return after, b"".join(chunks)
