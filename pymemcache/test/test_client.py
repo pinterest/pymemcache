@@ -1149,6 +1149,63 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         with pytest.raises(MemcacheUnknownError):
             client.version()
 
+    def test_raw_command_default_end_tokens(self):
+        client = self.make_client([b"REPLY\r\n", b"REPLY\r\nLEFTOVER"])
+        result = client.raw_command(b"misc")
+        assert result == b"REPLY"
+        result = client.raw_command(b"misc")
+        assert result == b"REPLY"
+
+    def test_raw_command_custom_end_tokens(self):
+        client = self.make_client(
+            [
+                b"REPLY\r\nEND\r\n",
+                b"REPLY\r\nEND\r\nLEFTOVER",
+                b"REPLYEND\r\nLEFTOVER",
+                b"REPLY\nLEFTOVER",
+            ]
+        )
+        end_tokens = b"END\r\n"
+        result = client.raw_command(b"misc", end_tokens)
+        assert result == b"REPLY\r\n"
+        result = client.raw_command(b"misc", end_tokens)
+        assert result == b"REPLY\r\n"
+        result = client.raw_command(b"misc", end_tokens)
+        assert result == b"REPLY"
+        result = client.raw_command(b"misc", b"\n")
+        assert result == b"REPLY"
+
+    def test_raw_command_missing_end_tokens(self):
+        client = self.make_client([b"REPLY", b"REPLY"])
+        with pytest.raises(IndexError):
+            client.raw_command(b"misc")
+        with pytest.raises(IndexError):
+            client.raw_command(b"misc", b"END\r\n")
+
+    def test_raw_command_empty_end_tokens(self):
+        client = self.make_client([b"REPLY"])
+
+        with pytest.raises(IndexError):
+            client.raw_command(b"misc", b"")
+
+    def test_raw_command_types(self):
+        client = self.make_client(
+            [b"REPLY\r\n", b"REPLY\r\n", b"REPLY\r\nLEFTOVER", b"REPLY\r\nLEFTOVER"]
+        )
+        assert client.raw_command("key") == b"REPLY"
+        assert client.raw_command(b"key") == b"REPLY"
+        assert client.raw_command("key") == b"REPLY"
+        assert client.raw_command(b"key") == b"REPLY"
+
+    def test_send_end_token_types(self):
+        client = self.make_client(
+            [b"REPLY\r\n", b"REPLY\r\n", b"REPLY\r\nLEFTOVER", b"REPLY\r\nLEFTOVER"]
+        )
+        assert client.raw_command("key", "\r\n") == b"REPLY"
+        assert client.raw_command(b"key", b"\r\n") == b"REPLY"
+        assert client.raw_command("key", "\r\n") == b"REPLY"
+        assert client.raw_command(b"key", b"\r\n") == b"REPLY"
+
 
 @pytest.mark.unit()
 class TestClientSocketConnect(unittest.TestCase):
