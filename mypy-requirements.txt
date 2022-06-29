@@ -1,2 +1,2 @@
 -r test-requirements.txt
-mypy==0.960
+mypy==0.961
