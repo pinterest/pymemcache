@@ -16,12 +16,13 @@ from functools import partial
 import logging
 from io import BytesIO
 import pickle
+import zlib
 
 FLAG_BYTES = 0
 FLAG_PICKLE = 1 << 0
 FLAG_INTEGER = 1 << 1
 FLAG_LONG = 1 << 2
-FLAG_COMPRESSED = 1 << 3  # unused, to main compatibility with python-memcached
+FLAG_COMPRESSED = 1 << 3
 FLAG_TEXT = 1 << 4
 
 # Pickle protocol version (highest available to runtime)
@@ -121,6 +122,63 @@ class PickleSerde:
         return python_memcache_deserializer(key, value, flags)
 
 
+pickle_serde = PickleSerde()
+
+
+class CompressedSerde:
+    """
+    An object which implements the serialization/deserialization protocol for
+    :py:class:`pymemcache.client.base.Client` and its descendants with
+    configurable compression.
+    """
+
+    def __init__(
+        self,
+        compress=zlib.compress,
+        decompress=zlib.decompress,
+        serde=pickle_serde,
+        # Discovered scientifically by testing at what point the serialization
+        # begins to improve, with a little padded on since compression adds
+        # CPU overhead
+        # >>> foo = 'foo'*4
+        # >>> len(zlib.compress(foo.encode('utf-8'))), len(foo)
+        # (13, 12)
+        # >>> foo = 'foo'*5
+        # >>> len(zlib.compress(foo.encode('utf-8'))), len(foo)
+        # (13, 15)
+        min_compress_len=30,
+    ):
+        self._serde = serde
+        self._compress = compress
+        self._decompress = decompress
+        self._min_compress_len = min_compress_len
+
+    def serialize(self, key, value):
+        value, flags = self._serde.serialize(key, value)
+
+        if len(value) > self._min_compress_len > 0:
+            old_value = value
+            value = self._compress(value)
+            # Don't use the compressed value if our end result is actually
+            # larger uncompressed.
+            if len(old_value) < len(value):
+                value = old_value
+            else:
+                flags |= FLAG_COMPRESSED
+
+        return value, flags
+
+    def deserialize(self, key, value, flags):
+        if flags & FLAG_COMPRESSED:
+            value = self._decompress(value)
+
+        value = self._serde.deserialize(key, value, flags)
+        return value
+
+
+compressed_serde = CompressedSerde()
+
+
 class LegacyWrappingSerde:
     """
     This class defines how to wrap legacy de/serialization functions into a
@@ -141,6 +199,3 @@ class LegacyWrappingSerde:
 
     def _default_deserialize(self, key, value, flags):
         return value
-
-
-pickle_serde = PickleSerde()

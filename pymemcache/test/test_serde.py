@@ -1,15 +1,19 @@
 from unittest import TestCase
 
 from pymemcache.serde import (
+    CompressedSerde,
     pickle_serde,
     PickleSerde,
     FLAG_BYTES,
+    FLAG_COMPRESSED,
     FLAG_PICKLE,
     FLAG_INTEGER,
     FLAG_TEXT,
 )
 import pytest
 import pickle
+import sys
+import zlib
 
 
 class CustomInt(int):
@@ -23,39 +27,40 @@ class CustomInt(int):
     pass
 
 
+def check(serde, value, expected_flags):
+    serialized, flags = serde.serialize(b"key", value)
+    assert flags == expected_flags
+
+    # pymemcache stores values as byte strings, so we immediately the value
+    # if needed so deserialized works as it would with a real server
+    if not isinstance(serialized, bytes):
+        serialized = str(serialized).encode("ascii")
+
+    deserialized = serde.deserialize(b"key", serialized, flags)
+    assert deserialized == value
+
+
 @pytest.mark.unit()
-class TestSerde(TestCase):
+class TestSerde:
     serde = pickle_serde
 
-    def check(self, value, expected_flags):
-        serialized, flags = self.serde.serialize(b"key", value)
-        assert flags == expected_flags
-
-        # pymemcache stores values as byte strings, so we immediately the value
-        # if needed so deserialized works as it would with a real server
-        if not isinstance(serialized, bytes):
-            serialized = str(serialized).encode("ascii")
-
-        deserialized = self.serde.deserialize(b"key", serialized, flags)
-        assert deserialized == value
-
     def test_bytes(self):
-        self.check(b"value", FLAG_BYTES)
-        self.check(b"\xc2\xa3 $ \xe2\x82\xac", FLAG_BYTES)  # £ $ €
+        check(self.serde, b"value", FLAG_BYTES)
+        check(self.serde, b"\xc2\xa3 $ \xe2\x82\xac", FLAG_BYTES)  # £ $ €
 
     def test_unicode(self):
-        self.check("value", FLAG_TEXT)
-        self.check("£ $ €", FLAG_TEXT)
+        check(self.serde, "value", FLAG_TEXT)
+        check(self.serde, "£ $ €", FLAG_TEXT)
 
     def test_int(self):
-        self.check(1, FLAG_INTEGER)
+        check(self.serde, 1, FLAG_INTEGER)
 
     def test_pickleable(self):
-        self.check({"a": "dict"}, FLAG_PICKLE)
+        check(self.serde, {"a": "dict"}, FLAG_PICKLE)
 
     def test_subtype(self):
         # Subclass of a native type will be restored as the same type
-        self.check(CustomInt(123123), FLAG_PICKLE)
+        check(self.serde, CustomInt(123123), FLAG_PICKLE)
 
 
 @pytest.mark.unit()
@@ -76,3 +81,66 @@ class TestSerdePickleVersion2(TestCase):
 @pytest.mark.unit()
 class TestSerdePickleVersionHighest(TestCase):
     serde = PickleSerde(pickle_version=pickle.HIGHEST_PROTOCOL)
+
+
+@pytest.mark.parametrize("serde", [pickle_serde, CompressedSerde()])
+@pytest.mark.unit()
+def test_compressed_simple(serde):
+    # test_bytes
+    check(serde, b"value", FLAG_BYTES)
+    check(serde, b"\xc2\xa3 $ \xe2\x82\xac", FLAG_BYTES)  # £ $ €
+
+    # test_unicode
+    check(serde, "value", FLAG_TEXT)
+    check(serde, "£ $ €", FLAG_TEXT)
+
+    # test_int
+    check(serde, 1, FLAG_INTEGER)
+
+    # test_pickleable
+    check(serde, {"a": "dict"}, FLAG_PICKLE)
+
+    # test_subtype
+    # Subclass of a native type will be restored as the same type
+    check(serde, CustomInt(12312), FLAG_PICKLE)
+
+
+@pytest.mark.parametrize(
+    "serde",
+    [
+        CompressedSerde(),
+        # Custom compression.  This could be something like lz4
+        CompressedSerde(
+            compress=lambda value: zlib.compress(value, 9),
+            decompress=lambda value: zlib.decompress(value),
+        ),
+    ],
+)
+@pytest.mark.unit()
+def test_compressed_complex(serde):
+    # test_bytes
+    check(serde, b"value" * 10, FLAG_BYTES | FLAG_COMPRESSED)
+    check(serde, b"\xc2\xa3 $ \xe2\x82\xac" * 10, FLAG_BYTES | FLAG_COMPRESSED)  # £ $ €
+
+    # test_unicode
+    check(serde, "value" * 10, FLAG_TEXT | FLAG_COMPRESSED)
+    check(serde, "£ $ €" * 10, FLAG_TEXT | FLAG_COMPRESSED)
+
+    # test_int, doesn't make sense to compress
+    check(serde, sys.maxsize, FLAG_INTEGER)
+
+    # test_pickleable
+    check(
+        serde,
+        {
+            "foo": "bar",
+            "baz": "qux",
+            "uno": "dos",
+            "tres": "tres",
+        },
+        FLAG_PICKLE | FLAG_COMPRESSED,
+    )
+
+    # test_subtype
+    # Subclass of a native type will be restored as the same type
+    check(serde, CustomInt(sys.maxsize), FLAG_PICKLE | FLAG_COMPRESSED)

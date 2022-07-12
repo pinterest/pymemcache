@@ -48,3 +48,4 @@ coverage.xml
 #Docs
 docs/_build
 docs/apidoc/
+venv/
