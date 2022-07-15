@@ -108,11 +108,12 @@ def test_compressed_simple(serde):
 @pytest.mark.parametrize(
     "serde",
     [
-        CompressedSerde(),
+        CompressedSerde(min_compress_len=49),
         # Custom compression.  This could be something like lz4
         CompressedSerde(
             compress=lambda value: zlib.compress(value, 9),
             decompress=lambda value: zlib.decompress(value),
+            min_compress_len=49,
         ),
     ],
 )
