@@ -137,16 +137,8 @@ class CompressedSerde:
         compress=zlib.compress,
         decompress=zlib.decompress,
         serde=pickle_serde,
-        # Discovered scientifically by testing at what point the serialization
-        # begins to improve, with a little padded on since compression adds
-        # CPU overhead
-        # >>> foo = 'foo'*4
-        # >>> len(zlib.compress(foo.encode('utf-8'))), len(foo)
-        # (13, 12)
-        # >>> foo = 'foo'*5
-        # >>> len(zlib.compress(foo.encode('utf-8'))), len(foo)
-        # (13, 15)
-        min_compress_len=30,
+        # Discovered via the `test_optimal_compression_length` test.
+        min_compress_len=400,
     ):
         self._serde = serde
         self._compress = compress
