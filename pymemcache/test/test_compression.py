@@ -1,3 +1,9 @@
+from pymemcache.client.base import Client
+from pymemcache.serde import (
+    CompressedSerde,
+    pickle_serde,
+)
+
 from faker import Faker
 
 import pytest
@@ -7,15 +13,7 @@ import time
 import zstd
 import zlib
 
-fake = Faker(
-    ['it_IT', 'en_US', 'ja_JP']
-)
-
-from pymemcache.client.base import Client
-from pymemcache.serde import (
-    CompressedSerde,
-    pickle_serde,
-)
+fake = Faker(["it_IT", "en_US", "ja_JP"])
 
 
 def get_random_string(length):
@@ -23,21 +21,22 @@ def get_random_string(length):
     chars = string.punctuation
     digits = string.digits
     total = letters + chars + digits
-    result_str = ''.join(random.choice(total) for i in range(length))
+    result_str = "".join(random.choice(total) for i in range(length))
     return result_str
 
 
-class CustomObject():
+class CustomObject:
     """
     Custom class for verifying serialization
     """
+
     def __init__(self):
         self.number = random.randint(0, 100)
         self.string = fake.text()
         self.object = fake.profile()
 
 
-class CustomObjectValue():
+class CustomObjectValue:
     def __init__(self, value):
         self.value = value
 
@@ -84,20 +83,18 @@ def objects():
 # Always run compression for the benchmarks
 min_compress_len = 1
 
-default_serde = CompressedSerde(
-    min_compress_len=min_compress_len
-)
+default_serde = CompressedSerde(min_compress_len=min_compress_len)
 
 zlib_serde = CompressedSerde(
     compress=lambda value: zlib.compress(value, 9),
     decompress=lambda value: zlib.decompress(value),
-    min_compress_len=min_compress_len
+    min_compress_len=min_compress_len,
 )
 
 zstd_serde = CompressedSerde(
     compress=lambda value: zstd.compress(value),
     decompress=lambda value: zstd.decompress(value),
-    min_compress_len=min_compress_len
+    min_compress_len=min_compress_len,
 )
 
 serializers = [
@@ -108,14 +105,12 @@ serializers = [
 ]
 ids = ["none", "zlib ", "zlib9", "zstd "]
 
+
 @pytest.mark.benchmark()
 @pytest.mark.parametrize("serde", serializers, ids=ids)
 def test_bench_compress_set_strings(count, host, port, serde, names):
-    client = Client(
-        (host, port),
-        serde=serde,
-        encoding='utf-8'
-    )
+    client = Client((host, port), serde=serde, encoding="utf-8")
+
     def test():
         for index, name in enumerate(names):
             key = f"name_{index}"
@@ -127,11 +122,7 @@ def test_bench_compress_set_strings(count, host, port, serde, names):
 @pytest.mark.benchmark()
 @pytest.mark.parametrize("serde", serializers, ids=ids)
 def test_bench_compress_get_strings(count, host, port, serde, names):
-    client = Client(
-        (host, port),
-        serde=serde,
-        encoding='utf-8'
-    )
+    client = Client((host, port), serde=serde, encoding="utf-8")
     for index, name in enumerate(names):
         key = f"name_{index}"
         client.set(key, name)
@@ -147,11 +138,8 @@ def test_bench_compress_get_strings(count, host, port, serde, names):
 @pytest.mark.benchmark()
 @pytest.mark.parametrize("serde", serializers, ids=ids)
 def test_bench_compress_set_large_strings(count, host, port, serde, paragraphs):
-    client = Client(
-        (host, port),
-        serde=serde,
-        encoding='utf-8'
-    )
+    client = Client((host, port), serde=serde, encoding="utf-8")
+
     def test():
         for index, p in enumerate(paragraphs):
             key = f"paragraph_{index}"
@@ -163,11 +151,7 @@ def test_bench_compress_set_large_strings(count, host, port, serde, paragraphs):
 @pytest.mark.benchmark()
 @pytest.mark.parametrize("serde", serializers, ids=ids)
 def test_bench_compress_get_large_strings(count, host, port, serde, paragraphs):
-    client = Client(
-        (host, port),
-        serde=serde,
-        encoding='utf-8'
-    )
+    client = Client((host, port), serde=serde, encoding="utf-8")
     for index, p in enumerate(paragraphs):
         key = f"paragraphs_{index}"
         client.set(key, p)
@@ -183,11 +167,8 @@ def test_bench_compress_get_large_strings(count, host, port, serde, paragraphs):
 @pytest.mark.benchmark()
 @pytest.mark.parametrize("serde", serializers, ids=ids)
 def test_bench_compress_set_objects(count, host, port, serde, objects):
-    client = Client(
-        (host, port),
-        serde=serde,
-        encoding='utf-8'
-    )
+    client = Client((host, port), serde=serde, encoding="utf-8")
+
     def test():
         for index, o in enumerate(objects):
             key = f"objects_{index}"
@@ -199,11 +180,7 @@ def test_bench_compress_set_objects(count, host, port, serde, objects):
 @pytest.mark.benchmark()
 @pytest.mark.parametrize("serde", serializers, ids=ids)
 def test_bench_compress_get_objects(count, host, port, serde, objects):
-    client = Client(
-        (host, port),
-        serde=serde,
-        encoding='utf-8'
-    )
+    client = Client((host, port), serde=serde, encoding="utf-8")
     for index, o in enumerate(objects):
         key = f"objects_{index}"
         client.set(key, o)
@@ -218,12 +195,12 @@ def test_bench_compress_get_objects(count, host, port, serde, objects):
 
 @pytest.mark.benchmark()
 def test_optimal_compression_length():
-    for l in range(5, 2000):
-        input_data = get_random_string(l)
+    for length in range(5, 2000):
+        input_data = get_random_string(length)
         start = len(input_data)
 
         for index, serializer in enumerate(serializers[1:]):
-            name = ids[index+1]
+            name = ids[index + 1]
             value, _ = serializer.serialize("foo", input_data)
             end = len(value)
             print(f"serializer={name}\t start={start}\t end={end}")
@@ -231,13 +208,13 @@ def test_optimal_compression_length():
 
 @pytest.mark.benchmark()
 def test_optimal_compression_length_objects():
-    for l in range(5, 2000):
-        input_data = get_random_string(l)
+    for length in range(5, 2000):
+        input_data = get_random_string(length)
         obj = CustomObjectValue(input_data)
         start = len(pickle_serde.serialize("foo", obj)[0])
 
         for index, serializer in enumerate(serializers[1:]):
-            name = ids[index+1]
+            name = ids[index + 1]
             value, _ = serializer.serialize("foo", obj)
             end = len(value)
             print(f"serializer={name}\t start={start}\t end={end}")
