@@ -10,7 +10,7 @@ import pytest
 import random
 import string
 import time
-import zstd
+import zstd  # type: ignore
 import zlib
 
 fake = Faker(["it_IT", "en_US", "ja_JP"])
