@@ -99,7 +99,7 @@ follows:
    - ``key4`` -> ``node1``
    - ``key5`` -> ``node2``
 
-3. Subsequent ``get``s will hash to the correct server and requests are routed
+3. Subsequent ``get`` calls will hash to the correct server and requests are routed
    accordingly.
 4. ``node3`` goes down.
 5. The hashclient tries to ``get("key2")`` but detects the node as down. This
@@ -253,7 +253,7 @@ One main advantage of using `tox` to interact with `pymemcache` is that it
 comes with it's own virtual environments. It will automatically install
 pymemcache and fetch all the needed requirements at run. See the example below:
 
-.. code-block:: shell
+.. code-block::
 
    $ podman run --publish 11211:11211 -it --rm --name memcached memcached
    $ tox -e venv -- python

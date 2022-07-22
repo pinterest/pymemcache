@@ -9,10 +9,11 @@ Welcome to pymemcache's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
     Getting Started </getting_started>
     Source Code </apidoc/modules>
+    ChangeLog </changelog>
 
 
 
