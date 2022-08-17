@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from functools import partial
 import logging
-from io import BytesIO
 import pickle
 import zlib
+from functools import partial
+from io import BytesIO
 
 FLAG_BYTES = 0
 FLAG_PICKLE = 1 << 0
@@ -61,7 +61,7 @@ def _python_memcache_serializer(key, value, pickle_version=None):
     return value, flags
 
 
-def get_python_memcache_serializer(pickle_version=DEFAULT_PICKLE_VERSION):
+def get_python_memcache_serializer(pickle_version: int = DEFAULT_PICKLE_VERSION):
     """Return a serializer using a specific pickle version"""
     return partial(_python_memcache_serializer, pickle_version=pickle_version)
 
@@ -112,7 +112,7 @@ class PickleSerde:
     for :py:class:`pymemcache.client.base.Client`
     """
 
-    def __init__(self, pickle_version=DEFAULT_PICKLE_VERSION):
+    def __init__(self, pickle_version: int = DEFAULT_PICKLE_VERSION) -> None:
         self._serialize_func = get_python_memcache_serializer(pickle_version)
 
     def serialize(self, key, value):
@@ -182,7 +182,7 @@ class LegacyWrappingSerde:
     case that they are missing.
     """
 
-    def __init__(self, serializer_func, deserializer_func):
+    def __init__(self, serializer_func, deserializer_func) -> None:
         self.serialize = serializer_func or self._default_serialize
         self.deserialize = deserializer_func or self._default_deserialize
 
