@@ -90,7 +90,7 @@ follows:
 
 1. A :class:`pymemcache.client.hash.HashClient` is created with 3 nodes,
    ``node1``, ``node2`` and ``node3``.
-2. A number of values is set in the client using ``set`` and ``set_many``.
+2. A number of values are set in the client using ``set`` and ``set_many``.
    Example:
 
    - ``key1`` -> ``node2``
@@ -120,13 +120,13 @@ follows:
 
 Using the built-in retrying mechanism
 -------------------------------------
-The library comes with retry mechanisms that can be used to wrap all kind of
-pymemcache clients. The wrapper allow you to define the exceptions that you want
+The library comes with retry mechanisms that can be used to wrap all kinds of
+pymemcache clients. The wrapper allows you to define the exceptions that you want
 to handle with retries, which exceptions to exclude, how many attempts to make
 and how long to wait between attempts.
 
 The ``RetryingClient`` wraps around any of the other included clients and will
-have the same methods. For this example we're just using the base ``Client``.
+have the same methods. For this example, we're just using the base ``Client``.
 
 .. code-block:: python
 
@@ -250,7 +250,7 @@ For testing purpose pymemcache can be used in an interactive mode by using
 the python interpreter or again ipython and tools like tox.
 
 One main advantage of using `tox` to interact with `pymemcache` is that it
-comes with it's own virtual environments. It will automatically install
+comes with its own virtual environments. It will automatically install
 pymemcache and fetch all the needed requirements at run. See the example below:
 
 .. code-block::
@@ -274,8 +274,8 @@ pymemcache and fetch all the needed requirements at run. See the example below:
 You can instantiate all the classes and clients offered by pymemcache.
 
 Your client will remain open until you decide to close it or until you decide
-to quit your interpreter. It can allow you to see what's happen if your server
-is abruptly closed. Below is an by example.
+to quit your interpreter. It can allow you to see what happens if your server
+is abruptly closed. Below is an example.
 
 Starting your server:
 
@@ -299,7 +299,7 @@ Restarting the server:
 
    $ podman restart memcached
 
-The previous client is still opened, now try to retrieve some keys:
+The previous client is still open, now try to retrieve some keys:
 
 .. code-block:: shell
 
