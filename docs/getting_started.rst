@@ -275,7 +275,7 @@ You can instantiate all the classes and clients offered by pymemcache.
 
 Your client will remain open until you decide to close it or until you decide
 to quit your interpreter. It can allow you to see what happens if your server
-is abruptly closed. Below is a by-example.
+is abruptly closed. Below is an example.
 
 Starting your server:
 
