@@ -1,4 +1,4 @@
-black==22.6.0
+black==22.8.0
 docutils==0.19
 flake8==5.0.2
 pygments==2.13.0
