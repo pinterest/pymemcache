@@ -17,8 +17,16 @@ import json
 import pytest
 
 from pymemcache.client.base import Client
-from pymemcache.exceptions import MemcacheIllegalInputError, MemcacheClientError
-from pymemcache.serde import PickleSerde, pickle_serde
+from pymemcache.exceptions import (
+    MemcacheIllegalInputError,
+    MemcacheClientError,
+    MemcacheServerError,
+)
+from pymemcache.serde import (
+    compressed_serde,
+    PickleSerde,
+    pickle_serde,
+)
 
 
 def get_set_helper(client, key, value, key2, value2):
@@ -41,8 +49,15 @@ def get_set_helper(client, key, value, key2, value2):
 
 
 @pytest.mark.integration()
-def test_get_set(client_class, host, port, socket_module):
-    client = client_class((host, port), socket_module=socket_module)
+@pytest.mark.parametrize(
+    "serde",
+    [
+        pickle_serde,
+        compressed_serde,
+    ],
+)
+def test_get_set(client_class, host, port, serde, socket_module):
+    client = client_class((host, port), serde=serde, socket_module=socket_module)
     client.flush_all()
 
     key = b"key"
@@ -53,9 +68,16 @@ def test_get_set(client_class, host, port, socket_module):
 
 
 @pytest.mark.integration()
-def test_get_set_unicode_key(client_class, host, port, socket_module):
+@pytest.mark.parametrize(
+    "serde",
+    [
+        pickle_serde,
+        compressed_serde,
+    ],
+)
+def test_get_set_unicode_key(client_class, host, port, serde, socket_module):
     client = client_class(
-        (host, port), socket_module=socket_module, allow_unicode_keys=True
+        (host, port), serde=serde, socket_module=socket_module, allow_unicode_keys=True
     )
     client.flush_all()
 
@@ -67,8 +89,15 @@ def test_get_set_unicode_key(client_class, host, port, socket_module):
 
 
 @pytest.mark.integration()
-def test_add_replace(client_class, host, port, socket_module):
-    client = client_class((host, port), socket_module=socket_module)
+@pytest.mark.parametrize(
+    "serde",
+    [
+        pickle_serde,
+        compressed_serde,
+    ],
+)
+def test_add_replace(client_class, host, port, serde, socket_module):
+    client = client_class((host, port), serde=serde, socket_module=socket_module)
     client.flush_all()
 
     result = client.add(b"key", b"value", noreply=False)
@@ -277,8 +306,15 @@ def serde_serialization_helper(client_class, host, port, socket_module, serde):
 
 
 @pytest.mark.integration()
-def test_serde_serialization(client_class, host, port, socket_module):
-    serde_serialization_helper(client_class, host, port, socket_module, pickle_serde)
+@pytest.mark.parametrize(
+    "serde",
+    [
+        pickle_serde,
+        compressed_serde,
+    ],
+)
+def test_serde_serialization(client_class, host, port, socket_module, serde):
+    serde_serialization_helper(client_class, host, port, socket_module, serde)
 
 
 @pytest.mark.integration()
@@ -350,3 +386,34 @@ def test_tls(client_class, tls_host, tls_port, socket_module, tls_context):
     key2 = b"key2"
     value2 = b"value2"
     get_set_helper(client, key, value, key2, value2)
+
+
+@pytest.mark.integration()
+@pytest.mark.parametrize(
+    "serde,should_fail",
+    [
+        (pickle_serde, True),
+        (compressed_serde, False),
+    ],
+)
+def test_get_set_large(
+    client_class,
+    host,
+    port,
+    serde,
+    socket_module,
+    should_fail,
+):
+    client = client_class((host, port), serde=serde, socket_module=socket_module)
+    client.flush_all()
+
+    key = b"key"
+    value = b"value" * 1024 * 1024
+    key2 = b"key2"
+    value2 = b"value2" * 1024 * 1024
+
+    if should_fail:
+        with pytest.raises(MemcacheServerError):
+            get_set_helper(client, key, value, key2, value2)
+    else:
+        get_set_helper(client, key, value, key2, value2)

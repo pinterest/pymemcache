@@ -83,14 +83,16 @@ def benchmark(count, func, *args, **kwargs):
 
 @pytest.mark.benchmark()
 def test_bench_get(request, client, pairs, count):
-    key, value = next(pairs)
+    key = "pymemcache_test:0"
+    value = pairs[key]
     client.set(key, value)
     benchmark(count, client.get, key)
 
 
 @pytest.mark.benchmark()
 def test_bench_set(request, client, pairs, count):
-    key, value = next(pairs.items())
+    key = "pymemcache_test:0"
+    value = pairs[key]
     benchmark(count, client.set, key, value)
 
 
@@ -113,4 +115,4 @@ def test_bench_delete(request, client, pairs, count):
 @pytest.mark.benchmark()
 def test_bench_delete_multi(request, client, pairs, count):
     # deleting missing key takes the same work client-side as real keys
-    benchmark(count, client.delete_multi, list(pairs))
+    benchmark(count, client.delete_multi, list(pairs.keys()))
