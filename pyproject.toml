@@ -3,3 +3,4 @@ target-version = ['py37', 'py38', 'py39', 'py310']
 
 [tool.mypy]
 python_version = 3.7
+ignore_missing_imports = true

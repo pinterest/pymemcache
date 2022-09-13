@@ -154,7 +154,7 @@ class HashClient:
         self._dead_clients[server] = dead_time
         self.hasher.remove_node(key)
 
-    def _retry_dead(self):
+    def _retry_dead(self) -> None:
         current_time = time.time()
         ldc = self._last_dead_check_time
         # We have reached the retry timeout
