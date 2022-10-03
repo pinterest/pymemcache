@@ -123,7 +123,7 @@ class HashClient:
             return "%s:%s" % server
         return server
 
-    def add_server(self, server, port=None):
+    def add_server(self, server, port=None) -> None:
         # To maintain backward compatibility, if a port is provided, assume
         # that server wasn't provided as a (host, port) tuple.
         if port is not None:
@@ -140,7 +140,7 @@ class HashClient:
         self.clients[key] = client
         self.hasher.add_node(key)
 
-    def remove_server(self, server, port=None):
+    def remove_server(self, server, port=None) -> None:
         # To maintain backward compatibility, if a port is provided, assume
         # that server wasn't provided as a (host, port) tuple.
         if port is not None:
@@ -422,7 +422,7 @@ class HashClient:
     def delete(self, key, *args, **kwargs):
         return self._run_cmd("delete", key, False, *args, **kwargs)
 
-    def delete_many(self, keys, *args, **kwargs):
+    def delete_many(self, keys, *args, **kwargs) -> bool:
         for key in keys:
             self._run_cmd("delete", key, False, *args, **kwargs)
         return True
@@ -438,10 +438,10 @@ class HashClient:
     def touch(self, key, *args, **kwargs):
         return self._run_cmd("touch", key, False, *args, **kwargs)
 
-    def flush_all(self, *args, **kwargs):
+    def flush_all(self, *args, **kwargs) -> None:
         for client in self.clients.values():
             self._safely_run_func(client, client.flush_all, False, *args, **kwargs)
 
-    def quit(self):
+    def quit(self) -> None:
         for client in self.clients.values():
             self._safely_run_func(client, client.quit, False)
