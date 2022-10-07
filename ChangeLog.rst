@@ -1,5 +1,14 @@
 Changelog
 =========
+New in version 4.0.0
+--------------------
+* Dropped Python 2 and 3.6 support
+  `#321 <https://github.com/pinterest/pymemcache/pull/321>`_
+  `#363 <https://github.com/pinterest/pymemcache/pull/363>`_
+* Begin adding typing
+* Add pluggable compression serde
+  `#407 <https://github.com/pinterest/pymemcache/pull/407>`_
+
 
 New in version 3.5.2
 --------------------
