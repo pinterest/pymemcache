@@ -368,10 +368,10 @@ class Client:
         self.encoding = encoding
         self.tls_context = tls_context
 
-    def check_key(self, key: Key) -> bytes:
+    def check_key(self, key: Key, key_prefix: bytes) -> bytes:
         """Checks key and add key_prefix."""
         return check_key_helper(
-            key, allow_unicode_keys=self.allow_unicode_keys, key_prefix=self.key_prefix
+            key, allow_unicode_keys=self.allow_unicode_keys, key_prefix=key_prefix
         )
 
     def _connect(self) -> None:
@@ -684,7 +684,9 @@ class Client:
         Returns:
           The value for the key, or default if the key wasn't found.
         """
-        return self._fetch_cmd(b"get", [key], False).get(key, default)
+        return self._fetch_cmd(b"get", [key], False, key_prefix=self.key_prefix).get(
+            key, default
+        )
 
     def get_many(self, keys: Iterable[Key]) -> Dict[Key, Any]:
         """
@@ -701,7 +703,7 @@ class Client:
         if not keys:
             return {}
 
-        return self._fetch_cmd(b"get", keys, False)
+        return self._fetch_cmd(b"get", keys, False, key_prefix=self.key_prefix)
 
     get_multi = get_many
 
@@ -721,7 +723,9 @@ class Client:
           or (default, cas_defaults) if the key was not found.
         """
         defaults = (default, cas_default)
-        return self._fetch_cmd(b"gets", [key], True).get(key, defaults)
+        return self._fetch_cmd(b"gets", [key], True, key_prefix=self.key_prefix).get(
+            key, defaults
+        )
 
     def gets_many(self, keys: Iterable[Key]) -> Dict[Key, Tuple[Any, Any]]:
         """
@@ -738,7 +742,7 @@ class Client:
         if not keys:
             return {}
 
-        return self._fetch_cmd(b"gets", keys, True)
+        return self._fetch_cmd(b"gets", keys, True, key_prefix=self.key_prefix)
 
     def delete(self, key: Key, noreply: Optional[bool] = None) -> bool:
         """
@@ -756,7 +760,7 @@ class Client:
         """
         if noreply is None:
             noreply = self.default_noreply
-        cmd = b"delete " + self.check_key(key)
+        cmd = b"delete " + self.check_key(key, self.key_prefix)
         if noreply:
             cmd += b" noreply"
         cmd += b"\r\n"
@@ -790,7 +794,7 @@ class Client:
         for key in keys:
             cmds.append(
                 b"delete "
-                + self.check_key(key)
+                + self.check_key(key, self.key_prefix)
                 + (b" noreply" if noreply else b"")
                 + b"\r\n"
             )
@@ -814,7 +818,7 @@ class Client:
           If noreply is True, always returns None. Otherwise returns the new
           value of the key, or None if the key wasn't found.
         """
-        key = self.check_key(key)
+        key = self.check_key(key, self.key_prefix)
         val = self._check_integer(value, "value")
         cmd = b"incr " + key + b" " + val
         if noreply:
@@ -842,7 +846,7 @@ class Client:
           If noreply is True, always returns None. Otherwise returns the new
           value of the key, or None if the key wasn't found.
         """
-        key = self.check_key(key)
+        key = self.check_key(key, self.key_prefix)
         val = self._check_integer(value, "value")
         cmd = b"decr " + key + b" " + val
         if noreply:
@@ -872,7 +876,7 @@ class Client:
         """
         if noreply is None:
             noreply = self.default_noreply
-        key = self.check_key(key)
+        key = self.check_key(key, self.key_prefix)
         expire_bytes = self._check_integer(expire, "expire")
         cmd = b"touch " + key + b" " + expire_bytes
         if noreply:
@@ -1109,9 +1113,13 @@ class Client:
             return original_key, value, buf
 
     def _fetch_cmd(
-        self, name: bytes, keys: Iterable[Key], expect_cas: bool
+        self,
+        name: bytes,
+        keys: Iterable[Key],
+        expect_cas: bool,
+        key_prefix: bytes = b"",
     ) -> Dict[Key, Any]:
-        prefixed_keys = [self.check_key(k) for k in keys]
+        prefixed_keys = [self.check_key(k, key_prefix=key_prefix) for k in keys]
         remapped_keys = dict(zip(prefixed_keys, keys))
 
         # It is important for all keys to be listed in their original order.
@@ -1184,7 +1192,7 @@ class Client:
             # must be able to reliably map responses back to the original order
             keys.append(key)
 
-            key = self.check_key(key)
+            key = self.check_key(key, self.key_prefix)
             data, data_flags = self.serde.serialize(key, data)
 
             # If 'flags' was explicitly provided, it overrides the value
