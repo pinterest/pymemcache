@@ -12,21 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from collections import defaultdict
 import json
-import pytest
+from collections import defaultdict
 
+import pytest
 from pymemcache.client.base import Client
 from pymemcache.exceptions import (
-    MemcacheIllegalInputError,
     MemcacheClientError,
+    MemcacheIllegalInputError,
     MemcacheServerError,
 )
-from pymemcache.serde import (
-    compressed_serde,
-    PickleSerde,
-    pickle_serde,
-)
+from pymemcache.serde import PickleSerde, compressed_serde, pickle_serde
 
 
 def get_set_helper(client, key, value, key2, value2):
@@ -56,8 +52,10 @@ def get_set_helper(client, key, value, key2, value2):
         compressed_serde,
     ],
 )
-def test_get_set(client_class, host, port, serde, socket_module):
-    client = client_class((host, port), serde=serde, socket_module=socket_module)
+def test_get_set(client_class, host, port, serde, socket_module, key_prefix):
+    client = client_class(
+        (host, port), serde=serde, socket_module=socket_module, key_prefix=key_prefix
+    )
     client.flush_all()
 
     key = b"key"
@@ -75,9 +73,15 @@ def test_get_set(client_class, host, port, serde, socket_module):
         compressed_serde,
     ],
 )
-def test_get_set_unicode_key(client_class, host, port, serde, socket_module):
+def test_get_set_unicode_key(
+    client_class, host, port, serde, socket_module, key_prefix
+):
     client = client_class(
-        (host, port), serde=serde, socket_module=socket_module, allow_unicode_keys=True
+        (host, port),
+        serde=serde,
+        socket_module=socket_module,
+        allow_unicode_keys=True,
+        key_prefix=key_prefix,
     )
     client.flush_all()
 
@@ -96,8 +100,10 @@ def test_get_set_unicode_key(client_class, host, port, serde, socket_module):
         compressed_serde,
     ],
 )
-def test_add_replace(client_class, host, port, serde, socket_module):
-    client = client_class((host, port), serde=serde, socket_module=socket_module)
+def test_add_replace(client_class, host, port, serde, socket_module, key_prefix):
+    client = client_class(
+        (host, port), serde=serde, socket_module=socket_module, key_prefix=key_prefix
+    )
     client.flush_all()
 
     result = client.add(b"key", b"value", noreply=False)
@@ -122,8 +128,10 @@ def test_add_replace(client_class, host, port, serde, socket_module):
 
 
 @pytest.mark.integration()
-def test_append_prepend(client_class, host, port, socket_module):
-    client = client_class((host, port), socket_module=socket_module)
+def test_append_prepend(client_class, host, port, socket_module, key_prefix):
+    client = client_class(
+        (host, port), socket_module=socket_module, key_prefix=key_prefix
+    )
     client.flush_all()
 
     result = client.append(b"key", b"value", noreply=False)
@@ -150,8 +158,10 @@ def test_append_prepend(client_class, host, port, socket_module):
 
 
 @pytest.mark.integration()
-def test_cas(client_class, host, port, socket_module):
-    client = client_class((host, port), socket_module=socket_module)
+def test_cas(client_class, host, port, socket_module, key_prefix):
+    client = client_class(
+        (host, port), socket_module=socket_module, key_prefix=key_prefix
+    )
     client.flush_all()
     result = client.cas(b"key", b"value", b"1", noreply=False)
     assert result is None
@@ -178,8 +188,10 @@ def test_cas(client_class, host, port, socket_module):
 
 
 @pytest.mark.integration()
-def test_gets(client_class, host, port, socket_module):
-    client = client_class((host, port), socket_module=socket_module)
+def test_gets(client_class, host, port, socket_module, key_prefix):
+    client = client_class(
+        (host, port), socket_module=socket_module, key_prefix=key_prefix
+    )
     client.flush_all()
 
     result = client.gets(b"key")
@@ -192,8 +204,10 @@ def test_gets(client_class, host, port, socket_module):
 
 
 @pytest.mark.integration()
-def test_delete(client_class, host, port, socket_module):
-    client = client_class((host, port), socket_module=socket_module)
+def test_delete(client_class, host, port, socket_module, key_prefix):
+    client = client_class(
+        (host, port), socket_module=socket_module, key_prefix=key_prefix
+    )
     client.flush_all()
 
     result = client.delete(b"key", noreply=False)
@@ -210,8 +224,8 @@ def test_delete(client_class, host, port, socket_module):
 
 
 @pytest.mark.integration()
-def test_incr_decr(client_class, host, port, socket_module):
-    client = Client((host, port), socket_module=socket_module)
+def test_incr_decr(client_class, host, port, socket_module, key_prefix):
+    client = Client((host, port), socket_module=socket_module, key_prefix=key_prefix)
     client.flush_all()
 
     result = client.incr(b"key", 1, noreply=False)
@@ -238,8 +252,10 @@ def test_incr_decr(client_class, host, port, socket_module):
 
 
 @pytest.mark.integration()
-def test_touch(client_class, host, port, socket_module):
-    client = client_class((host, port), socket_module=socket_module)
+def test_touch(client_class, host, port, socket_module, key_prefix):
+    client = client_class(
+        (host, port), socket_module=socket_module, key_prefix=key_prefix
+    )
     client.flush_all()
 
     result = client.touch(b"key", noreply=False)
@@ -256,9 +272,15 @@ def test_touch(client_class, host, port, socket_module):
 
 
 @pytest.mark.integration()
-def test_misc(client_class, host, port, socket_module):
-    client = Client((host, port), socket_module=socket_module)
+def test_misc(client_class, host, port, socket_module, key_prefix):
+    client = Client((host, port), socket_module=socket_module, key_prefix=key_prefix)
     client.flush_all()
+
+    # Ensure no exceptions are thrown
+    client.stats("cachedump", "1", "1")
+
+    success = client.cache_memlimit(50)
+    assert success
 
 
 @pytest.mark.integration()

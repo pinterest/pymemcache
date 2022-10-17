@@ -1,7 +1,8 @@
 import os.path
-import pytest
 import socket
 import ssl
+
+import pytest
 
 
 def pytest_addoption(parser):
@@ -100,7 +101,7 @@ def pytest_generate_tests(metafunc):
         metafunc.parametrize("socket_module", socket_modules)
 
     if "client_class" in metafunc.fixturenames:
-        from pymemcache.client.base import PooledClient, Client
+        from pymemcache.client.base import Client, PooledClient
         from pymemcache.client.hash import HashClient
 
         class HashClientSingle(HashClient):
@@ -108,3 +109,8 @@ def pytest_generate_tests(metafunc):
                 super().__init__([server], *args, **kwargs)
 
         metafunc.parametrize("client_class", [Client, PooledClient, HashClientSingle])
+
+    if "key_prefix" in metafunc.fixturenames:
+        mark = metafunc.definition.get_closest_marker("parametrize")
+        if not mark or "key_prefix" not in mark.args[0]:
+            metafunc.parametrize("key_prefix", [b"", b"prefix"])
