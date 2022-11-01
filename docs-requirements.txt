@@ -1,5 +1,5 @@
 sphinx==5.2.1
-sphinx_rtd_theme==1.0.0
+sphinx_rtd_theme==1.1.0
 sphinxcontrib-apidoc==0.3.0
 sphinxcontrib-napoleon==0.7
 pytest
