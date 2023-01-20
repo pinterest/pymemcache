@@ -688,6 +688,23 @@ class Client:
             key, default
         )
 
+    def gat(self, key: Key, expire: int = 0, default: Optional[Any] = None) -> Any:
+        """
+        The memcached "gat" command, but only for one key, as a convenience.
+
+        Args:
+          key: str, see class docs for details.
+          expire: optional int, number of seconds until the item is expired
+                  from the cache, or zero for no expiry (the default).
+          default: value that will be returned if the key was not found.
+
+        Returns:
+          The value for the key, or default if the key wasn't found.
+        """
+        return self._fetch_cmd(
+            b"gat", [key], False, key_prefix=self.key_prefix, expire=expire
+        ).get(key, default)
+
     def get_many(self, keys: Iterable[Key]) -> Dict[Key, Any]:
         """
         The memcached "get" command.
@@ -726,6 +743,28 @@ class Client:
         return self._fetch_cmd(b"gets", [key], True, key_prefix=self.key_prefix).get(
             key, defaults
         )
+
+    def gats(
+        self, key: Key, expire: int = 0, default: Any = None, cas_default: Any = None
+    ) -> Tuple[Any, Any]:
+        """
+        The memcached "gats" command, but only for one key, as a convenience.
+
+        Args:
+          key: str, see class docs for details.
+          expire: optional int, number of seconds until the item is expired
+                  from the cache, or zero for no expiry (the default).
+          default: value that will be returned if the key was not found.
+          cas_default: same behaviour as default argument.
+
+        Returns:
+          A tuple of (value, cas)
+          or (default, cas_defaults) if the key was not found.
+        """
+        defaults = (default, cas_default)
+        return self._fetch_cmd(
+            b"gats", [key], True, key_prefix=self.key_prefix, expire=expire
+        ).get(key, defaults)
 
     def gets_many(self, keys: Iterable[Key]) -> Dict[Key, Tuple[Any, Any]]:
         """
@@ -1118,12 +1157,17 @@ class Client:
         keys: Iterable[Key],
         expect_cas: bool,
         key_prefix: bytes = b"",
+        expire: Optional[int] = None,
     ) -> Dict[Key, Any]:
         prefixed_keys = [self.check_key(k, key_prefix=key_prefix) for k in keys]
         remapped_keys = dict(zip(prefixed_keys, keys))
 
         # It is important for all keys to be listed in their original order.
         cmd = name
+        if expire is not None:
+            expire_bytes = self._check_integer(expire, "expire")
+            cmd += b" " + expire_bytes
+
         if prefixed_keys:
             cmd += b" " + b" ".join(prefixed_keys)
         cmd += b"\r\n"
@@ -1492,6 +1536,26 @@ class PooledClient:
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             try:
                 return client.get(key, default)
+            except Exception:
+                if self.ignore_exc:
+                    return default
+                else:
+                    raise
+
+    def gat(self, key: Key, expire: int = 0, default: Optional[Any] = None) -> Any:
+        with self.client_pool.get_and_release(destroy_on_fail=True) as client:
+            try:
+                return client.gat(key, expire, default)
+            except Exception:
+                if self.ignore_exc:
+                    return default
+                else:
+                    raise
+
+    def gats(self, key: Key, expire: int = 0, default: Optional[Any] = None) -> Any:
+        with self.client_pool.get_and_release(destroy_on_fail=True) as client:
+            try:
+                return client.gats(key, expire, default)
             except Exception:
                 if self.ignore_exc:
                     return default

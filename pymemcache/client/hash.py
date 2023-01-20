@@ -170,18 +170,24 @@ class HashClient:
             self._last_dead_check_time = current_time
 
     def _get_client(self, key):
-        check_key_helper(key, self.allow_unicode_keys, self.key_prefix)
+        # If key is tuple use first item as server key
+        if isinstance(key, tuple) and len(key) == 2:
+            server_key, key = key
+        else:
+            server_key = key
+
+        check_key_helper(server_key, self.allow_unicode_keys, self.key_prefix)
         if self._dead_clients:
             self._retry_dead()
 
-        server = self.hasher.get_node(key)
+        server = self.hasher.get_node(server_key)
         # We've ran out of servers to try
         if server is None:
             if self.ignore_exc is True:
-                return
+                return None, key
             raise MemcacheError("All servers seem to be down right now")
 
-        return self.clients[server]
+        return self.clients[server], key
 
     def _safely_run_func(self, client, func, default_val, *args, **kwargs):
         try:
@@ -311,7 +317,7 @@ class HashClient:
             self._failed_clients[server] = failed_metadata
 
     def _run_cmd(self, cmd, key, default_val, *args, **kwargs):
-        client = self._get_client(key)
+        client, key = self._get_client(key)
 
         if client is None:
             return default_val
@@ -346,6 +352,12 @@ class HashClient:
     def get(self, key, default=None, **kwargs):
         return self._run_cmd("get", key, default, default=default, **kwargs)
 
+    def gat(self, key, default=None, **kwargs):
+        return self._run_cmd("gat", key, default, default=default, **kwargs)
+
+    def gats(self, key, default=None, **kwargs):
+        return self._run_cmd("gats", key, default, default=default, **kwargs)
+
     def incr(self, key, *args, **kwargs):
         return self._run_cmd("incr", key, False, *args, **kwargs)
 
@@ -357,7 +369,7 @@ class HashClient:
         failed = []
 
         for key, value in values.items():
-            client = self._get_client(key)
+            client, key = self._get_client(key)
 
             if client is None:
                 failed.append(key)
@@ -378,7 +390,7 @@ class HashClient:
         end = {}
 
         for key in keys:
-            client = self._get_client(key)
+            client, key = self._get_client(key)
 
             if client is None:
                 continue

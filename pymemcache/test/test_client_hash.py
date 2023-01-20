@@ -74,17 +74,48 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
             ],
         )
 
-        def get_clients(key):
+        def get_node(key):
             if key == b"key3":
-                return client.clients["/tmp/pymemcache.1.%d" % pid]
+                return "/tmp/pymemcache.1.%d" % pid
             else:
-                return client.clients["/tmp/pymemcache.2.%d" % pid]
+                return "/tmp/pymemcache.2.%d" % pid
 
-        client._get_client = get_clients
+        client.hasher.get_node = get_node
 
         result = client.set(b"key1", b"value1", noreply=False)
         result = client.set(b"key3", b"value2", noreply=False)
         result = client.get_many([b"key1", b"key3"])
+        assert result == {b"key1": b"value1", b"key3": b"value2"}
+
+    def test_get_many_unix_with_server_key(self):
+        pid = os.getpid()
+        sockets = [
+            "/tmp/pymemcache.1.%d" % pid,
+            "/tmp/pymemcache.2.%d" % pid,
+        ]
+        client = self.make_unix_client(
+            sockets,
+            *[
+                [
+                    b"STORED\r\n",
+                    b"STORED\r\n",
+                    b"VALUE key1 0 6\r\nvalue1\r\nVALUE key3 0 6\r\nvalue2\r\nEND\r\n",
+                ],
+                [],
+            ],
+        )
+
+        def get_node(key):
+            if key == b"server_key":
+                return "/tmp/pymemcache.1.%d" % pid
+            else:
+                return "/tmp/pymemcache.2.%d" % pid
+
+        client.hasher.get_node = get_node
+
+        result = client.set((b"server_key", b"key1"), b"value1", noreply=False)
+        result = client.set((b"server_key", b"key3"), b"value2", noreply=False)
+        result = client.get_many([(b"server_key", b"key1"), (b"server_key", b"key3")])
         assert result == {b"key1": b"value1", b"key3": b"value2"}
 
     def test_get_many_all_found(self):
@@ -101,13 +132,13 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
             ]
         )
 
-        def get_clients(key):
+        def get_node(key):
             if key == b"key3":
-                return client.clients["127.0.0.1:11012"]
+                return "127.0.0.1:11012"
             else:
-                return client.clients["127.0.0.1:11013"]
+                return "127.0.0.1:11013"
 
-        client._get_client = get_clients
+        client.hasher.get_node = get_node
 
         result = client.set(b"key1", b"value1", noreply=False)
         result = client.set(b"key3", b"value2", noreply=False)
@@ -127,13 +158,13 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
             ]
         )
 
-        def get_clients(key):
+        def get_node(key):
             if key == b"key3":
-                return client.clients["127.0.0.1:11012"]
+                return "127.0.0.1:11012"
             else:
-                return client.clients["127.0.0.1:11013"]
+                return "127.0.0.1:11013"
 
-        client._get_client = get_clients
+        client.hasher.get_node = get_node
         result = client.set(b"key1", b"value1", noreply=False)
         result = client.get_many([b"key1", b"key3"])
 
@@ -153,13 +184,13 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
             ]
         )
 
-        def get_clients(key):
+        def get_node(key):
             if key == b"key3":
-                return client.clients["127.0.0.1:11012"]
+                return "127.0.0.1:11012"
             else:
-                return client.clients["127.0.0.1:11013"]
+                return "127.0.0.1:11013"
 
-        client._get_client = get_clients
+        client.hasher.get_node = get_node
 
         with pytest.raises(MemcacheUnknownError):
             client.set(b"key1", b"value1", noreply=False)
@@ -181,13 +212,13 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
             ignore_exc=True,
         )
 
-        def get_clients(key):
+        def get_node(key):
             if key == b"key3":
-                return client.clients["127.0.0.1:11012"]
+                return "127.0.0.1:11012"
             else:
-                return client.clients["127.0.0.1:11013"]
+                return "127.0.0.1:11013"
 
-        client._get_client = get_clients
+        client.hasher.get_node = get_node
 
         client.set(b"key1", b"value1", noreply=False)
         client.set(b"key3", b"value2", noreply=False)
@@ -208,13 +239,13 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
             ]
         )
 
-        def get_clients(key):
+        def get_node(key):
             if key == b"key3":
-                return client.clients["127.0.0.1:11012"]
+                return "127.0.0.1:11012"
             else:
-                return client.clients["127.0.0.1:11013"]
+                return "127.0.0.1:11013"
 
-        client._get_client = get_clients
+        client.hasher.get_node = get_node
 
         assert client.set(b"key1", b"value1", noreply=False) is True
         assert client.set(b"key3", b"value2", noreply=False) is True
@@ -258,7 +289,7 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         )
 
         hashed_client = client._get_client("foo")
-        assert hashed_client is None
+        assert hashed_client == (None, "foo")
 
     def test_no_servers_left_raise_exception(self):
         from pymemcache.client.hash import HashClient

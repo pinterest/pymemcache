@@ -724,6 +724,21 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         result = client.gets_many([b"key1", b"key2"])
         assert result == {b"key1": (b"value1", b"11")}
 
+    def test_gats_not_found(self):
+        client = self.make_client([b"END\r\n"])
+        result = client.gats(b"key")
+        assert result == (None, None)
+
+    def test_gats_not_found_defaults(self):
+        client = self.make_client([b"END\r\n"])
+        result = client.gats(b"key", default="foo", cas_default="bar")
+        assert result == ("foo", "bar")
+
+    def test_gats_found(self):
+        client = self.make_client([b"VALUE key 0 5 10\r\nvalue\r\nEND\r\n"])
+        result = client.gats(b"key")
+        assert result == (b"value", b"10")
+
     def test_touch_not_found(self):
         client = self.make_client([b"NOT_FOUND\r\n"])
         result = client.touch(b"key", noreply=False)
@@ -1515,6 +1530,17 @@ class TestPrefixedClient(ClientTestMixin, unittest.TestCase):
         )
         result = client.set(b"key", b"value", noreply=False)
         result = client.get(b"key")
+        assert result == b"value"
+
+    def test_gat_found(self):
+        client = self.make_client(
+            [
+                b"STORED\r\n",
+                b"VALUE xyz:key 0 5\r\nvalue\r\nEND\r\n",
+            ]
+        )
+        result = client.set(b"key", b"value", noreply=False)
+        result = client.gat(b"key")
         assert result == b"value"
 
     def test_get_many_some_found(self):

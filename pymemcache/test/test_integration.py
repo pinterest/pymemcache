@@ -272,6 +272,37 @@ def test_touch(client_class, host, port, socket_module, key_prefix):
 
 
 @pytest.mark.integration()
+def test_gat_gats(client_class, host, port, socket_module, key_prefix):
+    client = client_class(
+        (host, port), socket_module=socket_module, key_prefix=key_prefix
+    )
+    client.flush_all()
+
+    direct_client = (
+        client if hasattr(client, "raw_command") else list(client.clients.values())[0]
+    )
+
+    result = client.set(b"key", b"0", 10, noreply=False)
+    assert result is True
+
+    ttl1 = direct_client.raw_command(b"mg " + key_prefix + b"key t").replace(
+        b"HD t", b""
+    )
+
+    result = client.gat(b"key", expire=1000)
+    assert result == b"0"
+
+    result, cas = client.gats(b"key", expire=1000)
+    assert result == b"0"
+
+    ttl2 = direct_client.raw_command(b"mg " + key_prefix + b"key t").replace(
+        b"HD t", b""
+    )
+
+    assert int(ttl1) < 950 < int(ttl2) <= 1000
+
+
+@pytest.mark.integration()
 def test_misc(client_class, host, port, socket_module, key_prefix):
     client = Client((host, port), socket_module=socket_module, key_prefix=key_prefix)
     client.flush_all()
