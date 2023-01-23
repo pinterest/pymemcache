@@ -88,7 +88,7 @@ class MockMemcacheClient:
         key = self.check_key(key)
         if isinstance(value, str) and not isinstance(value, bytes):
             try:
-                value = value.encode(self.encoding)
+                value.encode(self.encoding)
             except (UnicodeEncodeError, UnicodeDecodeError):
                 raise MemcacheIllegalInputError
 
@@ -147,7 +147,7 @@ class MockMemcacheClient:
         if current is not None:
             if isinstance(value, str) and not isinstance(value, bytes):
                 try:
-                    value = value.encode(self.encoding)
+                    value.encode(self.encoding)
                 except (UnicodeEncodeError, UnicodeDecodeError):
                     raise MemcacheIllegalInputError
             self.set(key, value + current, expire, noreply, flags=flags)
@@ -158,7 +158,7 @@ class MockMemcacheClient:
         if current is not None:
             if isinstance(value, str) and not isinstance(value, bytes):
                 try:
-                    value = value.encode(self.encoding)
+                    value.encode(self.encoding)
                 except (UnicodeEncodeError, UnicodeDecodeError):
                     raise MemcacheIllegalInputError
             self.set(key, current + value, expire, noreply, flags=flags)
