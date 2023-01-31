@@ -136,6 +136,7 @@ Credits
 * `Nick Pope <https://github.com/ngnpope>`_
 * `Hervé Beraud <https://github.com/4383>`_
 * `Martin Jørgensen <https://github.com/martinnj>`_
+* `Matej Spiller Muys <https://github.com/matejsp>`_
 
 We're Hiring!
 =============
