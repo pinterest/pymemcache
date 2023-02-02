@@ -359,10 +359,10 @@ class HashClient:
         return self._run_cmd("gats", key, default, default=default, **kwargs)
 
     def incr(self, key, *args, **kwargs):
-        return self._run_cmd("incr", key, False, *args, **kwargs)
+        return self._run_cmd("incr", key, None, *args, **kwargs)
 
     def decr(self, key, *args, **kwargs):
-        return self._run_cmd("decr", key, False, *args, **kwargs)
+        return self._run_cmd("decr", key, None, *args, **kwargs)
 
     def set_many(self, values, *args, **kwargs):
         client_batches = collections.defaultdict(dict)
