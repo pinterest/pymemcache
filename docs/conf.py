@@ -17,8 +17,8 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
-import sys
 import subprocess
+import sys
 
 sys.path.insert(0, os.path.abspath(".."))
 
@@ -353,6 +353,12 @@ texinfo_documents = [
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {"https://docs.python.org/": None}
+
+
+# autodoc include __init__
+autodoc_default_options = {
+    "special-members": "__init__",
+}
 
 
 # Automate building apidoc when building with readthedocs
