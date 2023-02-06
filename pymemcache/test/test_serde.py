@@ -12,7 +12,6 @@ from pymemcache.serde import (
 )
 import pytest
 import pickle
-import sys
 import zlib
 
 
@@ -128,7 +127,7 @@ def test_compressed_complex(serde):
     check(serde, "£ $ €" * 10, FLAG_TEXT | FLAG_COMPRESSED)
 
     # test_int, doesn't make sense to compress
-    check(serde, sys.maxsize, FLAG_INTEGER)
+    check(serde, 9223372036854775807, FLAG_INTEGER)
 
     # test_pickleable
     check(
@@ -144,4 +143,4 @@ def test_compressed_complex(serde):
 
     # test_subtype
     # Subclass of a native type will be restored as the same type
-    check(serde, CustomInt(sys.maxsize), FLAG_PICKLE | FLAG_COMPRESSED)
+    check(serde, CustomInt(9223372036854775807), FLAG_PICKLE | FLAG_COMPRESSED)
