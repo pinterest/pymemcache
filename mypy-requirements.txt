@@ -1,2 +1,2 @@
 -r test-requirements.txt
-mypy==0.982
+mypy==1.0.1
