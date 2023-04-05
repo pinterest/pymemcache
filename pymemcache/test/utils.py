@@ -36,7 +36,6 @@ class MockMemcacheClient:
         encoding="ascii",
         tls_context=None,
     ):
-
         self._contents = {}
 
         self.serde = serde or LegacyWrappingSerde(serializer, deserializer)
