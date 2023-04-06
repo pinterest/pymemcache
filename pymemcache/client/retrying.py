@@ -153,7 +153,6 @@ class RetryingClient(object):
     # strictly defined for ourselves and pass it on to whatever client we've
     # been given.
     def __getattr__(self, name):
-
         return lambda *args, **kwargs: self._retry(
             name, self._client.__getattribute__(name), *args, **kwargs
         )

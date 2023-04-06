@@ -1306,7 +1306,6 @@ class Client:
         noreply: Optional[bool],
         end_tokens=None,
     ) -> List[bytes]:
-
         # If no end_tokens have been given, just assume standard memcached
         # operations, which end in "\r\n", use regular code for that.
         _reader: Callable[[socket.socket, bytes], Tuple[bytes, bytes]]
@@ -1795,7 +1794,6 @@ def _readsegment(
     result = bytes()
 
     while True:
-
         tokens_pos = buf.find(end_tokens)
         if tokens_pos != -1:
             before, after = buf[:tokens_pos], buf[tokens_pos + len(end_tokens) :]

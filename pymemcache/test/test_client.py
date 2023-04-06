@@ -66,7 +66,6 @@ def is_ipv6(address):
 def test_check_key_helper_failing_conditions(
     key, allow_unicode_keys, key_prefix, ex_exception, ex_excinfo
 ):
-
     with pytest.raises(ex_exception) as excinfo:
         check_key_helper(key, allow_unicode_keys, key_prefix)
 
@@ -505,7 +504,6 @@ class ClientTestMixin:
 
 
 class TestClient(ClientTestMixin, unittest.TestCase):
-
     Client = Client
 
     def test_append_stored(self):
