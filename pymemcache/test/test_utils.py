@@ -1,6 +1,5 @@
 import pytest
 
-
 from pymemcache.serde import pickle_serde
 from pymemcache.test.utils import MockMemcacheClient
 
