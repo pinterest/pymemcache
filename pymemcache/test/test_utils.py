@@ -15,6 +15,16 @@ def test_get_set():
 
 @pytest.mark.unit()
 def test_get_set_string():
+    client = MockMemcacheClient()
+    assert client.get("hello") is None
+
+    value = "world"
+    client.set("hello", value)
+    assert client.get("hello") == b"world"
+
+
+@pytest.mark.unit()
+def test_get_set_string_with_serde():
     client = MockMemcacheClient(serde=pickle_serde)
     assert client.get("hello") is None
 
