@@ -4,5 +4,5 @@ pytest-cov==4.0.0
 gevent==22.10.1; "PyPy" not in platform_python_implementation
 pylibmc==1.6.3; sys.platform != 'win32'
 python-memcached==1.59
-zstd==1.5.2.5
+zstd==1.5.4.0
 setuptools>=65.5.1 # not directly required, pinned by Snyk to avoid a vulnerability
