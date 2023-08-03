@@ -38,6 +38,14 @@ class MockMemcacheClient:
     ):
         self._contents = {}
 
+        def _serializer(key, value):
+            if isinstance(value, str):
+                value = value.encode()
+            return value, 0
+
+        if serializer is None:
+            serializer = _serializer
+
         self.serde = serde or LegacyWrappingSerde(serializer, deserializer)
         self.allow_unicode_keys = allow_unicode_keys
 
@@ -87,7 +95,7 @@ class MockMemcacheClient:
         key = self.check_key(key)
         if isinstance(value, str) and not isinstance(value, bytes):
             try:
-                value = value.encode(self.encoding)
+                value.encode(self.encoding)
             except (UnicodeEncodeError, UnicodeDecodeError):
                 raise MemcacheIllegalInputError
 

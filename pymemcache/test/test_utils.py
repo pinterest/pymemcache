@@ -1,5 +1,6 @@
 import pytest
 
+from pymemcache.serde import pickle_serde
 from pymemcache.test.utils import MockMemcacheClient
 
 
@@ -10,6 +11,26 @@ def test_get_set():
 
     client.set(b"hello", 12)
     assert client.get(b"hello") == 12
+
+
+@pytest.mark.unit()
+def test_get_set_string():
+    client = MockMemcacheClient()
+    assert client.get("hello") is None
+
+    value = "world"
+    client.set("hello", value)
+    assert client.get("hello") == b"world"
+
+
+@pytest.mark.unit()
+def test_get_set_string_with_serde():
+    client = MockMemcacheClient(serde=pickle_serde)
+    assert client.get("hello") is None
+
+    value = "world"
+    client.set("hello", value)
+    assert client.get("hello") == value
 
 
 @pytest.mark.unit()
