@@ -72,29 +72,40 @@ class ObjectPool(Generic[T]):
             raise
         self.release(obj)
 
-    def get(self):
-        with self._lock:
-            # Find a free object, removing any that have idled for too long.
-            now = self._idle_clock()
-            while self._free_objs:
-                obj = self._free_objs.popleft()
-                if now - obj._last_used <= self.idle_timeout:
-                    break
+    def get(self, **options):
+        #get the option parameters if the user needs blocking.
+        max_attempts = max(options.get('max_attempts',1),1)
+        max_timeout = options.get('max_timeout')
+        current_attempt = 0
 
-                if self._after_remove is not None:
-                    self._after_remove(obj)
-            else:
-                # No free objects, create a new one.
-                curr_count = len(self._used_objs)
-                if curr_count >= self.max_size:
-                    raise RuntimeError(
-                        "Too many objects," " %s >= %s" % (curr_count, self.max_size)
-                    )
-                obj = self._obj_creator()
+        while current_attempt < max_attempts:
+            current_attempt += 1
+            with self._lock:
+                # Find a free object, removing any that have idled for too long.
+                now = self._idle_clock()
+                while self._free_objs:
+                    obj = self._free_objs.popleft()
+                    if now - obj._last_used <= self.idle_timeout:
+                        break
 
-            self._used_objs.append(obj)
-            obj._last_used = now
-            return obj
+                    if self._after_remove is not None:
+                        self._after_remove(obj)
+
+                    #wait for a fraction of the time before trying again
+                    if max_timeout is not None:
+                        time.sleep(max_timeout/max_attempts)
+                else:
+                    # No free objects, create a new one.
+                    curr_count = len(self._used_objs)
+                    if curr_count >= self.max_size:
+                        raise RuntimeError(
+                            "Too many objects," " %s >= %s" % (curr_count, self.max_size)
+                        )
+                    obj = self._obj_creator()
+
+                self._used_objs.append(obj)
+                obj._last_used = now
+                return obj
 
     def destroy(self, obj, silent=True) -> None:
         was_dropped = False
