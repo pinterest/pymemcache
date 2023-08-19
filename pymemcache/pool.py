@@ -79,11 +79,12 @@ class ObjectPool(Generic[T]):
 
         with self._lock:
             # Find a free object, removing any that have idled for too long.
-            now = self._idle_clock()
+            
             #while there are free objects or we are before the time limit
             while current_time <= end_time:
                 #get the current time again to check if we can run another iteration
                 current_time = time.time()
+                now = self._idle_clock()
 
                 while self._free_objs:
                     obj = self._free_objs.popleft()
