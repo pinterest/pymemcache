@@ -1030,6 +1030,28 @@ class Client:
             return True
         return results[0] == b"OK"
 
+    def auto_discover(self):
+        """
+        This is specific to AWS Elasticache
+
+        Returns list of hostname and ip address of the nodes
+        
+        The response received is as follows:
+        0: CONFIG cluster 0 134
+        1: configversion\r\n
+        2: hostname|ip-address|port hostname|ip-address|port ...\r\n
+        3:
+        4: END
+        5: blank
+        """
+        cmd = b"config get cluster"
+        data = self._misc_cmd([cmd], b"config get cluster", noreply=False)
+        lines = data.split(b'\n')
+        configs = [conf.split(b'|') for conf in lines[2].split(b' ')]
+        self.quit()
+        nodes = [(ip, int(port)) for host, ip, port in configs]
+        return nodes
+
     def quit(self) -> None:
         """
         The memcached "quit" command.
@@ -1356,7 +1378,19 @@ class Client:
         self.delete(key, noreply=True)
 
 
-class PooledClient:
+class PooledClient:        # 0: CONFIG cluster 0 134        # 0: CONFIG cluster 0 134
+        # 1: configversion\r\n
+        # 2: hostname|ip-address|port hostname|ip-address|port ...\r\n
+        # 3:
+        # 4: END
+        # 5: blank
+
+        # 1: configversion\r\n
+        # 2: hostname|ip-address|port hostname|ip-address|port ...\r\n
+        # 3:
+        # 4: END
+        # 5: blank
+
     """A thread-safe pool of clients (with the same client api).
 
     Args:
