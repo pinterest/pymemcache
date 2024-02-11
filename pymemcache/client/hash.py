@@ -450,6 +450,17 @@ class HashClient:
     def touch(self, key, *args, **kwargs):
         return self._run_cmd("touch", key, False, *args, **kwargs)
 
+    def stats(self, *args, **kwargs):
+        result = list()
+        for key, client in self.clients.items():
+            result.append(
+                (
+                    key,
+                    self._safely_run_func(client, client.stats, False, *args, **kwargs),
+                )
+            )
+        return result
+
     def flush_all(self, *args, **kwargs) -> None:
         for client in self.clients.values():
             self._safely_run_func(client, client.flush_all, False, *args, **kwargs)
