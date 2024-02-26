@@ -1,5 +1,5 @@
 Faker==18.11.2
-pytest==7.4.1
+pytest==8.0.2
 pytest-cov==4.0.0
 gevent==22.10.1; "PyPy" not in platform_python_implementation
 pylibmc==1.6.3; sys.platform != 'win32'
