@@ -1030,6 +1030,15 @@ class Client:
             return True
         return results[0] == b"OK"
 
+    def auto_discover(self):
+        cmd = b"config get cluster"
+        data = self._misc_cmd([cmd], b"config get cluster", noreply=False)
+        lines = data.split(b'\n')
+        configs = [conf.split(b'|') for conf in lines[2].split(b' ')]
+        self.quit()
+        nodes = [(ip, int(port)) for host, ip, port in configs]
+        return nodes
+
     def quit(self) -> None:
         """
         The memcached "quit" command.
