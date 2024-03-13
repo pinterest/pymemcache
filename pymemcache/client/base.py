@@ -1447,6 +1447,7 @@ class PooledClient:
             key_prefix=self.key_prefix,
             default_noreply=self.default_noreply,
             allow_unicode_keys=self.allow_unicode_keys,
+            encoding=self.encoding,
             tls_context=self.tls_context,
         )
 
