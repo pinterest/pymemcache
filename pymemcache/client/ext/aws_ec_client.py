@@ -32,31 +32,31 @@ class AWSElastiCacheHashClient(HashClient):
     """
 
     def __init__(
-            self,
-            cfg_node: object,
-            hasher: object = RendezvousHash,
-            serde: object = None,
-            serializer: object = None,
-            deserializer: object = None,
-            connect_timeout: object = None,
-            timeout: object = None,
-            no_delay: object = False,
-            socket_module: object = socket,
-            socket_keepalive: object = None,
-            key_prefix: object = b"",
-            max_pool_size: object = None,
-            pool_idle_timeout: object = 0,
-            lock_generator: object = None,
-            retry_attempts: object = 2,
-            retry_timeout: object = 1,
-            dead_timeout: object = 60,
-            use_pooling: object = False,
-            ignore_exc: object = False,
-            allow_unicode_keys: object = False,
-            default_noreply: object = True,
-            encoding: object = "ascii",
-            tls_context: object = None,
-            use_vpc: object = True,
+        self,
+        cfg_node: object,
+        hasher: object = RendezvousHash,
+        serde: object = None,
+        serializer: object = None,
+        deserializer: object = None,
+        connect_timeout: object = None,
+        timeout: object = None,
+        no_delay: object = False,
+        socket_module: object = socket,
+        socket_keepalive: object = None,
+        key_prefix: object = b"",
+        max_pool_size: object = None,
+        pool_idle_timeout: object = 0,
+        lock_generator: object = None,
+        retry_attempts: object = 2,
+        retry_timeout: object = 1,
+        dead_timeout: object = 60,
+        use_pooling: object = False,
+        ignore_exc: object = False,
+        allow_unicode_keys: object = False,
+        default_noreply: object = True,
+        encoding: object = "ascii",
+        tls_context: object = None,
+        use_vpc: object = True,
     ) -> object:
         """
         Constructor.
@@ -174,20 +174,20 @@ class AWSElastiCacheHashClient(HashClient):
             A list of tuples containing the address and port of each node in the cluster.
             Each tuple has the format (address: str, port: int).
         """
-        addr, port = self._cfg_node.rsplit(':', maxsplit=1)
+        addr, port = self._cfg_node.rsplit(":", maxsplit=1)
         client = Client((addr, port), **self.default_kwargs)
 
         # https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/AutoDiscovery.AddingToYourClientLibrary.html
         try:
             *_, config_line = client.raw_command(
-                b'config get cluster',
-                end_tokens=b'\n\r\nEND\r\n',
+                b"config get cluster",
+                end_tokens=b"\n\r\nEND\r\n",
             ).splitlines()
         except MemcacheUnknownCommandError:
             logger.exception(
                 "Can't retrieve cluster configuration from '%s:%s' "
                 "Seems like it is ElastiCache Serverless or even isn't ElastiCache at all.",
-                client.server
+                client.server,
             )
         finally:
             client.close()
@@ -195,8 +195,8 @@ class AWSElastiCacheHashClient(HashClient):
         servers = [
             (server[self._use_vpc], server[2])
             for server in map(
-                operator.methodcaller('split', '|'),
-                config_line.decode().split(' '),
+                operator.methodcaller("split", "|"),
+                config_line.decode().split(" "),
             )
         ]
 
