@@ -14,7 +14,7 @@ from pymemcache.client.rendezvous import RendezvousHash
 logger = logging.getLogger(__name__)
 
 _RE_AWS_ENDPOINT = re.compile(
-    r"^(?:(?:[\w\d-]{0,61}[\w\d]\.)+[\w]{1,6}|\[(?:[\d]{1,3}\.){3}[\d]{1,3}\])(?:\:\d{1,5})?$"
+    r"^(?:(?:[\w\d-]{0,61}[\w\d]\.)+[\w]{1,6}|\[(?:[\d]{1,3}\.){3}[\d]{1,3}\])\:\d{1,5}$"
 )
 
 
