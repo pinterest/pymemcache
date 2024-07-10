@@ -6,3 +6,4 @@ pylibmc==1.6.3; sys.platform != 'win32'
 python-memcached==1.59
 zstd==1.5.4.0
 setuptools>=65.5.1 # not directly required, pinned by Snyk to avoid a vulnerability
+zipp>=3.19.1 # not directly required, pinned by Snyk to avoid a vulnerability
