@@ -16,7 +16,8 @@ import collections
 import contextlib
 import threading
 import time
-from typing import Callable, Optional, TypeVar, Deque, List, Generic, Iterator
+from typing import Callable, Optional, TypeVar, Deque, Generic
+from collections.abc import Iterator
 
 
 T = TypeVar("T")
@@ -120,7 +121,7 @@ class ObjectPool(Generic[T]):
 
     def clear(self) -> None:
         if self._after_remove is not None:
-            needs_destroy: List[T] = []
+            needs_destroy: list[T] = []
             with self._lock:
                 needs_destroy.extend(self._used_objs)
                 needs_destroy.extend(self._free_objs)
