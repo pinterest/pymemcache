@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.9', '3.10', '3.11', 'pypy-3.9']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13', 'pypy-3.9']
 
     steps:
     - uses: actions/checkout@v4
@@ -32,11 +32,11 @@ jobs:
         python -m pip install tox tox-gh-actions
         sudo apt-get install libmemcached-dev
     - name: Lint
-      if: matrix.python-version == '3.10'
+      if: matrix.python-version == '3.13'
       run: |
         tox -e lint,mypy
     - name: Docs
-      if: matrix.python-version == '3.10'
+      if: matrix.python-version == '3.13'
       run: |
         tox -e docs
     - name: Disable IPv6 localhost
