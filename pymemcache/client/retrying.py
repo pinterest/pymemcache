@@ -43,7 +43,7 @@ def _ensure_tuple_argument(argument_name, argument_value):
     return argument_tuple
 
 
-class RetryingClient(object):
+class RetryingClient:
     """
     Client that allows retrying calls for the other clients.
     """
