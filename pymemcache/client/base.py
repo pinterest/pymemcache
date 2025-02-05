@@ -1792,7 +1792,7 @@ def _readsegment(
       bytes object).
 
     """
-    result = b''
+    result = b""
 
     while True:
         tokens_pos = buf.find(end_tokens)
