@@ -18,7 +18,8 @@ import socket
 from functools import partial
 from ssl import SSLContext
 from types import ModuleType
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any, Callable, Optional, Union
+from collections.abc import Iterable
 
 from pymemcache import pool
 from pymemcache.exceptions import (
@@ -52,7 +53,7 @@ STORE_RESULTS_VALUE = {
     b"EXISTS": False,
 }
 
-ServerSpec = Union[Tuple[str, int], str]
+ServerSpec = Union[tuple[str, int], str]
 Key = Union[bytes, str]
 
 
@@ -74,7 +75,7 @@ def _parse_hex(value: bytes) -> int:
     return int(value, 8)
 
 
-STAT_TYPES: Dict[bytes, Callable[[bytes], Any]] = {
+STAT_TYPES: dict[bytes, Callable[[bytes], Any]] = {
     # General stats
     b"version": bytes,
     b"rusage_user": _parse_float,
@@ -476,11 +477,11 @@ class Client:
 
     def set_many(
         self,
-        values: Dict[Key, Any],
+        values: dict[Key, Any],
         expire: int = 0,
         noreply: Optional[bool] = None,
         flags: Optional[int] = None,
-    ) -> List[Key]:
+    ) -> list[Key]:
         """
         A convenience function for setting multiple values.
 
@@ -705,7 +706,7 @@ class Client:
             b"gat", [key], False, key_prefix=self.key_prefix, expire=expire
         ).get(key, default)
 
-    def get_many(self, keys: Iterable[Key]) -> Dict[Key, Any]:
+    def get_many(self, keys: Iterable[Key]) -> dict[Key, Any]:
         """
         The memcached "get" command.
 
@@ -726,7 +727,7 @@ class Client:
 
     def gets(
         self, key: Key, default: Any = None, cas_default: Any = None
-    ) -> Tuple[Any, Any]:
+    ) -> tuple[Any, Any]:
         """
         The memcached "gets" command for one key, as a convenience.
 
@@ -746,7 +747,7 @@ class Client:
 
     def gats(
         self, key: Key, expire: int = 0, default: Any = None, cas_default: Any = None
-    ) -> Tuple[Any, Any]:
+    ) -> tuple[Any, Any]:
         """
         The memcached "gats" command, but only for one key, as a convenience.
 
@@ -766,7 +767,7 @@ class Client:
             b"gats", [key], True, key_prefix=self.key_prefix, expire=expire
         ).get(key, defaults)
 
-    def gets_many(self, keys: Iterable[Key]) -> Dict[Key, Tuple[Any, Any]]:
+    def gets_many(self, keys: Iterable[Key]) -> dict[Key, tuple[Any, Any]]:
         """
         The memcached "gets" command.
 
@@ -1118,9 +1119,9 @@ class Client:
         expect_cas: bool,
         line: bytes,
         buf: bytes,
-        remapped_keys: Dict[bytes, Key],
-        prefixed_keys: List[bytes],
-    ) -> Tuple[Key, Union[Any, Tuple[Any, bytes]], bytes]:
+        remapped_keys: dict[bytes, Key],
+        prefixed_keys: list[bytes],
+    ) -> tuple[Key, Union[Any, tuple[Any, bytes]], bytes]:
         """
         This function is abstracted from _fetch_cmd to support different ways
         of value extraction. In order to use this feature, _extract_value needs
@@ -1158,7 +1159,7 @@ class Client:
         expect_cas: bool,
         key_prefix: bytes = b"",
         expire: Optional[int] = None,
-    ) -> Dict[Key, Any]:
+    ) -> dict[Key, Any]:
         prefixed_keys = [self.check_key(k, key_prefix=key_prefix) for k in keys]
         remapped_keys = dict(zip(prefixed_keys, keys))
 
@@ -1183,7 +1184,7 @@ class Client:
 
             buf = b""
             line = None
-            result: Dict[Key, Any] = {}
+            result: dict[Key, Any] = {}
             while True:
                 try:
                     buf, line = _readline(self.sock, buf)
@@ -1216,12 +1217,12 @@ class Client:
     def _store_cmd(
         self,
         name: bytes,
-        values: Dict[Key, Any],
+        values: dict[Key, Any],
         expire: int,
         noreply: bool,
         flags: Optional[int] = None,
         cas: Optional[bytes] = None,
-    ) -> Dict[Key, Optional[bool]]:
+    ) -> dict[Key, Optional[bool]]:
         cmds = []
         keys = []
 
@@ -1305,10 +1306,10 @@ class Client:
         cmd_name: bytes,
         noreply: Optional[bool],
         end_tokens=None,
-    ) -> List[bytes]:
+    ) -> list[bytes]:
         # If no end_tokens have been given, just assume standard memcached
         # operations, which end in "\r\n", use regular code for that.
-        _reader: Callable[[socket.socket, bytes], Tuple[bytes, bytes]]
+        _reader: Callable[[socket.socket, bytes], tuple[bytes, bytes]]
         if end_tokens:
             _reader = partial(_readsegment, end_tokens=end_tokens)
         else:
@@ -1561,7 +1562,7 @@ class PooledClient:
                 else:
                     raise
 
-    def get_many(self, keys: Iterable[Key]) -> Dict[Key, Any]:
+    def get_many(self, keys: Iterable[Key]) -> dict[Key, Any]:
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             try:
                 return client.get_many(keys)
@@ -1573,7 +1574,7 @@ class PooledClient:
 
     get_multi = get_many
 
-    def gets(self, key: Key) -> Tuple[Any, Any]:
+    def gets(self, key: Key) -> tuple[Any, Any]:
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             try:
                 return client.gets(key)
@@ -1583,7 +1584,7 @@ class PooledClient:
                 else:
                     raise
 
-    def gets_many(self, keys: Iterable[Key]) -> Dict[Key, Tuple[Any, Any]]:
+    def gets_many(self, keys: Iterable[Key]) -> dict[Key, tuple[Any, Any]]:
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             try:
                 return client.gets_many(keys)
@@ -1672,7 +1673,7 @@ class PooledClient:
         self.delete(key, noreply=True)
 
 
-def _readline(sock: socket.socket, buf: bytes) -> Tuple[bytes, bytes]:
+def _readline(sock: socket.socket, buf: bytes) -> tuple[bytes, bytes]:
     """Read line of text from the socket.
 
     Read a line of text (delimited by "\r\n") from the socket, and
@@ -1692,7 +1693,7 @@ def _readline(sock: socket.socket, buf: bytes) -> Tuple[bytes, bytes]:
       byte string).
 
     """
-    chunks: List[bytes] = []
+    chunks: list[bytes] = []
     last_char = b""
 
     while True:
@@ -1770,7 +1771,7 @@ def _readvalue(sock: socket.socket, buf: bytes, size: int):
 
 def _readsegment(
     sock: socket.socket, buf: bytes, end_tokens: bytes
-) -> Tuple[bytes, bytes]:
+) -> tuple[bytes, bytes]:
     """Read a segment from the socket.
 
     Read a segment from the socket, up to the first end_token sub-string/bytes,
@@ -1791,7 +1792,7 @@ def _readsegment(
       bytes object).
 
     """
-    result = bytes()
+    result = b""
 
     while True:
         tokens_pos = buf.find(end_tokens)

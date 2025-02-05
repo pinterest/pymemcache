@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # pymemcache documentation build configuration file, created by
 # sphinx-quickstart on Wed Aug  3 11:15:43 2016.

@@ -38,7 +38,7 @@ class TestRetryingClientPassthrough(ClientTestMixin, unittest.TestCase):
 
 # Retry specific tests.
 @pytest.mark.unit()
-class TestRetryingClient(object):
+class TestRetryingClient:
     def make_base_client(self, mock_socket_values, **kwargs):
         """Creates a regular mock client to wrap in the RetryClient."""
         base_client = Client("localhost", **kwargs)
