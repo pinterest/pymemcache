@@ -409,6 +409,19 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         client = self.make_client()
         client.flush_all(noreply=True)
 
+    def test_stats_many_server(self):
+        client = self.make_client(
+            *[
+                [b"STAT fake_stats 1\r\n", b"END\r\n"],
+                [b"STAT fake_stats 2\r\n", b"END\r\n"],
+            ]
+        )
+        result = client.stats()
+        assert result == [
+            ("127.0.0.1:11012", {b"fake_stats": 1}),
+            ("127.0.0.1:11013", {b"fake_stats": 2}),
+        ]
+
     def test_set_many_unix(self):
         values = {"key1": "value1", "key2": "value2", "key3": "value3"}
 
