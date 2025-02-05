@@ -27,11 +27,11 @@ jobs:
         python -m pip install tox tox-gh-actions
         sudo apt-get install libmemcached-dev
     - name: Lint
-      if: matrix.python-version == '3.13'
+      if: matrix.python-version == '3.10'
       run: |
         tox -e lint,mypy
     - name: Docs
-      if: matrix.python-version == '3.13'
+      if: matrix.python-version == '3.10'
       run: |
         tox -e docs
     - name: Disable IPv6 localhost
