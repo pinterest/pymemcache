@@ -1219,6 +1219,20 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         assert client.raw_command("key", "\r\n") == b"REPLY"
         assert client.raw_command(b"key", b"\r\n") == b"REPLY"
 
+    def test_auto_discover(self):
+        mock_response = (
+            b"CONFIG cluster 0 134\r\n"
+            b"configversion\r\n"
+            b"hostname1|10.0.0.1|11211 hostname2|10.0.0.2|11211\r\n"
+            b"END\r\n"
+        )
+
+        client = self.make_client([mock_response])
+        nodes = client.auto_discover()
+
+        expected_nodes = [("10.0.0.1", 11211), ("10.0.0.2", 11211)]
+        assert nodes == expected_nodes
+        
 
 @pytest.mark.unit()
 class TestClientSocketConnect(unittest.TestCase):
@@ -1431,6 +1445,7 @@ class TestPooledClient(ClientTestMixin, unittest.TestCase):
         client = PooledClient(("host", 11211))
         client.client_class = MyClient
         assert isinstance(client.client_pool.get(), MyClient)
+        
 
 
 class TestPooledClientIdleTimeout(ClientTestMixin, unittest.TestCase):
