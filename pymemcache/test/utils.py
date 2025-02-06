@@ -35,6 +35,7 @@ class MockMemcacheClient:
         allow_unicode_keys=False,
         encoding="ascii",
         tls_context=None,
+        **kwargs,
     ):
         self._contents = {}
 
