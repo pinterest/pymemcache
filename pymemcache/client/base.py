@@ -1144,7 +1144,7 @@ class Client:
         except MemcacheUnexpectedCloseError:
             self.close()
             raise
-        original_key = remapped_keys[key]
+        original_key = remapped_keys.get(key, "")
         value = self.serde.deserialize(original_key, value, int(flags))
 
         if expect_cas:
