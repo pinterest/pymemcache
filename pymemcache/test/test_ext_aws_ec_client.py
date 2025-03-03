@@ -38,7 +38,7 @@ def test_init_valid_node_endpoint(connection_sting, monkeypatch):
 def test_init_invalid_node_endpoint(connection_sting, monkeypatch):
     with patch.object(
         AWSElastiCacheHashClient, "reconfigure_nodes", new=MagicMock()
-    ) as mock:
+    ):
         with pytest.raises(ValueError):
             AWSElastiCacheHashClient(connection_sting, socket_module=MockSocketModule())
 
