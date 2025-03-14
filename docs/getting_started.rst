@@ -118,6 +118,24 @@ follows:
    ``node3`` is added back into the hasher and will be retried for any future
    operations.
 
+
+Using a configuration node endpoint and auto discovery
+------------------------------------------------------
+This will use AWS elasticache auto discovery method to discover nodes by just 
+using Configuration node's endpoint
+
+.. code-block:: python
+
+    from pymemcache.client.hash import HashClient
+
+    client = HashClient('127.0.0.1:11211', enable_autodiscovery=True)
+    client.set('some_key', 'some value')
+    result = client.get('some_key')
+
+The client internally fetches all the nodes from the configuration nodes and sets up a connection with them,
+Refer AWS `doc`<https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/AutoDiscovery.html> for more information.
+
+
 Using the built-in retrying mechanism
 -------------------------------------
 The library comes with retry mechanisms that can be used to wrap all kinds of

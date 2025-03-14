@@ -48,6 +48,7 @@ class HashClient:
         default_noreply=True,
         encoding="ascii",
         tls_context=None,
+        enable_auto_discovery=False
     ):
         """
         Constructor.
@@ -55,6 +56,8 @@ class HashClient:
         Args:
           servers: list() of tuple(hostname, port) or string containing a UNIX
                    socket path.
+                   Or If enable_auto_discovery is set, just tuple(hostname, port) or UNIX socket path string 
+                   of configuration node would suffice.
           hasher: optional class three functions ``get_node``, ``add_node``,
                   and ``remove_node``
                   defaults to Rendezvous (HRW) hash.
@@ -70,12 +73,14 @@ class HashClient:
           dead_timeout (float): Time in seconds before attempting to add a node
                                 back in the pool.
           encoding: optional str, controls data encoding (defaults to 'ascii').
+          enable_auto_discovery (bool): If enabled, nodes would be discovered from the configuration endpoint.
 
         Further arguments are interpreted as for :py:class:`.Client`
         constructor.
         """
         self.clients = {}
         self.retry_attempts = retry_attempts
+        self.connect_timeout = connect_timeout
         self.retry_timeout = retry_timeout
         self.dead_timeout = dead_timeout
         self.use_pooling = use_pooling
@@ -112,11 +117,18 @@ class HashClient:
                     "lock_generator": lock_generator,
                 }
             )
-
-        for server in servers:
-            self.add_server(normalize_server_spec(server))
         self.encoding = encoding
         self.tls_context = tls_context
+        if not isinstance(servers, list):
+            if not enable_auto_discovery:
+                raise ValueError(f"Auto Discovery should be enabled if configuration endpoint is used: {servers!r}")
+
+            if enable_auto_discovery and servers is not None:
+                # AutoDiscovery is enabled and a address of configuration node is provided
+                servers = self._auto_discover(normalize_server_spec(servers))
+        
+        for server in servers:
+            self.add_server(normalize_server_spec(server))
 
     def _make_client_key(self, server):
         if isinstance(server, (list, tuple)) and len(server) == 2:
@@ -340,6 +352,12 @@ class HashClient:
         succeeded = [key for key in values if key not in failed]
         return succeeded, failed, None
 
+    def _auto_discover(self, server):
+            _class = PooledClient if self.use_pooling else self.client_class
+            client = _class(server)
+            nodes  = client.auto_discover()   
+            return nodes
+             
     def close(self):
         for client in self.clients.values():
             self._safely_run_func(client, client.close, False)
