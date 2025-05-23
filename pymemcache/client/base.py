@@ -1574,10 +1574,12 @@ class PooledClient:
 
     get_multi = get_many
 
-    def gets(self, key: Key) -> tuple[Any, Any]:
+    def gets(
+        self, key: Key, default: Any = None, cas_default: Any = None
+    ) -> tuple[Any, Any]:
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             try:
-                return client.gets(key)
+                return client.gets(key, default=default, cas_default=cas_default)
             except Exception:
                 if self.ignore_exc:
                     return (None, None)
