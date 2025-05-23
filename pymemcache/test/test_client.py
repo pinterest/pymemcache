@@ -1447,6 +1447,36 @@ class TestPooledClient(ClientTestMixin, unittest.TestCase):
         result = client.gets(b"key")
         assert result == (b"value", b"10")
 
+    def test_cas_stored(self):
+        client = self.make_client([b"STORED\r\n"])
+        result = client.cas(b"key", b"value", b"123", noreply=False)
+        assert result is True
+
+        # unit test for encoding passed in __init__()
+        client = self.make_client([b"STORED\r\n"], encoding="utf-8")
+        result = client.cas(b"key", b"value", b"123", noreply=False)
+        assert result is True
+
+    def test_cas_exists(self):
+        client = self.make_client([b"EXISTS\r\n"])
+        result = client.cas(b"key", b"value", b"123", noreply=False)
+        assert result is False
+
+        # unit test for encoding passed in __init__()
+        client = self.make_client([b"EXISTS\r\n"], encoding="utf-8")
+        result = client.cas(b"key", b"value", b"123", noreply=False)
+        assert result is False
+
+    def test_cas_not_found(self):
+        client = self.make_client([b"NOT_FOUND\r\n"])
+        result = client.cas(b"key", b"value", b"123", noreply=False)
+        assert result is None
+
+        # unit test for encoding passed in __init__()
+        client = self.make_client([b"NOT_FOUND\r\n"], encoding="utf-8")
+        result = client.cas(b"key", b"value", b"123", noreply=False)
+        assert result is None
+
 
 class TestPooledClientIdleTimeout(ClientTestMixin, unittest.TestCase):
     def make_client(self, mock_socket_values, **kwargs):
