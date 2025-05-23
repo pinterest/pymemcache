@@ -38,6 +38,7 @@ class MockMemcacheClient:
         **kwargs,
     ):
         self._contents = {}
+        self._cas_ids = {}  # maps keys to bytes CAS tokens
 
         def _serializer(key, value):
             if isinstance(value, str):
@@ -68,6 +69,7 @@ class MockMemcacheClient:
     def clear(self):
         """Method used to clear/reset mock cache"""
         self._contents.clear()
+        self._cas_ids.clear()
 
     def get(self, key, default=None):
         key = self.check_key(key)
@@ -92,6 +94,28 @@ class MockMemcacheClient:
 
     get_multi = get_many
 
+    def gets(self, key, default=None, cas_default=None):
+        not_found = []
+
+        value = self.get(key, default=not_found)
+        if value is not_found:
+            return default, cas_default
+
+        cas_token = self._cas_ids.setdefault(key, str(time.time_ns()).encode())
+        return value, cas_token
+
+    def gets_many(self, keys):
+        not_found = []
+
+        out = {}
+        for key in keys:
+            value, cas = self.gets(key, default=not_found)
+            if value is not not_found:
+                out[key] = (value, cas)
+        return out
+
+    get_multi = get_many
+
     def set(self, key, value, expire=0, noreply=True, flags=None):
         key = self.check_key(key)
         if isinstance(value, str) and not isinstance(value, bytes):
@@ -106,6 +130,7 @@ class MockMemcacheClient:
             expire += time.time()
 
         self._contents[key] = expire, value, flags
+        self._cas_ids[key] = str(time.time_ns()).encode()
         return True
 
     def set_many(self, values, expire=0, noreply=True, flags=None):
@@ -189,7 +214,7 @@ class MockMemcacheClient:
             "stat_key_prefix": "",
             "umask": 0o644,
             "detail_enabled": False,
-            "cas_enabled": False,
+            "cas_enabled": True,
             "auth_enabled_sasl": False,
             "maxconns_fast": False,
             "slab_reassign": False,
@@ -203,8 +228,20 @@ class MockMemcacheClient:
             self.set(key, value, expire, noreply, flags=flags)
         return noreply or present
 
-    def cas(self, key, value, cas, expire=0, noreply=False, flags=None):
-        raise MemcacheClientError("CAS is not enabled for this instance")
+    def cas(self, key, value, cas_token, expire=0, noreply=False, **kwargs):
+        if not isinstance(cas_token, (int, str, bytes)):
+            raise MemcacheIllegalInputError(f'cas must be integer, string, or bytes, got bad value: {cas_token}')
+
+        key = self.check_key(key)
+
+        if key not in self._contents:
+            self.set(key, value, noreply=noreply, **kwargs)
+            return True if noreply else None
+
+        elif self._cas_ids.get(key) != cas_token:
+            return True if noreply else False
+
+        return self.set(key, value, noreply=noreply, **kwargs)
 
     def touch(self, key, expire=0, noreply=True):
         current = self.get(key)

@@ -1466,18 +1466,11 @@ class TestPooledClientIdleTimeout(ClientTestMixin, unittest.TestCase):
 
 
 class TestMockClient(ClientTestMixin, unittest.TestCase):
-    def make_client(self, mock_socket_values, **kwargs):
-        client = MockMemcacheClient("localhost", **kwargs)
-        client.sock = MockSocket(list(mock_socket_values))
-        return client
+    def make_client(self, mock_socket_values=None, **kwargs):
+        return MockMemcacheClient("localhost", **kwargs)
 
     def test_get_found(self):
-        client = self.make_client(
-            [
-                b"STORED\r\n",
-                b"VALUE key 0 5\r\nvalue\r\nEND\r\n",
-            ]
-        )
+        client = self.make_client()
         result = client.set(b"key", b"value", noreply=False)
         result = client.get(b"key")
         assert result == b"value"
@@ -1494,15 +1487,7 @@ class TestMockClient(ClientTestMixin, unittest.TestCase):
                     return json.loads(value.decode("UTF-8"))
                 return value
 
-        client = self.make_client(
-            [
-                b"STORED\r\n",
-                b"VALUE key1 0 5\r\nhello\r\nEND\r\n",
-                b"STORED\r\n",
-                b'VALUE key2 0 18\r\n{"hello": "world"}\r\nEND\r\n',
-            ],
-            serde=JsonSerde(),
-        )
+        client = self.make_client(serde=JsonSerde())
 
         result = client.set(b"key1", b"hello", noreply=False)
         result = client.get(b"key1")
@@ -1511,6 +1496,56 @@ class TestMockClient(ClientTestMixin, unittest.TestCase):
         result = client.set(b"key2", dict(hello="world"), noreply=False)
         result = client.get(b"key2")
         assert result == dict(hello="world")
+
+    def test_gets_not_found(self):
+        client = self.make_client()
+        result = client.gets(b"key")
+        assert result == (None, None)
+
+    def test_gets_not_found_defaults(self):
+        client = self.make_client()
+        result = client.gets(b"key", default="foo", cas_default="bar")
+        assert result == ("foo", "bar")
+
+    @mock.patch('time.time_ns', return_value=10)
+    def test_gets_found(self, _):
+        client = self.make_client()
+        result = client.set(b"key", b"value", noreply=False)
+        result = client.gets(b"key")
+        assert result == (b"value", b"10")
+
+    def test_gets_many_none_found(self):
+        client = self.make_client([b"END\r\n"])
+        result = client.gets_many([b"key1", b"key2"])
+        assert result == {}
+
+    @mock.patch('time.time_ns', return_value=11)
+    def test_gets_many_some_found(self, _):
+        client = self.make_client()
+        result = client.set(b"key1", b"value", noreply=False)
+        result = client.gets_many([b"key1", b"key2"])
+        assert result == {b"key1": (b"value", b"11")}
+
+    @mock.patch('time.time_ns', return_value=123)
+    def test_cas_stored(self, _):
+        client = self.make_client()
+        client.set(b"key", b"existing")
+        result = client.cas(b"key", b"value", b"123", noreply=False)
+        assert result is True
+
+        result = client.get(b"key")
+        assert result == b"value"
+
+    def test_cas_exists(self):
+        client = self.make_client()
+        client.set(b"key", b"existing")
+        result = client.cas(b"key", b"value", b"123", noreply=False)
+        assert result is False
+
+    def test_cas_not_found(self):
+        client = self.make_client()
+        result = client.cas(b"key", b"value", b"123", noreply=False)
+        assert result is None
 
 
 class TestPrefixedClient(ClientTestMixin, unittest.TestCase):
