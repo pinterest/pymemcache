@@ -1547,6 +1547,9 @@ class TestMockClient(ClientTestMixin, unittest.TestCase):
         result = client.cas(b"key", b"value", b"123", noreply=False)
         assert result is None
 
+        result = client.get(b"key")
+        assert result is None
+
 
 class TestPrefixedClient(ClientTestMixin, unittest.TestCase):
     def make_client(self, mock_socket_values, **kwargs):

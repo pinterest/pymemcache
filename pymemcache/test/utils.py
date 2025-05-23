@@ -235,7 +235,6 @@ class MockMemcacheClient:
         key = self.check_key(key)
 
         if key not in self._contents:
-            self.set(key, value, noreply=noreply, **kwargs)
             return True if noreply else None
 
         elif self._cas_ids.get(key) != cas_token:
