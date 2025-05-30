@@ -1808,7 +1808,7 @@ def _readsegment(
             raise MemcacheUnexpectedCloseError()
 
 
-def _recv(sock: socket.socket, size: int) -> bytes:
+def _recv(sock: Optional[socket.socket], size: int) -> bytes:
     """sock.recv() with retry on EINTR"""
     while True:
         try:
@@ -1816,3 +1816,5 @@ def _recv(sock: socket.socket, size: int) -> bytes:
         except OSError as e:
             if e.errno != errno.EINTR:
                 raise
+        except AttributeError as e:
+            raise MemcacheUnexpectedCloseError(e)
