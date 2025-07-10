@@ -73,17 +73,27 @@ class ObjectPool(Generic[T]):
             raise
         self.release(obj)
 
-    def get(self):
-        with self._lock:
-            # Find a free object, removing any that have idled for too long.
-            now = self._idle_clock()
-            while self._free_objs:
-                obj = self._free_objs.popleft()
-                if now - obj._last_used <= self.idle_timeout:
-                    break
+    def get(self, **options):
+        # get the current time in seconds and the maximum time we can run the function until
+        current_time = time.time()
+        end_time = current_time + max(options.get('timeout', 0), 0)
 
-                if self._after_remove is not None:
-                    self._after_remove(obj)
+        with self._lock:
+            # while there are free objects or we are before the time limit
+            # Find a free object, removing any that have idled for too long.
+            while current_time <= end_time:
+                # get the current time again to check if we can run another iteration
+                current_time = time.time()
+                now = self._idle_clock()
+
+                while self._free_objs:
+                    obj = self._free_objs.popleft()
+                    if now - obj._last_used <= self.idle_timeout:
+                        break
+
+                    if self._after_remove is not None:
+                        self._after_remove(obj)
+
             else:
                 # No free objects, create a new one.
                 curr_count = len(self._used_objs)
