@@ -1,5 +1,9 @@
 Changelog
 =========
+New in version 4.0.1
+--------------------
+* Added auto discovery feature to HashClient
+
 New in version 4.0.0
 --------------------
 * Dropped Python 2 and 3.6 support
