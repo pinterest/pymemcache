@@ -102,6 +102,7 @@ class MockMemcacheClient:
 
         value, flags = self.serde.serialize(key, value)
 
+        assert isinstance(expire, int), expire
         if expire:
             expire += time.time()
 
