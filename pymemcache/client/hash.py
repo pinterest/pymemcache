@@ -334,8 +334,7 @@ class HashClient:
         try:
             failed = client.set_many(values, *args, **kwargs)
         except Exception as e:
-            if not self.ignore_exc:
-                return succeeded, failed, e
+            return succeeded, failed, e
 
         succeeded = [key for key in values if key not in failed]
         return succeeded, failed, None
