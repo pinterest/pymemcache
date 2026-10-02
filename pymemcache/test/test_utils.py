@@ -125,6 +125,19 @@ def test_incr_decr():
 
 
 @pytest.mark.unit()
+@pytest.mark.parametrize("noreply", [False, True])
+def test_decr_does_not_underflow(noreply):
+    client = MockMemcacheClient()
+    client.set(b"k", 2)
+    assert client.decr(b"k", 3, noreply=noreply) == (None if noreply else 0)
+    assert client.get(b"k") == 0
+    assert client.decr(b"k", 1, noreply=noreply) == (None if noreply else 0)
+    assert client.get(b"k") == 0
+    assert client.decr(b"missing", 1, noreply=noreply) is None
+    assert client.get(b"missing") is None
+
+
+@pytest.mark.unit()
 def test_prepand_append():
     client = MockMemcacheClient()
 
