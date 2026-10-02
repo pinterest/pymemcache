@@ -129,8 +129,9 @@ class MockMemcacheClient:
         current = self.get(key)
         present = current is not None
         if present:
-            self.set(key, current - value, noreply=noreply)
-        return None if noreply or not present else current - value
+            current = max(0, current - value)
+            self.set(key, current, noreply=noreply)
+        return None if noreply or not present else current
 
     def add(self, key, value, expire=0, noreply=True, flags=None):
         current = self.get(key)
