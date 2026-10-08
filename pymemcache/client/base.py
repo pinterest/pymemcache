@@ -72,7 +72,7 @@ def _parse_float(value: bytes) -> float:
 
 
 def _parse_hex(value: bytes) -> int:
-    return int(value, 8)
+    return int(value, 16)
 
 
 STAT_TYPES: dict[bytes, Callable[[bytes], Any]] = {
