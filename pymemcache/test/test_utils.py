@@ -1,5 +1,6 @@
 import pytest
 
+from pymemcache.client.base import PooledClient
 from pymemcache.serde import pickle_serde
 from pymemcache.test.utils import MockMemcacheClient
 
@@ -132,3 +133,16 @@ def test_prepand_append():
     client.append(b"k", "a")
     client.prepend(b"k", "p")
     assert client.get(b"k") == b"p1a"
+
+
+@pytest.mark.unit()
+@pytest.mark.parametrize("pooled", [False, True])
+@pytest.mark.parametrize("serde, expected", [(None, b"hello"), (pickle_serde, "hello")])
+def test_string_encoding_with_pool(pooled, serde, expected):
+    if pooled:
+        client = PooledClient(("localhost", 11211), serde=serde)
+        client.client_class = MockMemcacheClient
+    else:
+        client = MockMemcacheClient(serde=serde)
+    client.set("key", "hello")
+    assert client.get("key") == expected
