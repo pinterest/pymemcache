@@ -2,11 +2,13 @@ import logging
 import operator
 import socket
 import re
+import ssl
 import time
+from typing import Any, Callable, Optional
 
 from pymemcache import MemcacheUnknownCommandError
 from pymemcache.client import Client
-from pymemcache.client.base import normalize_server_spec
+from pymemcache.client.base import KeepaliveOpts, normalize_server_spec
 from pymemcache.client.hash import HashClient
 from pymemcache.client.rendezvous import RendezvousHash
 
@@ -33,31 +35,31 @@ class AWSElastiCacheHashClient(HashClient):
 
     def __init__(
         self,
-        cfg_node: object,
-        hasher: object = RendezvousHash,
-        serde: object = None,
-        serializer: object = None,
-        deserializer: object = None,
-        connect_timeout: object = None,
-        timeout: object = None,
-        no_delay: object = False,
-        socket_module: object = socket,
-        socket_keepalive: object = None,
-        key_prefix: object = b"",
-        max_pool_size: object = None,
-        pool_idle_timeout: object = 0,
-        lock_generator: object = None,
-        retry_attempts: object = 2,
-        retry_timeout: object = 1,
-        dead_timeout: object = 60,
-        use_pooling: object = False,
-        ignore_exc: object = False,
-        allow_unicode_keys: object = False,
-        default_noreply: object = True,
-        encoding: object = "ascii",
-        tls_context: object = None,
-        use_vpc: object = True,
-    ) -> object:
+        cfg_node: str,
+        hasher: Callable[[], Any] = RendezvousHash,
+        serde: Any = None,
+        serializer: Optional[Callable[..., Any]] = None,
+        deserializer: Optional[Callable[..., Any]] = None,
+        connect_timeout: Optional[float] = None,
+        timeout: Optional[float] = None,
+        no_delay: bool = False,
+        socket_module: Any = socket,
+        socket_keepalive: Optional[KeepaliveOpts] = None,
+        key_prefix: bytes = b"",
+        max_pool_size: Optional[int] = None,
+        pool_idle_timeout: int = 0,
+        lock_generator: Optional[Callable[[], Any]] = None,
+        retry_attempts: int = 2,
+        retry_timeout: int = 1,
+        dead_timeout: int = 60,
+        use_pooling: bool = False,
+        ignore_exc: bool = False,
+        allow_unicode_keys: bool = False,
+        default_noreply: bool = True,
+        encoding: str = "ascii",
+        tls_context: Optional[ssl.SSLContext] = None,
+        use_vpc: bool = True,
+    ) -> None:
         """
         Constructor.
 
@@ -175,7 +177,7 @@ class AWSElastiCacheHashClient(HashClient):
             Each tuple has the format (address: str, port: int).
         """
         addr, port = self._cfg_node.rsplit(":", maxsplit=1)
-        client = Client((addr, port), **self.default_kwargs)
+        client = Client((addr, int(port)), **self.default_kwargs)
 
         # https://docs.aws.amazon.com/AmazonElastiCache/latest/mem-ug/AutoDiscovery.AddingToYourClientLibrary.html
         try:
