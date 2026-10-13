@@ -58,6 +58,11 @@ def is_ipv6(address):
     [
         ("b" * 251, True, b"", MemcacheIllegalInputError, "Key is too long"),
         ("foo bar", True, b"", MemcacheIllegalInputError, "Key contains whitespace"),
+        (" ", True, b"", MemcacheIllegalInputError, "Key contains whitespace"),
+        ("\t", True, b"", MemcacheIllegalInputError, "Key contains whitespace"),
+        ("\r\n", True, b"", MemcacheIllegalInputError, "Key contains whitespace"),
+        ("  \r\n  ", True, b"", MemcacheIllegalInputError, "Key contains whitespace"),
+        (b" ", True, b"", MemcacheIllegalInputError, "Key contains whitespace"),
         ("\00", True, b"", MemcacheIllegalInputError, "Key contains null"),
         (None, True, b"", TypeError, None),
     ],

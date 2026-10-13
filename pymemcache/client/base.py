@@ -116,8 +116,9 @@ def check_key_helper(
 
     if len(key) > 250:
         raise MemcacheIllegalInputError("Key is too long: %r" % key)
-    # second statement catches leading or trailing whitespace
-    elif len(parts) > 1 or (parts and parts[0] != key):
+    # second statement catches leading or trailing whitespace; the third
+    # catches keys made only of whitespace, for which split() is empty (#662)
+    elif len(parts) > 1 or (parts and parts[0] != key) or (key and not parts):
         raise MemcacheIllegalInputError("Key contains whitespace: %r" % key)
     elif b"\00" in key:
         raise MemcacheIllegalInputError("Key contains null: %r" % key)
