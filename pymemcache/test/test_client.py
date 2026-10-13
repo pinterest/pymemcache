@@ -1188,6 +1188,14 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         result = client.raw_command(b"misc", b"\n")
         assert result == b"REPLY"
 
+    def test_raw_command_pipeline_commands(self):
+        # Regression test for _readsegment dropping data: when the response to
+        # a pipelined sequence of commands is split across recv() calls, bytes
+        # read before the end_tokens is found must be preserved.
+        client = self.make_client([b"VALUE k0", b" 0 3\r\nfoo\r\nEND\r\n"])
+        result = client.raw_command(b"get k0\r\nget k1\r\n", end_tokens=b"END\r\n")
+        assert result == b"VALUE k0 0 3\r\nfoo\r\n"
+
     def test_raw_command_missing_end_tokens(self):
         client = self.make_client([b"REPLY", b"REPLY"])
         with pytest.raises(IndexError):
