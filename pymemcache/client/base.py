@@ -1802,6 +1802,8 @@ def _readsegment(
             before, after = buf[:tokens_pos], buf[tokens_pos + len(end_tokens) :]
             result += before
             return after, result
+        else:
+            result += buf
 
         buf = _recv(sock, RECV_SIZE)
         if not buf:
