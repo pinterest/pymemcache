@@ -1169,8 +1169,8 @@ class Client:
             expire_bytes = self._check_integer(expire, "expire")
             cmd += b" " + expire_bytes
 
-        if prefixed_keys:
-            cmd += b" " + b" ".join(prefixed_keys)
+        #if prefixed_keys:
+            #cmd += b" " + b" ".join(prefixed_keys)
         cmd += b"\r\n"
 
         try:
