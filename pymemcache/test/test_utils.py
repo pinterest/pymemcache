@@ -125,6 +125,35 @@ def test_incr_decr():
 
 
 @pytest.mark.unit()
+def test_default_noreply():
+    client = MockMemcacheClient(default_noreply=False)
+
+    assert client.add(b"k", 2) is True
+    assert client.add(b"k", 25) is False
+    assert client.delete(b"k") is True
+    assert client.delete(b"k") is False
+
+
+@pytest.mark.unit()
+def test_default_noreply_true():
+    client = MockMemcacheClient(default_noreply=True)
+
+    assert client.add(b"k", 2) is True
+    assert client.add(b"k", 25) is True
+    assert client.delete(b"k") is True
+    assert client.delete(b"missing") is True
+
+
+@pytest.mark.unit()
+def test_noreply_arg_overrides_default():
+    client = MockMemcacheClient(default_noreply=True)
+
+    assert client.add(b"k", 2, noreply=False) is True
+    assert client.add(b"k", 25, noreply=False) is False
+    assert client.delete(b"missing", noreply=False) is False
+
+
+@pytest.mark.unit()
 def test_prepand_append():
     client = MockMemcacheClient()
 
