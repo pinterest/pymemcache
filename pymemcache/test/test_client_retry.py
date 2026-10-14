@@ -164,6 +164,18 @@ class TestRetryingClient:
 
         assert dir(base) == dir(client)
 
+    @pytest.mark.parametrize("attribute", ["server", "ignore_exc", "sock"])
+    def test_attribute_passthrough(self, attribute):
+        base = self.make_base_client([])
+        client = RetryingClient(base)
+        assert getattr(client, attribute) is getattr(base, attribute)
+
+    def test_missing_attribute(self):
+        client = self.make_client([])
+        assert not hasattr(client, "missing_method")
+        with pytest.raises(AttributeError):
+            client.missing_method
+
     def test_retry_dict_set_is_supported(self):
         client = self.make_client([b"UNKNOWN\r\n", b"STORED\r\n"])
         client[b"key"] = b"value"

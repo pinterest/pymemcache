@@ -153,9 +153,10 @@ class RetryingClient:
     # strictly defined for ourselves and pass it on to whatever client we've
     # been given.
     def __getattr__(self, name):
-        return lambda *args, **kwargs: self._retry(
-            name, self._client.__getattribute__(name), *args, **kwargs
-        )
+        attribute = getattr(self._client, name)
+        if not callable(attribute):
+            return attribute
+        return lambda *args, **kwargs: self._retry(name, attribute, *args, **kwargs)
 
     # We implement these explicitly because they're "magic" functions and won't
     # get passed on by __getattr__.
