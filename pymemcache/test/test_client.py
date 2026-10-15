@@ -59,6 +59,27 @@ def is_ipv6(address):
         ("b" * 251, True, b"", MemcacheIllegalInputError, "Key is too long"),
         ("foo bar", True, b"", MemcacheIllegalInputError, "Key contains whitespace"),
         ("\00", True, b"", MemcacheIllegalInputError, "Key contains null"),
+        (
+            b"foo\x01",
+            False,
+            b"",
+            MemcacheIllegalInputError,
+            "Key contains control characters",
+        ),
+        (
+            b"foo\x7f",
+            True,
+            b"",
+            MemcacheIllegalInputError,
+            "Key contains control characters",
+        ),
+        (
+            "\x01",
+            True,
+            b"",
+            MemcacheIllegalInputError,
+            "Key contains control characters",
+        ),
         (None, True, b"", TypeError, None),
     ],
 )
@@ -82,6 +103,7 @@ def test_check_key_helper():
     assert check_key_helper("key", True) == b"key"
     assert isinstance(check_key_helper(b"key", True), bytes)
     assert check_key_helper("", True) == b""
+    assert check_key_helper(b"key\x80", False) == b"key\x80"
 
 
 class MockSocket:
@@ -930,6 +952,14 @@ class TestClient(ClientTestMixin, unittest.TestCase):
 
         with pytest.raises(MemcacheIllegalInputError):
             _set()
+
+    def test_set_key_with_control_character(self):
+        client = self.make_client([])
+
+        with pytest.raises(MemcacheIllegalInputError):
+            client.set(b"key\x01", b"value", noreply=False)
+
+        client._connect.assert_not_called()
 
     def test_set_key_with_noninteger_expire(self):
         client = self.make_client([b""])
