@@ -121,6 +121,10 @@ def check_key_helper(
         raise MemcacheIllegalInputError("Key contains whitespace: %r" % key)
     elif b"\00" in key:
         raise MemcacheIllegalInputError("Key contains null: %r" % key)
+    elif any(
+        (byte < 0x20 and byte not in b" \t\n\r\v\f") or byte == 0x7F for byte in key
+    ):
+        raise MemcacheIllegalInputError("Key contains control characters: %r" % key)
 
     return key
 
