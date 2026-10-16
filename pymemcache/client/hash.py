@@ -158,10 +158,10 @@ class HashClient:
         current_time = time.time()
         ldc = self._last_dead_check_time
         # We have reached the retry timeout
-        if current_time - ldc > self.dead_timeout:
+        if current_time - ldc >= self.dead_timeout:
             candidates = []
             for server, dead_time in self._dead_clients.items():
-                if current_time - dead_time > self.dead_timeout:
+                if current_time - dead_time >= self.dead_timeout:
                     candidates.append(server)
             for server in candidates:
                 logger.debug("bringing server back into rotation %s", server)
@@ -200,7 +200,7 @@ class HashClient:
                 # time lets just retry using it
                 if failed_metadata["attempts"] < self.retry_attempts:
                     failed_time = failed_metadata["failed_time"]
-                    if time.time() - failed_time > self.retry_timeout:
+                    if time.time() - failed_time >= self.retry_timeout:
                         logger.debug("retrying failed server: %s", client.server)
                         result = func(*args, **kwargs)
                         # we were successful, lets remove it from the failed
@@ -249,7 +249,7 @@ class HashClient:
                 # time lets just retry using it
                 if failed_metadata["attempts"] < self.retry_attempts:
                     failed_time = failed_metadata["failed_time"]
-                    if time.time() - failed_time > self.retry_timeout:
+                    if time.time() - failed_time >= self.retry_timeout:
                         logger.debug("retrying failed server: %s", client.server)
                         succeeded, failed, err = self._set_many(
                             client, values, *args, **kwargs

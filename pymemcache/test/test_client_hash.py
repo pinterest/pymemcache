@@ -463,6 +463,7 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         for client in hash_client.clients.values():
             assert client.encoding == encoding
 
+    @mock.patch("pymemcache.client.hash.time.time", new=lambda: 100.0)
     @mock.patch("pymemcache.client.hash.HashClient.client_class")
     def test_dead_server_comes_back(self, client_patch):
         client = HashClient([], dead_timeout=0, retry_attempts=0)
@@ -482,6 +483,7 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         assert client.get(b"key") == "Some value"
         assert ("127.0.0.1", 11211) not in client._dead_clients
 
+    @mock.patch("pymemcache.client.hash.time.time", new=lambda: 100.0)
     @mock.patch("pymemcache.client.hash.HashClient.client_class")
     def test_failed_is_retried(self, client_patch):
         client = HashClient([], retry_attempts=1, retry_timeout=0)
@@ -561,3 +563,34 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
             client.remove_server(server, server[-1])
 
     # TODO: Test failover logic
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("timeout", [0, 5])
+@pytest.mark.parametrize(
+    "command,argument,result",
+    [("get", b"key", b"value"), ("set_many", {b"key": b"value"}, [])],
+)
+def test_retry_at_timeout_boundary(timeout, command, argument, result):
+    with mock.patch("pymemcache.client.hash.time.time", return_value=100) as clock:
+        with mock.patch(
+            "pymemcache.client.hash.HashClient.client_class"
+        ) as client_class:
+            client = HashClient([("localhost", 11211)], retry_timeout=timeout)
+            inner = client_class.return_value
+            inner.server = ("localhost", 11211)
+            method = getattr(inner, command)
+            method.side_effect = socket.timeout()
+            with pytest.raises(socket.timeout):
+                getattr(client, command)(argument)
+
+            method.side_effect = None
+            method.return_value = result
+            if timeout:
+                clock.return_value = 100 + timeout - 1
+                getattr(client, command)(argument)
+                assert method.call_count == 1
+
+            clock.return_value = 100 + timeout
+            assert getattr(client, command)(argument) == result
+            assert method.call_count == 2
