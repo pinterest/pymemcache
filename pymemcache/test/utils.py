@@ -101,6 +101,11 @@ class MockMemcacheClient:
                 raise MemcacheIllegalInputError
 
         value, flags = self.serde.serialize(key, value)
+        if isinstance(value, str):
+            try:
+                value = value.encode(self.encoding)
+            except UnicodeEncodeError as exc:
+                raise MemcacheIllegalInputError from exc
 
         if expire:
             expire += time.time()
