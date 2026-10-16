@@ -384,7 +384,37 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
         )
         result = client.set_many(values, noreply=False)
 
-        assert len(result) == 0
+        assert set(result) == set(values)
+
+    def test_set_many_reports_only_failed_server_keys(self):
+        for error in [OSError("connection reset"), MemcacheUnknownError("bad reply")]:
+            with self.subTest(error=error):
+                client = self.make_client([], [b"STORED\r\n"], ignore_exc=True)
+                client.hasher.get_node = lambda key: (
+                    "127.0.0.1:11013" if key == "healthy" else "127.0.0.1:11012"
+                )
+                failed_client = client.clients["127.0.0.1:11012"]
+                values = {"failed1": "a", "healthy": "b", "failed2": "c"}
+                with mock.patch.object(failed_client, "set_many", side_effect=error):
+                    result = client.set_many(values, noreply=False)
+
+                assert set(result) == {"failed1", "failed2"}
+                assert (failed_client.server in client._failed_clients) == isinstance(
+                    error, OSError
+                )
+
+    def test_set_many_ignored_socket_error_respects_retry_timeout(self):
+        client = self.make_client([], ignore_exc=True)
+        client.retry_timeout = 10
+        failed_client = client.clients["127.0.0.1:11012"]
+        values = {"key1": "a", "key2": "b"}
+        with mock.patch("pymemcache.client.hash.time.time", return_value=100):
+            with mock.patch.object(
+                failed_client, "set_many", side_effect=OSError("connection reset")
+            ) as set_many:
+                assert set(client.set_many(values)) == set(values)
+                assert set(client.set_many(values)) == set(values)
+                set_many.assert_called_once()
 
     def test_noreply_set_many(self):
         values = {"key1": "value1", "key2": "value2", "key3": "value3"}
