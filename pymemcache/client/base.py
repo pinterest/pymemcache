@@ -1552,13 +1552,17 @@ class PooledClient:
                 else:
                     raise
 
-    def gats(self, key: Key, expire: int = 0, default: Optional[Any] = None) -> Any:
+    def gats(
+        self, key: Key, expire: int = 0, default: Any = None, cas_default: Any = None
+    ) -> tuple[Any, Any]:
         with self.client_pool.get_and_release(destroy_on_fail=True) as client:
             try:
-                return client.gats(key, expire, default)
+                return client.gats(
+                    key, expire=expire, default=default, cas_default=cas_default
+                )
             except Exception:
                 if self.ignore_exc:
-                    return default
+                    return (default, cas_default)
                 else:
                     raise
 
@@ -1582,7 +1586,7 @@ class PooledClient:
                 return client.gets(key, default=default, cas_default=cas_default)
             except Exception:
                 if self.ignore_exc:
-                    return (None, None)
+                    return (default, cas_default)
                 else:
                     raise
 

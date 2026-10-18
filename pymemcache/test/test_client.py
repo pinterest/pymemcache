@@ -1447,6 +1447,39 @@ class TestPooledClient(ClientTestMixin, unittest.TestCase):
         result = client.gets(b"key")
         assert result == (b"value", b"10")
 
+    def test_gats_not_found_defaults(self):
+        client = self.make_client([b"END\r\n"])
+        result = client.gats(b"key", default="foo", cas_default="bar")
+        assert result == ("foo", "bar")
+
+    def test_gats_found(self):
+        client = self.make_client([b"VALUE key 0 5 10\r\nvalue\r\nEND\r\n"])
+        result = client.gats(b"key", 10)
+        assert result == (b"value", b"10")
+
+    def _make_failing_client(self):
+        # The pooled clients never ignore errors themselves, so build one
+        # that raises and let the PooledClient handle ignore_exc.
+        mock_client = Client("localhost")
+        mock_client.sock = MockSocket([b"INVALID DATA\r\n"])
+        client = PooledClient("localhost", ignore_exc=True)
+        client.client_pool = pool.ObjectPool(lambda: mock_client)
+        return client
+
+    def test_gets_ignore_exc_defaults(self):
+        client = self._make_failing_client()
+        assert client.gets(b"key") == (None, None)
+        client = self._make_failing_client()
+        result = client.gets(b"key", default="foo", cas_default="bar")
+        assert result == ("foo", "bar")
+
+    def test_gats_ignore_exc_defaults(self):
+        client = self._make_failing_client()
+        assert client.gats(b"key") == (None, None)
+        client = self._make_failing_client()
+        result = client.gats(b"key", default="foo", cas_default="bar")
+        assert result == ("foo", "bar")
+
     def test_cas_stored(self):
         client = self.make_client([b"STORED\r\n"])
         result = client.cas(b"key", b"value", b"123", noreply=False)
