@@ -718,6 +718,8 @@ class Client:
           and the values are values from the cache. The dict may contain all,
           some or none of the given keys.
         """
+        # Keys are iterated more than once, so accept one-shot iterables too.
+        keys = list(keys)
         if not keys:
             return {}
 
@@ -779,6 +781,8 @@ class Client:
           the values are tuples of (value, cas) from the cache. The dict may
           contain all, some or none of the given keys.
         """
+        # Keys are iterated more than once, so accept one-shot iterables too.
+        keys = list(keys)
         if not keys:
             return {}
 

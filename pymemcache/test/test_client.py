@@ -722,6 +722,21 @@ class TestClient(ClientTestMixin, unittest.TestCase):
         result = client.gets_many([b"key1", b"key2"])
         assert result == {b"key1": (b"value1", b"11")}
 
+    def test_get_many_iterator(self):
+        client = self.make_client([b"VALUE key1 0 6\r\nvalue1\r\nEND\r\n"])
+        result = client.get_many(iter([b"key1", b"key2"]))
+        assert result == {b"key1": b"value1"}
+
+    def test_get_many_empty_iterator(self):
+        client = self.make_client([])
+        result = client.get_many(iter([]))
+        assert result == {}
+
+    def test_gets_many_iterator(self):
+        client = self.make_client([b"VALUE key1 0 6 11\r\nvalue1\r\nEND\r\n"])
+        result = client.gets_many(key for key in [b"key1", b"key2"])
+        assert result == {b"key1": (b"value1", b"11")}
+
     def test_gats_not_found(self):
         client = self.make_client([b"END\r\n"])
         result = client.gats(b"key")
