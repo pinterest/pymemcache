@@ -11,6 +11,60 @@ from unittest import mock
 import socket
 
 
+@pytest.mark.unit()
+@pytest.mark.parametrize("use_pooling", [False, True])
+@pytest.mark.parametrize(
+    "server,remove_args",
+    [
+        (("127.0.0.1", 11211), (("127.0.0.1", 11211),)),
+        (("127.0.0.1", 11211), ("127.0.0.1", 11211)),
+        ("/tmp/pymemcache-healthy", ("/tmp/pymemcache-healthy",)),
+    ],
+)
+def test_remove_healthy_server(server, remove_args, use_pooling):
+    """Removing a server must not require an earlier connection failure."""
+    remaining_server = ("127.0.0.1", 11212)
+    with mock.patch("pymemcache.client.hash.time.time", return_value=1000) as clock:
+        client = HashClient(
+            [server, remaining_server], dead_timeout=60, use_pooling=use_pooling
+        )
+        server_key = client._make_client_key(server)
+        remaining_key = client._make_client_key(remaining_server)
+
+        assert server_key in client.hasher.nodes
+        assert client._failed_clients == {}
+        client.remove_server(*remove_args)
+
+        assert server_key not in client.hasher.nodes
+        assert client._failed_clients == {}
+        assert client._dead_clients == {server: 1000}
+        with mock.patch.object(
+            client.clients[remaining_key], "get", return_value=b"value"
+        ) as get:
+            assert client.get(b"key") == b"value"
+            get.assert_called_once_with(b"key", default=None)
+
+        # Explicit removals retain the existing dead-timeout recovery policy.
+        clock.return_value = 1061
+        client._retry_dead()
+        assert server_key in client.hasher.nodes
+        assert client._dead_clients == {}
+
+
+@pytest.mark.unit()
+def test_remove_unknown_server_does_not_schedule_retry():
+    """An invalid removal must not introduce a new server during recovery."""
+    server = ("127.0.0.1", 11211)
+    client = HashClient([server])
+
+    with pytest.raises(ValueError, match="No such node"):
+        client.remove_server(("127.0.0.1", 11212))
+
+    assert client.hasher.nodes == [client._make_client_key(server)]
+    assert client._dead_clients == {}
+    assert client._failed_clients == {}
+
+
 class TestHashClient(ClientTestMixin, unittest.TestCase):
     def make_client_pool(self, hostname, mock_socket_values, serializer=None, **kwargs):
         mock_client = Client(hostname, serializer=serializer, **kwargs)
