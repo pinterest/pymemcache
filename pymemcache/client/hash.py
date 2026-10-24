@@ -150,9 +150,9 @@ class HashClient:
 
         key = self._make_client_key(server)
         dead_time = time.time()
-        self._failed_clients.pop(server)
-        self._dead_clients[server] = dead_time
         self.hasher.remove_node(key)
+        self._failed_clients.pop(server, None)
+        self._dead_clients[server] = dead_time
 
     def _retry_dead(self) -> None:
         current_time = time.time()
