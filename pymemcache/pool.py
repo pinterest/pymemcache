@@ -65,7 +65,8 @@ class ObjectPool(Generic[T]):
         obj = self.get()
         try:
             yield obj
-        except Exception:
+        except BaseException:
+            # Interrupts and cancellation must also return or discard the object.
             if not destroy_on_fail:
                 self.release(obj)
             else:
