@@ -1,5 +1,11 @@
 Changelog
 =========
+
+New in version 4.1.0
+--------------------
+* Added support for Auto Discovery endpoint
+  `#572 <https://github.com/pinterest/pymemcache/pull/572>`_
+
 New in version 4.0.0
 --------------------
 * Dropped Python 2 and 3.6 support
