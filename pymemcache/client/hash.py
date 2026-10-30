@@ -342,7 +342,13 @@ class HashClient:
 
     def close(self):
         for client in self.clients.values():
-            self._safely_run_func(client, client.close, False)
+            # Closing local connections must not be skipped during retry backoff
+            # or count as a successful request to a failed server.
+            try:
+                client.close()
+            except Exception:
+                if not self.ignore_exc:
+                    raise
 
     disconnect_all = close
 

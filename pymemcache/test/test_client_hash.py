@@ -561,3 +561,70 @@ class TestHashClient(ClientTestMixin, unittest.TestCase):
             client.remove_server(server, server[-1])
 
     # TODO: Test failover logic
+
+
+@pytest.mark.unit()
+@pytest.mark.parametrize("method", ["close", "disconnect_all"])
+@pytest.mark.parametrize("ignore_exc", [False, True])
+@pytest.mark.parametrize("elapsed", [0, 61])
+def test_close_failed_server_pool(method, ignore_exc, elapsed):
+    server = ("127.0.0.1", 11211)
+    client = HashClient(
+        [server], use_pooling=True, ignore_exc=ignore_exc, retry_timeout=60
+    )
+    client_pool = client.clients["127.0.0.1:11211"].client_pool
+    failing_client = client_pool.get()
+    idle_client = client_pool.get()
+    failing_socket = MockSocket([socket.timeout()])
+    idle_socket = MockSocket([])
+    failing_client.sock = failing_socket
+    idle_client.sock = idle_socket
+    client_pool.release(failing_client)
+    client_pool.release(idle_client)
+
+    with mock.patch("pymemcache.client.hash.time.time", return_value=1):
+        if ignore_exc:
+            assert client.get(b"key") is None
+        else:
+            with pytest.raises(socket.timeout):
+                client.get(b"key")
+
+    assert failing_socket.closed
+    assert client_pool.free == (idle_client,)
+    failed_clients = {
+        key: metadata.copy() for key, metadata in client._failed_clients.items()
+    }
+    assert server in failed_clients
+
+    with mock.patch("pymemcache.client.hash.time.time", return_value=1 + elapsed):
+        assert getattr(client, method)() is None
+
+    assert idle_socket.closed
+    assert client_pool.free == ()
+    assert client_pool.used == ()
+    # Local cleanup is not a successful request to the failed server.
+    assert client._failed_clients == failed_clients
+    assert client._dead_clients == {}
+
+
+@pytest.mark.unit()
+@pytest.mark.parametrize("ignore_exc", [False, True])
+@pytest.mark.parametrize(
+    "error", [OSError("close failed"), RuntimeError("close failed")]
+)
+def test_close_custom_client_error(ignore_exc, error):
+    client = HashClient([], ignore_exc=ignore_exc)
+    failing_client = mock.Mock(server=("127.0.0.1", 11211))
+    failing_client.close.side_effect = error
+    healthy_client = mock.Mock(server=("127.0.0.1", 11212))
+    client.clients = {"failed": failing_client, "healthy": healthy_client}
+
+    if ignore_exc:
+        assert client.close() is None
+        healthy_client.close.assert_called_once_with()
+    else:
+        with pytest.raises(type(error)) as excinfo:
+            client.close()
+        assert excinfo.value is error
+
+    failing_client.close.assert_called_once_with()
